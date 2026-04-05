@@ -1,0 +1,38 @@
+# Local IDE settings
+.vscode/
+*.code-workspace
+
+# CubeMX / project metadata
+.mxproject
+
+# Keil MDK user-specific files
+MDK-ARM/*.uvoptx
+MDK-ARM/*.uvguix.*
+MDK-ARM/*.uvgui.*
+MDK-ARM/*.log
+MDK-ARM/*.htm
+MDK-ARM/*.html
+MDK-ARM/*.map
+MDK-ARM/*.lst
+MDK-ARM/*.crf
+MDK-ARM/*.d
+MDK-ARM/*.dep
+MDK-ARM/*.lnp
+MDK-ARM/*.sct
+MDK-ARM/*.bak
+MDK-ARM/*.tmp
+MDK-ARM/*.axf
+MDK-ARM/*.elf
+MDK-ARM/*.bin
+MDK-ARM/*.hex
+MDK-ARM/JLinkLog.txt
+MDK-ARM/JLinkSettings.ini
+MDK-ARM/EventRecorderStub.scvd
+MDK-ARM/DebugConfig/
+MDK-ARM/RTE/
+MDK-ARM/led_key/
+
+# Common OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
