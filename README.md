@@ -1,36 +1,43 @@
 # LED Key Polling Demo
 
-这是一个基于 STM32F411 的 LED 与按键控制示例工程。
+这是一个面向工程框架演示的 STM32F411 示例项目，重点展示应用层、BSP 层、HAL 层和 RTOS 之间的组织方式，而不是单一外设的控制逻辑。
 
-## 功能说明
+## 项目定位
 
-- 使用 `FreeRTOS` 创建默认任务 `defaultTask`
-- 通过 `USART1` 重定向 `printf` 输出调试信息
-- 在任务中轮询读取按键状态
-- 按下按键后控制 `PC13` 上的 LED 亮灭切换
-- 便于学习 `GPIO`、`HAL`、`FreeRTOS` 和基础 BSP 封装写法
+- 这是一个框架优先的基础工程
+- 适合观察 STM32CubeMX 生成代码与自定义代码如何协作
+- 适合后续继续扩展为按键、LED、串口、定时器、状态机等模块
+- 适合作为你后续 BSP 和应用架构的起点
 
-## 硬件连接
+## 框架结构
 
-- LED：PC13
-- KEY：PA0
-- 按键另一端接 GND
-- 按键输入使用内部上拉，按下时为低电平
+- `Core`：CubeMX 生成的系统初始化、时钟、外设和 RTOS 入口
+- `Drivers`：STM32F4 HAL 与 CMSIS 等底层驱动
+- `Middlewares`：FreeRTOS 等中间件支持
+- `BSP`：你自己维护的板级封装层，用来承载可复用接口
 
-## 运行逻辑
+## 当前能力
 
-1. 系统初始化后启动 `defaultTask`
-2. 任务中通过 `printf` 输出调试信息
-3. 轮询检测 `PA0` 电平
-4. 当按键按下时，`PC13` LED 进行亮灭切换
-5. 任务中配合 `osDelay(1)` 让出 CPU
+- `FreeRTOS` 默认任务已经接入
+- `USART1` 已完成 `printf` 重定向，便于调试输出
+- `GPIO` 已完成 LED 和按键相关基础配置
+- `BSP/LED/driver` 已开始抽象 LED 驱动接口
+- `HAL`、`RTOS`、`BSP` 三层关系已经建立
+
+## 设计重点
+
+- 保留 CubeMX 生成代码的稳定性
+- 把自定义逻辑放进 `USER CODE` 区和 `BSP` 目录
+- 通过接口抽象降低板级和业务逻辑的耦合
+- 为后续复用 `time base`、`delay`、`LED ops` 等能力预留空间
 
 ## 关键文件
 
 - `Core/Src/main.c`
 - `Core/Src/main.h`
-- `Core/Src/stm32f4xx_it.c`
 - `Core/Src/stm32f4xx_hal_msp.c`
+- `Core/Src/stm32f4xx_it.c`
+- `Core/Inc/FreeRTOSConfig.h`
 - `BSP/LED/driver/inc/bsp_led_driver.h`
 - `BSP/LED/driver/src/bsp_led_driver.c`
 
@@ -45,10 +52,10 @@
 
 1. 打开工程
 2. 编译并下载到开发板
-3. 串口查看 `USART1` 输出
-4. 按下 `KEY`，观察 `LED` 状态变化
+3. 通过串口观察运行输出
+4. 在此基础上继续扩展自己的 BSP 和业务模块
 
 ## 备注
 
-- 当前工程是按键轮询控制 LED，并不是外部中断回调版本
-- 如果后续要改成中断方式，可以再把 `PA0` 配置为 `EXTI0_IRQHandler()` 对应的中断输入
+- 这个分支的重点是框架演进，不是单一硬件演示
+- README 里的描述应该优先服务于项目观察者快速理解工程分层和扩展性
