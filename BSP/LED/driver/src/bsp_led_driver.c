@@ -93,9 +93,9 @@ led_status_t bsp_led_driver_inst(bsp_led_driver_t *const self,
     self->p_os_delay = p_os_delay;
 #endif
 
-    self->blink_cycle_time_ms = 0;
-    self->blink_proportion = LED_BLINK_PROPORTION_0_5;
-    self->blink_count = 0;
+    self->led_cycle_time_ms = 0;
+    self->led_blink_proportion = LED_BLINK_PROPORTION_0_5;
+    self->led_blink_count = 0;
 
     ret = led_driver_init(self);
 
@@ -105,7 +105,7 @@ led_status_t bsp_led_driver_inst(bsp_led_driver_t *const self,
 #ifdef DEBUG
         DEBUG_OUT("bsp_led_driver_inst: LED driver instance initialization failed!\n");
 #endif
-        self->p_led_ops = NULL;
+    self->p_led_ops = NULL;
     self->p_time_base = NULL;
 #ifdef OS_SUPPORTING
     self->p_os_delay = NULL;
