@@ -65,10 +65,12 @@ typedef struct
     led_status_t (*pf_get_time_ms)(uint32_t *const p_time_ms);
 } time_base_t;
 
+#ifdef OS_SUPPORTING
 typedef struct 
 {
     led_status_t (*pf_os_delay_ms)(const uint32_t delay_ms);
 } os_delay_t;
+#endif
 
 typedef struct bsp_led_driver bsp_led_driver_t;
 
@@ -82,7 +84,9 @@ typedef struct bsp_led_driver
 
     led_ops_t *p_led_ops;
     time_base_t time_base;
+#ifdef OS_SUPPORTING
     os_delay_t os_delay;
+#endif
 
 
 
@@ -95,6 +99,12 @@ typedef led_status_t (*pf_led_control_func_t)(bsp_led_driver_t *const p_led_driv
 
 
 //******************************* Declaring *********************************//
+#ifdef OS_SUPPORTING
+#define BSP_LED_DRIVER_INIT_OS_PARAMS , os_delay_t *const os_delay
+#else
+#define BSP_LED_DRIVER_INIT_OS_PARAMS
+#endif
+
 /**
  * @brief Instantiates the bsp_led_driver_t structure.
  * 
@@ -112,8 +122,10 @@ typedef led_status_t (*pf_led_control_func_t)(bsp_led_driver_t *const p_led_driv
 
 led_status_t bsp_led_driver_init(bsp_led_driver_t *const self,
                                  led_ops_t *const led_ops,
-                                 os_delay_t *const os_delay,
-                                 time_base_t *const time_base);
+                                 time_base_t *const time_base
+                                 BSP_LED_DRIVER_INIT_OS_PARAMS);
+
+#undef BSP_LED_DRIVER_INIT_OS_PARAMS
 
 
 #endif // End of __BSP_LED_DRIVER_H__
