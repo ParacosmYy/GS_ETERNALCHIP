@@ -1,0 +1,36 @@
+# Build outputs
+*.o
+*.d
+*.crf
+*.axf
+*.elf
+*.hex
+*.bin
+*.map
+*.htm
+*.lst
+*.lnp
+*.dep
+
+# Keil / MDK generated files
+*.uvguix.*
+*.uvgui.*
+MDK-ARM/**/Objects/
+MDK-ARM/**/Listings/
+MDK-ARM/**/Debug/
+MDK-ARM/**/Release/
+
+# STM32CubeIDE / Eclipse
+.settings/
+.metadata/
+Debug/
+Release/
+
+# VS Code workspace state
+.vscode/*.log
+.vscode/*.tmp
+
+# OS junk
+Thumbs.db
+Desktop.ini
+.DS_Store
