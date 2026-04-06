@@ -31,6 +31,15 @@
 //******************************* Includes **********************************//
 
 
+//******************************* Defines ***********************************//
+#define INITED 1
+#define NOT_INITED 0
+
+#define OS_SUPPORTING 
+#define DEBUG
+#define DEBUG_OUT(X)  printf(X)
+
+
 typedef enum
 {
     LED_STATUS_OK = 0,
@@ -83,9 +92,9 @@ typedef struct bsp_led_driver
     proportion_t led_blink_proportion;
 
     led_ops_t *p_led_ops;
-    time_base_t time_base;
+    time_base_t *p_time_base;
 #ifdef OS_SUPPORTING
-    os_delay_t os_delay;
+    os_delay_t *p_os_delay;
 #endif
 
 
@@ -99,11 +108,6 @@ typedef led_status_t (*pf_led_control_func_t)(bsp_led_driver_t *const p_led_driv
 
 
 //******************************* Declaring *********************************//
-#ifdef OS_SUPPORTING
-#define BSP_LED_DRIVER_INIT_OS_PARAMS , os_delay_t *const os_delay
-#else
-#define BSP_LED_DRIVER_INIT_OS_PARAMS
-#endif
 
 /**
  * @brief Instantiates the bsp_led_driver_t structure.
@@ -113,19 +117,19 @@ typedef led_status_t (*pf_led_control_func_t)(bsp_led_driver_t *const p_led_driv
  * 
  * @param[in] self      : Pointer to the LED driver instance.
  * @param[in] led_ops   : Core LED operations interface.
- * @param[in] os_delay  : OS delay interface (if OS support is enabled).
- * @param[in] time_base : Timebase interface.
+ * @param[in] p_os_delay  : OS delay interface (if OS support is enabled).
+ * @param[in] p_time_base : Timebase interface.
  * 
  * @return led_status_t : Operation status
  * 
  */
 
-led_status_t bsp_led_driver_init(bsp_led_driver_t *const self,
+led_status_t bsp_led_driver_inst(bsp_led_driver_t *const self,
                                  led_ops_t *const led_ops,
-                                 time_base_t *const time_base
-                                 BSP_LED_DRIVER_INIT_OS_PARAMS);
-
-#undef BSP_LED_DRIVER_INIT_OS_PARAMS
+#ifdef OS_SUPPORTING
+                                 os_delay_t *const p_os_delay,
+#endif
+                                 time_base_t *const p_time_base);
 
 
 #endif // End of __BSP_LED_DRIVER_H__
