@@ -1,4 +1,4 @@
-# Build outputs
+# Build outputs and linker artifacts
 *.o
 *.d
 *.crf
@@ -11,14 +11,24 @@
 *.lst
 *.lnp
 *.dep
+*.sct
+*.bak
 
-# Keil / MDK generated files
+# Keil / MDK generated and local state files
 *.uvguix.*
 *.uvgui.*
+*.uvoptx
+*.build_log.htm
+*.iex
 MDK-ARM/**/Objects/
 MDK-ARM/**/Listings/
 MDK-ARM/**/Debug/
 MDK-ARM/**/Release/
+MDK-ARM/**/Backup/
+Core/**/Backup/
+BSP/**/Backup/
+Drivers/**/Backup/
+Middlewares/**/Backup/
 
 # STM32CubeIDE / Eclipse
 .settings/
