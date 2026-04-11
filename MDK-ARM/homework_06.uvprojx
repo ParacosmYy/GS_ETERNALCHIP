@@ -1307,14 +1307,14 @@
           <GroupName>BSP</GroupName>
           <Files>
             <File>
-              <FileName>bsp_led_driver.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\BSP\LED\driver\inc\bsp_led_driver.h</FilePath>
-            </File>
-            <File>
               <FileName>bsp_led_driver.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\BSP\LED\driver\src\bsp_led_driver.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_led_handler.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\LED\handler\src\bsp_led_handler.c</FilePath>
             </File>
           </Files>
         </Group>
