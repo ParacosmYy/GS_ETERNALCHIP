@@ -118,3 +118,72 @@ led_status_t bsp_led_driver_inst(bsp_led_driver_t *const self,
 #endif
     return ret;
 }
+
+#ifdef OS_SUPPORTING
+led_status_t led_blink  (bsp_led_driver_t * self)
+{
+    led_status_t ret = LED_STATUS_OK;
+    if (self == NULL || self->led_is_inited != INITED)
+    {
+#ifdef DEBUG
+        DEBUG_OUT("led_blink: Invalid parameter(s) or LED driver not initialized!\n");
+#endif
+        return LED_STATUS_ERROR_PARAM;
+    }
+
+    {
+            uint32_t cycle_time_local ;
+            uint32_t blink_times_local;
+            uint32_t led_toggle_time_local;
+            proportion_t proportion_local;
+
+            cycle_time_local = self->led_cycle_time_ms;
+
+            blink_times_local = self->led_blink_count;
+
+            proportion_local = self->led_blink_proportion;
+
+            if(proportion_local == LED_BLINK_PROPORTION_0_5)
+            {
+                led_toggle_time_local = cycle_time_local / 2;
+                // Handle 50% blink proportion
+            }
+            else if(proportion_local == LED_BLINK_PROPORTION_0_25)
+            {
+                led_toggle_time_local = cycle_time_local / 4;
+            }   
+            else if(proportion_local == LED_BLINK_PROPORTION_0_75)
+            {
+                led_toggle_time_local = (cycle_time_local * 3) / 4;
+            }
+            else
+            {
+    #ifdef DEBUG
+                DEBUG_OUT("led_blink: Invalid blink proportion!\n");
+    #endif
+                return LED_STATUS_ERROR_PARAM;
+            }
+
+        
+        for(uint32_t i = 0; i < blink_times_local; i++)
+        {
+            for(uint32_t j = 0; j <cycle_time_local; j++)
+            {
+                self->p_os_delay->pf_os_delay_ms(1);
+
+                if(j < led_toggle_time_local)
+                {
+                    self->p_led_ops->pf_on();
+                }
+                else
+                {
+                    self->p_led_ops->pf_off();
+                }
+            }
+        }
+    }
+    return ret;
+}
+
+
+#endif 
