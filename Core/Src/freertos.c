@@ -35,7 +35,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+/* Set to 1 to enable periodic Hello World output, 0 to disable */
+#define DEBUG_PERIODIC_ECHO 0
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -115,9 +116,12 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
+  UART_StartReceive();
   for(;;)
   {
+#if DEBUG_PERIODIC_ECHO
     HAL_UART_Transmit(&huart1, (uint8_t*)"Hello World\r\n", 13, HAL_MAX_DELAY);
+#endif
     osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */

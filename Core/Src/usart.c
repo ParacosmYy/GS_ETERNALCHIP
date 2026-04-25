@@ -21,7 +21,10 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
+#include <string.h>
 
+#define RX_BUF_SIZE 256
+static uint8_t rx_buf[RX_BUF_SIZE];
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart1;
@@ -158,5 +161,21 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+void UART_StartReceive(void)
+{
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rx_buf, RX_BUF_SIZE);
+    __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
+}
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+    if (huart->Instance == USART1)
+    {
+        HAL_UART_Transmit(&huart1, rx_buf, Size, HAL_MAX_DELAY);
+        HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rx_buf, RX_BUF_SIZE);
+        __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
+    }
+}
 
 /* USER CODE END 1 */
