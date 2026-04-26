@@ -25,8 +25,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "usart.h"
-#include <string.h>
+#include "app_key_task.h"
+#include "app_uart_task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,10 +46,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-#define UART_RX_BUF_SIZE 64
-static uint8_t uart_rx_buf[UART_RX_BUF_SIZE];
-static volatile uint16_t uart_rx_len = 0;
-static volatile uint8_t  uart_rx_flag = 0;
+
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -99,7 +96,9 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  /* 创建应用任务 */
+  (void)App_Key_Init();
+  (void)App_UART_Init();
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -118,60 +117,15 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
-  uint8_t last_key = 1;  /* 上拉输入，松开为1 */
-  uint32_t heartbeat_tick = osKernelGetTickCount();
-
-  /* 启动 DMA 接收 */
-  HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart_rx_buf, UART_RX_BUF_SIZE);
-
   /* Infinite loop */
   for(;;)
   {
-    /* ---- 按键检测 ---- */
-    uint8_t cur_key = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
-
-    if (last_key == 1 && cur_key == 0)
-    {
-      osDelay(20);
-      if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == 0)
-      {
-        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-        HAL_UART_Transmit(&huart1, (uint8_t *)"LED Toggle\r\n", 12, 100);
-      }
-    }
-    last_key = cur_key;
-
-    /* ---- UART 收到的数据原样回显 ---- */
-    if (uart_rx_flag)
-    {
-      HAL_UART_Transmit(&huart1, uart_rx_buf, uart_rx_len, 100);
-      uart_rx_flag = 0;
-      uart_rx_len = 0;
-    }
-
-    /* ---- 心跳 ---- */
-    if ((osKernelGetTickCount() - heartbeat_tick) >= 1000)
-    {
-      heartbeat_tick = osKernelGetTickCount();
-      HAL_UART_Transmit(&huart1, (uint8_t *)"heartbeat\r\n", 11, 100);
-    }
-
-    osDelay(10);
+    osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
-{
-  if (huart->Instance == USART1)
-  {
-    uart_rx_len = size;
-    uart_rx_flag = 1;
-    /* 重新启动接收 */
-    HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart_rx_buf, UART_RX_BUF_SIZE);
-  }
-}
-/* USER CODE END Application */
 
+/* USER CODE END Application */
