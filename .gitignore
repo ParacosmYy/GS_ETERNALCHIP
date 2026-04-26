@@ -1,0 +1,53 @@
+# ===== Keil MDK-ARM =====
+# 编译输出
+MDK-ARM/key_led/
+*.o
+*.d
+*.crf
+*.axf
+*.hex
+*.htm
+*.lnp
+*.map
+*.sct
+*.dep
+*.lst
+*.build_log.htm
+
+# Keil GUI 配置（用户相关）
+*.uvguix.*
+*.uvgui.*
+
+# 调试配置
+MDK-ARM/DebugConfig/
+MDK-ARM/RTE/
+
+# JLink
+JLinkLog.txt
+JLinkSettings.ini
+
+# ===== IAR EWARM =====
+EWARM/settings/
+EWARM/Debug/
+EWARM/Release/
+*.dep
+*.ewt
+
+# ===== 通用 =====
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 二进制
+*.bin
+*.elf
+*.lib
+*.a
