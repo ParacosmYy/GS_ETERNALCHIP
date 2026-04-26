@@ -13,19 +13,23 @@
  * @brief 按键应用任务实现，轮询扫描按键并发送事件到消息队列
  * 
  * Processing flow:
- * BSP_Key_Scan 检测按下 → BSP_LED_Toggle 翻转 LED → 队列发送事件
+ * 注入 time_ops → BSP_Key_Init → BSP_Key_Scan 检测按下 → LED 翻转 → 队列发送事件
  * 
- * @version V1.0 2025-04-26
+ * @version V2.0 2025-04-26
  *
  * @note 1 tab == 4 spaces
  * 
  *****************************************************************************/
 
 //******************************** Includes *********************************//
-#include "app_key_task.h"
-#include "bsp_key.h"
-#include "bsp_led.h"
-#include "cmsis_os.h"
+#include "FreeRTOS.h"            /* 必须第一个包含 */
+#include "task.h"                 /* TaskHandle_t */
+
+#include "app_key_task.h"        /* QueueHandle_t, app_key_event_t */
+#include "bsp_key.h"             /* BSP_Key_Init, BSP_Key_Scan */
+#include "bsp_led.h"             /* BSP_LED_Toggle */
+
+#include "cmsis_os2.h"           /* osDelay, osKernelGetTickCount */
 //******************************** Includes *********************************//
 
 //******************************** Defines **********************************//
@@ -37,6 +41,13 @@
 //******************************** Variables ********************************//
 static QueueHandle_t g_key_queue = NULL;
 static osThreadId_t  g_key_task_handle = NULL;
+
+/* 时间操作接口：FreeRTOS 实现，注入到 BSP */
+static const bsp_key_time_ops_t g_key_time_ops = {
+    .pf_get_tick_ms = osKernelGetTickCount,
+    .pf_delay_ms    = osDelay,
+};
+//******************************** Variables ********************************//
 
 //******************************** Declaring ********************************//
 static void StartKeyTask(void *argument);
@@ -104,7 +115,7 @@ osThreadId_t App_Key_GetTaskHandle(void)
  * @brief 按键扫描任务函数
  * 
  * Steps:
- *  1. 维护 last_key 状态（上拉输入，松开=1）
+ *  1. 注入 FreeRTOS 时间操作接口到 BSP Key
  *  2. 每 10ms 调用 BSP_Key_Scan 检测按键
  *  3. 检测到有效按下时翻转 LED 并向队列发送事件
  * 
@@ -114,11 +125,13 @@ osThreadId_t App_Key_GetTaskHandle(void)
 static void StartKeyTask(void *argument)
 {
     (void)argument;
-    uint8_t last_key = 1;  /* 上拉输入，松开为1 */
+
+    /* 注入时间操作接口 + 初始化按键状态 */
+    (void)BSP_Key_Init(&g_key_time_ops);
 
     for (;;)
     {
-        if (BSP_Key_Scan(&last_key) == KEY_PRESSED)
+        if (BSP_Key_Scan() == KEY_PRESSED)
         {
             (void)BSP_LED_Toggle();
 
