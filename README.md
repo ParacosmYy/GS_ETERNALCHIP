@@ -104,3 +104,84 @@ DMA Circular 模式自动持续接收，无需手动重启。
 1. 用 STM32CubeMX 打开 `Freertos_Uart.ioc` 查看或修改配置
 2. 编译并烧录到 STM32F4 开发板
 3. 连接串口工具 (115200, 8N1) 即可与设备通信
+
+---
+
+## Keil 调试：外设寄存器不显示的修复
+
+### 问题描述
+
+Keil MDK 新版本（DFP 3.x.x 起）不再自带 `.sfr` 文件，只提供 `.svd` 文件。调试时 **Peripherals** 菜单或 **System Viewer** 窗口为空，无法查看 USART、GPIO、DMA 等外设寄存器。
+
+### 原因
+
+Keil 调试器依赖 `.sfr` 文件来渲染外设寄存器视图，而新版 Pack 中只有 `.svd`（CMSIS 标准描述格式），需要手动转换。
+
+### 修复步骤
+
+#### 1. 找到 SVD 文件
+
+路径格式：
+
+```
+<Keil安装目录>\ARM\PACK\Keil\<芯片系列>_DFP\<版本号>\CMSIS\SVD\<型号>.svd
+```
+
+本工程对应文件：
+
+```
+E:\Embedded\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\3.1.1\CMSIS\SVD\STM32F411.svd
+```
+
+#### 2. 找到 SVDConv 工具
+
+位于 Keil 安装目录下的 `UV4` 文件夹：
+
+```
+<Keil安装目录>\UV4\SVDConv.exe
+```
+
+#### 3. 生成 SFR 文件
+
+在终端中执行：
+
+```cmd
+"<Keil安装目录>\UV4\SVDConv.exe" "<SVD文件路径>" --generate=sfr
+```
+
+本工程实际命令：
+
+```cmd
+"E:\Embedded\Keil_v5\UV4\SVDConv.exe" "E:\Embedded\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\3.1.1\CMSIS\SVD\STM32F411.svd" --generate=sfr
+```
+
+> 注意：SFR 文件会生成在**当前工作目录**，需要手动复制到 SVD 文件所在目录。
+
+#### 4. 将 SFR 文件放到 SVD 目录
+
+```cmd
+copy STM32F411.sfr "E:\Embedded\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\3.1.1\CMSIS\SVD\"
+```
+
+#### 5. 修改 Keil 工程文件
+
+打开 `MDK-ARM/Freertos_Uart.uvprojx`，找到 `<SFDFile>` 标签：
+
+```xml
+<!-- 修改前 -->
+<SFDFile>$$Device:STM32F411CEUx$CMSIS\SVD\STM32F411.svd</SFDFile>
+
+<!-- 修改后 -->
+<SFDFile>$$Device:STM32F411CEUx$CMSIS\SVD\STM32F411.sfr</SFDFile>
+```
+
+#### 6. 验证
+
+1. 重新打开 Keil 工程
+2. 进入 Debug 模式
+3. 菜单 **Peripherals** 或 **View → System Viewer** 应能看到 USART1、GPIOA、DMA2 等外设寄存器
+
+### 参考链接
+
+- [Keil 官方 SVDConv 文档](https://developer.arm.com/documentation/101407/0537/Utilities/System-View-Description-Converter)
+- [CSDN 原文参考](https://blog.csdn.net/weixin_51686526/article/details/137756385)

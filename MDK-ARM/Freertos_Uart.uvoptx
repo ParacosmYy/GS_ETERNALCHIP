@@ -125,7 +125,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>DLGTARM</Key>
-          <Name>(1010=-1,-1,-1,-1,0)(1007=-1,-1,-1,-1,0)(1008=-1,-1,-1,-1,0)(1009=-1,-1,-1,-1,0)(1012=-1,-1,-1,-1,0)</Name>
+          <Name>(1010=-1,-1,-1,-1,0)(1007=510,181,697,456,0)(1008=-1,-1,-1,-1,0)(1009=-1,-1,-1,-1,0)(1012=-1,-1,-1,-1,0)</Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -157,9 +157,9 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>169</LineNumber>
+          <LineNumber>216</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134226096</Address>
+          <Address>134224370</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -168,7 +168,23 @@
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>../Core/Src/usart.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\Freertos_Uart\../Core/Src/usart.c\169</Expression>
+          <Expression>\\Freertos_Uart\../Core/Src/usart.c\216</Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
+          <LineNumber>216</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134224478</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>../Core/Src/usart.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\Freertos_Uart\../Core/Src/usart.c\216</Expression>
         </Bp>
       </Breakpoint>
       <Tracepoint>
@@ -213,6 +229,12 @@
       <pszMrulep></pszMrulep>
       <pSingCmdsp></pSingCmdsp>
       <pMultCmdsp></pMultCmdsp>
+      <SystemViewers>
+        <Entry>
+          <Name>System Viewer\USART1</Name>
+          <WinId>35905</WinId>
+        </Entry>
+      </SystemViewers>
       <DebugDescription>
         <Enable>1</Enable>
         <EnableFlashSeq>1</EnableFlashSeq>
