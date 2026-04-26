@@ -27,6 +27,7 @@
 #include "app_uart_task.h"
 #include "app_key_task.h"
 #include "usart.h"
+#include <stdio.h>
 #include <string.h>
 //******************************** Includes *********************************//
 
@@ -105,8 +106,7 @@ static void StartUARTTask(void *argument)
         app_key_event_t evt;
         if (xQueueReceive(key_queue, &evt, 0) == pdPASS)
         {
-            (void)HAL_UART_Transmit(&huart1,
-                         (uint8_t *)"LED Toggle\r\n", 12, 100);
+            printf("LED Toggle\r\n");
         }
 
         /* ---- UART echo 回显 ---- */
@@ -121,8 +121,7 @@ static void StartUARTTask(void *argument)
         if ((osKernelGetTickCount() - heartbeat_tick) >= HEARTBEAT_INTERVAL_MS)
         {
             heartbeat_tick = osKernelGetTickCount();
-            (void)HAL_UART_Transmit(&huart1,
-                         (uint8_t *)"heartbeat\r\n", 11, 100);
+            printf("heartbeat\r\n");
         }
 
         osDelay(UART_TASK_PERIOD_MS);
