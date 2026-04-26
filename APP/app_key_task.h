@@ -4,7 +4,7 @@
  * @file app_key_task.h
  * 
  * @par dependencies 
- * - cmsis_os2.h
+ * - queue.h (FreeRTOS)
  * 
  * @author GS_Mark
  *
@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 //******************************* Includes **********************************//
-#include "cmsis_os2.h"
+#include "queue.h"
 //******************************* Includes **********************************//
 
 //******************************* Defines ***********************************//
@@ -46,18 +46,18 @@ typedef enum {
  *  1. 创建按键事件消息队列
  *  2. 创建按键扫描任务
  * 
- * @return osStatus_t : osOK 表示成功
+ * @return BaseType_t : pdPASS 表示成功
  * 
  * */
-osStatus_t App_Key_Init(void);
+BaseType_t App_Key_Init(void);
 
 /**
  * @brief 获取按键消息队列句柄
  * 
- * @return osMessageQueueId_t : 队列句柄，供其他任务接收按键事件
+ * @return QueueHandle_t : 队列句柄，供其他任务接收按键事件
  * 
  * */
-osMessageQueueId_t App_Key_GetQueue(void);
+QueueHandle_t App_Key_GetQueue(void);
 
 #ifdef __cplusplus
 }

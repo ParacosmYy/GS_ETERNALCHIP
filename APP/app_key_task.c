@@ -25,6 +25,7 @@
 #include "app_key_task.h"
 #include "bsp_key.h"
 #include "bsp_led.h"
+#include "cmsis_os.h"
 //******************************** Includes *********************************//
 
 //******************************** Defines **********************************//
@@ -34,8 +35,8 @@
 #define KEY_QUEUE_SIZE       4
 
 //******************************** Variables ********************************//
-static osMessageQueueId_t g_key_queue = NULL;
-static osThreadId_t       g_key_task_handle = NULL;
+static QueueHandle_t g_key_queue = NULL;
+static osThreadId_t  g_key_task_handle = NULL;
 
 //******************************** Declaring ********************************//
 static void StartKeyTask(void *argument);
@@ -49,15 +50,15 @@ static void StartKeyTask(void *argument);
  *  1. 创建按键事件消息队列（容量4，每项 sizeof(app_key_event_t)）
  *  2. 创建按键扫描任务
  * 
- * @return osStatus_t : osOK 表示成功
+ * @return BaseType_t : pdPASS 表示成功
  * 
  * */
-osStatus_t App_Key_Init(void)
+BaseType_t App_Key_Init(void)
 {
-    g_key_queue = osMessageQueueNew(KEY_QUEUE_SIZE, sizeof(app_key_event_t), NULL);
+    g_key_queue = xQueueCreate(KEY_QUEUE_SIZE, sizeof(app_key_event_t));
     if (g_key_queue == NULL)
     {
-        return osError;
+        return pdFAIL;
     }
 
     const osThreadAttr_t key_task_attr = {
@@ -69,19 +70,21 @@ osStatus_t App_Key_Init(void)
     g_key_task_handle = osThreadNew(StartKeyTask, NULL, &key_task_attr);
     if (g_key_task_handle == NULL)
     {
-        return osError;
+        vQueueDelete(g_key_queue);
+        g_key_queue = NULL;
+        return pdFAIL;
     }
 
-    return osOK;
+    return pdPASS;
 }
 
 /**
  * @brief 获取按键消息队列句柄
  * 
- * @return osMessageQueueId_t : 队列句柄
+ * @return QueueHandle_t : 队列句柄
  * 
  * */
-osMessageQueueId_t App_Key_GetQueue(void)
+QueueHandle_t App_Key_GetQueue(void)
 {
     return g_key_queue;
 }
@@ -109,7 +112,7 @@ static void StartKeyTask(void *argument)
             (void)BSP_LED_Toggle();
 
             app_key_event_t evt = KEY_EVENT_PRESSED;
-            (void)osMessageQueuePut(g_key_queue, &evt, 0, 0);
+            (void)xQueueSend(g_key_queue, &evt, 0);
         }
 
         osDelay(KEY_TASK_PERIOD_MS);

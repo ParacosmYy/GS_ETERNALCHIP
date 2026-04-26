@@ -94,7 +94,7 @@ static void StartUARTTask(void *argument)
     (void)argument;
     uint32_t heartbeat_tick = osKernelGetTickCount();
 
-    osMessageQueueId_t key_queue = App_Key_GetQueue();
+    QueueHandle_t key_queue = App_Key_GetQueue();
 
     /* 启动 DMA 接收 */
     (void)HAL_UARTEx_ReceiveToIdle_DMA(&huart1, g_uart_rx_buf, UART_RX_BUF_SIZE);
@@ -103,7 +103,7 @@ static void StartUARTTask(void *argument)
     {
         /* ---- 按键事件响应 ---- */
         app_key_event_t evt;
-        if (osMessageQueueGet(key_queue, &evt, NULL, 0) == osOK)
+        if (xQueueReceive(key_queue, &evt, 0) == pdPASS)
         {
             (void)HAL_UART_Transmit(&huart1,
                          (uint8_t *)"LED Toggle\r\n", 12, 100);
