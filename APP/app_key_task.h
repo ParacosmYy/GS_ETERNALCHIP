@@ -29,6 +29,7 @@ extern "C" {
 //******************************* Includes **********************************//
 #include "FreeRTOS.h"
 #include "queue.h"
+#include "cmsis_os2.h"
 //******************************* Includes **********************************//
 
 //******************************* Defines ***********************************//
@@ -59,6 +60,14 @@ BaseType_t App_Key_Init(void);
  * 
  * */
 QueueHandle_t App_Key_GetQueue(void);
+
+/**
+ * @brief 获取按键任务句柄
+ * 
+ * @return osThreadId_t : 按键任务句柄
+ * 
+ * */
+osThreadId_t App_Key_GetTaskHandle(void);
 
 #ifdef __cplusplus
 }

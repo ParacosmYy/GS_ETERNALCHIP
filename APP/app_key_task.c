@@ -90,6 +90,17 @@ QueueHandle_t App_Key_GetQueue(void)
 }
 
 /**
+ * @brief 获取按键任务句柄
+ * 
+ * @return osThreadId_t : 按键任务句柄
+ * 
+ * */
+osThreadId_t App_Key_GetTaskHandle(void)
+{
+    return g_key_task_handle;
+}
+
+/**
  * @brief 按键扫描任务函数
  * 
  * Steps:

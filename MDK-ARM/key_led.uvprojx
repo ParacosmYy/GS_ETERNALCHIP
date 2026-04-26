@@ -619,6 +619,11 @@
               <FileType>1</FileType>
               <FilePath>..\APP\app_uart_task.c</FilePath>
             </File>
+            <File>
+              <FileName>app_stack_monitor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\app_stack_monitor.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

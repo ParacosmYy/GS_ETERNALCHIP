@@ -43,6 +43,14 @@ extern "C" {
  * */
 osStatus_t App_UART_Init(void);
 
+/**
+ * @brief 获取 UART 任务句柄
+ * 
+ * @return osThreadId_t : UART 任务句柄
+ * 
+ * */
+osThreadId_t App_UART_GetTaskHandle(void);
+
 #ifdef __cplusplus
 }
 #endif
