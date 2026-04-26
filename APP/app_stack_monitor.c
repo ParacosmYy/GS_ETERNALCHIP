@@ -88,11 +88,11 @@ void App_StackMonitor_Print(void)
         hwm = uxTaskGetStackHighWaterMark(
                   (TaskHandle_t)g_monitored_tasks[i].handle);
 
-        printf("%-11s : total=%u, hwm=%u words, used=%u bytes\r\n",
+        printf("%-11s : total=%u words, hwm=%u words, used_peak=%u words\r\n",
                g_monitored_tasks[i].p_name,
-               (unsigned int)(stack_words * 4),
+               (unsigned int)stack_words,
                (unsigned int)hwm,
-               (unsigned int)((stack_words - hwm) * 4));
+               (unsigned int)(stack_words - hwm));
     }
 }
 
