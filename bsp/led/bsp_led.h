@@ -9,7 +9,8 @@
 #define BSP_LED_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 //*** Includes ***//
@@ -25,7 +26,8 @@ typedef struct bsp_led_driver bsp_led_driver_t;
  * @brief  LED operation abstraction layer.
  *         Override these function pointers to adapt non-HAL GPIO backends.
  */
-typedef struct {
+typedef struct
+{
     void (*p_On)(bsp_led_driver_t *p_drv);     /**< Turn LED on     */
     void (*p_Off)(bsp_led_driver_t *p_drv);    /**< Turn LED off    */
     void (*p_Toggle)(bsp_led_driver_t *p_drv); /**< Toggle LED      */
@@ -34,7 +36,8 @@ typedef struct {
 /**
  * @brief  LED hardware configuration (immutable, usually const)
  */
-typedef struct {
+typedef struct
+{
     GPIO_TypeDef *p_port;   /**< GPIO port (GPIOA .. GPIOC)       */
     uint16_t      pin;      /**< GPIO pin  (GPIO_PIN_x)           */
     uint8_t       active_level; /**< 0 = low-active, 1 = high-active */
@@ -43,7 +46,8 @@ typedef struct {
 /**
  * @brief  LED driver instance (one per physical LED)
  */
-struct bsp_led_driver {
+struct bsp_led_driver
+{
     const bsp_led_config_t *p_config; /**< Hardware configuration       */
     const led_operations_t *p_ops;    /**< Operation function pointers   */
     uint32_t blink_interval_ms;       /**< Blink period (0 = stopped)    */

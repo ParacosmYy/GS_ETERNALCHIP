@@ -15,7 +15,8 @@ static uint8_t s_rtt_ready;
 
 void BspRtt_Init(void)
 {
-    if (s_rtt_ready != 0u) {
+    if (s_rtt_ready != 0u)
+    {
         return;
     }
 
@@ -25,7 +26,8 @@ void BspRtt_Init(void)
 
 int BspRtt_WriteString(const char *s)
 {
-    if (s == NULL) {
+    if (s == NULL)
+    {
         return -1;
     }
 
@@ -38,7 +40,8 @@ int BspRtt_Printf(const char *fmt, ...)
     va_list args;
     int     result;
 
-    if (fmt == NULL) {
+    if (fmt == NULL)
+    {
         return -1;
     }
 

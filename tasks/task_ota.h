@@ -18,7 +18,8 @@
 
 //*** OTA Task States ***//
 
-typedef enum {
+typedef enum
+{
     OTA_TASK_NORMAL,
     OTA_TASK_TRIGGER_WAIT,
     OTA_TASK_PREPARING,

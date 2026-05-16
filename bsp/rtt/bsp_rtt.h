@@ -7,7 +7,8 @@
 #define BSP_RTT_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /** @brief  初始化 SEGGER RTT 调试输出后端 */

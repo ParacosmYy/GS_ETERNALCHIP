@@ -9,7 +9,8 @@
 #define BSP_KEY_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 //*** Includes ***//
@@ -19,7 +20,8 @@ extern "C" {
 //*** Type Definitions ***//
 
 /** @brief  Key event types reported via callback */
-typedef enum {
+typedef enum
+{
     BSP_KEY_EVT_NONE        = 0,
     BSP_KEY_EVT_PRESSED,    /**< Key pressed (debounce confirmed)          */
     BSP_KEY_EVT_RELEASED,   /**< Key released (debounce confirmed)         */
@@ -33,7 +35,8 @@ typedef void (*bsp_key_callback_t)(bsp_key_event_t event, void *p_user_data);
 /**
  * @brief  Key hardware configuration (immutable, usually const)
  */
-typedef struct {
+typedef struct
+{
     GPIO_TypeDef       *p_port;        /**< GPIO port                    */
     uint16_t            pin;           /**< GPIO pin                     */
     uint8_t             active_level;  /**< 0 = low-active, 1 = high    */
@@ -44,7 +47,8 @@ typedef struct {
 } bsp_key_config_t;
 
 /** @brief  Internal debounce states */
-enum {
+enum
+{
     BSP_KEY_STATE_IDLE       = 0,  /**< Waiting for level change     */
     BSP_KEY_STATE_DEBOUNCING = 1,  /**< Debounce timer running       */
     BSP_KEY_STATE_STABLE     = 2,  /**< Stable state, tracking press */
@@ -53,7 +57,8 @@ enum {
 /**
  * @brief  Key driver instance (one per physical key)
  */
-typedef struct {
+typedef struct
+{
     const bsp_key_config_t *p_config;     /**< Configuration reference     */
     uint8_t   state;                      /**< Current FSM state           */
     uint8_t   stable_level;               /**< Current stable pin level    */

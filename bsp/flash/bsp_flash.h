@@ -31,19 +31,22 @@
 #define OTA_CONFIG_MAGIC       0x4F544131u   /* "OTA1" */
 #define OTA_CONFIG_VERSION     1u
 
-typedef enum {
+typedef enum
+{
     OTA_SLOT_A = 0,
     OTA_SLOT_B = 1,
 } ota_slot_t;
 
-typedef enum {
+typedef enum
+{
     OTA_STATE_IDLE             = 0,
     OTA_STATE_UPGRADE_PENDING  = 1,
     OTA_STATE_COPY_IN_PROGRESS = 2,
     OTA_STATE_CONFIRMED        = 3,
 } ota_state_t;
 
-typedef struct {
+typedef struct
+{
     uint32_t    magic;
     uint32_t    version;
     ota_slot_t  active_slot;

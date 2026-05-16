@@ -15,9 +15,12 @@
  */
 static void HalLed_On(bsp_led_driver_t *p_drv)
 {
-    if (p_drv->p_config->active_level == 0) {
+    if (p_drv->p_config->active_level == 0)
+    {
         HAL_GPIO_WritePin(p_drv->p_config->p_port, p_drv->p_config->pin, GPIO_PIN_RESET);
-    } else {
+    }
+    else
+    {
         HAL_GPIO_WritePin(p_drv->p_config->p_port, p_drv->p_config->pin, GPIO_PIN_SET);
     }
 }
@@ -28,9 +31,12 @@ static void HalLed_On(bsp_led_driver_t *p_drv)
  */
 static void HalLed_Off(bsp_led_driver_t *p_drv)
 {
-    if (p_drv->p_config->active_level == 0) {
+    if (p_drv->p_config->active_level == 0)
+    {
         HAL_GPIO_WritePin(p_drv->p_config->p_port, p_drv->p_config->pin, GPIO_PIN_SET);
-    } else {
+    }
+    else
+    {
         HAL_GPIO_WritePin(p_drv->p_config->p_port, p_drv->p_config->pin, GPIO_PIN_RESET);
     }
 }
@@ -91,12 +97,16 @@ void BspLed_BlinkStop(bsp_led_driver_t *p_drv)
 
 void BspLed_TimebaseHook(bsp_led_driver_t *p_drv)
 {
-    if (!p_drv->is_blinking) {
+    uint32_t now;
+
+    if (!p_drv->is_blinking)
+    {
         return;
     }
 
-    uint32_t now = HAL_GetTick();
-    if ((now - p_drv->blink_last_tick) >= p_drv->blink_interval_ms) {
+    now = HAL_GetTick();
+    if ((now - p_drv->blink_last_tick) >= p_drv->blink_interval_ms)
+    {
         p_drv->blink_last_tick = now;
         BspLed_Toggle(p_drv);
     }

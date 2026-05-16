@@ -9,7 +9,8 @@
 #define BSP_UART_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 //*** Includes ***//
@@ -29,7 +30,8 @@ extern "C" {
 //*** Type Definitions ***//
 
 /** @brief  UART event types reported via callback */
-typedef enum {
+typedef enum
+{
     BSP_UART_EVT_RX_DONE,    /**< Packet received (IDLE or buffer full)  */
     BSP_UART_EVT_TX_DONE,    /**< DMA transmit complete                  */
     BSP_UART_EVT_ERROR,      /**< UART error (auto-restart applied)      */
@@ -44,7 +46,8 @@ typedef void (*bsp_uart_callback_t)(bsp_uart_event_t evt,
 /**
  * @brief  UART hardware configuration (immutable, usually const)
  */
-typedef struct {
+typedef struct
+{
     UART_HandleTypeDef *p_huart;       /**< HAL UART handle (e.g. &huart1)   */
     uint8_t            *p_rx_buf;      /**< RX buffer (caller-allocated)     */
     uint16_t            rx_buf_size;   /**< RX buffer size in bytes          */
@@ -55,7 +58,8 @@ typedef struct {
 /**
  * @brief  UART driver instance (one per physical UART peripheral)
  */
-typedef struct {
+typedef struct
+{
     const bsp_uart_config_t *p_config; /**< Configuration reference         */
     volatile uint8_t tx_busy;          /**< 1 = DMA TX in progress           */
     volatile uint8_t rx_busy;          /**< 1 = DMA RX in progress           */

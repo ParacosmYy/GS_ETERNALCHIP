@@ -58,8 +58,12 @@ static const uint32_t s_crc32_table[256] = {
 
 static uint32_t calc_crc32(const uint8_t *p_data, uint32_t len)
 {
-    uint32_t crc = 0xFFFFFFFFu;
-    for (uint32_t i = 0; i < len; i++) {
+    uint32_t crc;
+    uint32_t i;
+
+    crc = 0xFFFFFFFFu;
+    for (i = 0; i < len; i++)
+    {
         crc = s_crc32_table[(crc ^ p_data[i]) & 0xFF] ^ (crc >> 8);
     }
     return crc ^ 0xFFFFFFFFu;
@@ -75,7 +79,8 @@ uint32_t BspFlash_GetSectorSize(uint32_t sector_num)
     /* 参数校验: sector_num 有效范围 FLASH_SECTOR_0 ~ FLASH_SECTOR_7 */
     if (sector_num > FLASH_SECTOR_7) return 0;
 
-    switch (sector_num) {
+    switch (sector_num)
+    {
     case FLASH_SECTOR_0: return 16384u;   /* 16KB */
     case FLASH_SECTOR_1: return 16384u;   /* 16KB */
     case FLASH_SECTOR_2: return 16384u;   /* 16KB */
@@ -105,12 +110,15 @@ void BspFlash_Init(void)
 
 int BspFlash_EraseSector(uint32_t sector_num)
 {
+    FLASH_EraseInitTypeDef erase;
+    uint32_t               sector_error;
+    HAL_StatusTypeDef      status;
+
     if (sector_num > FLASH_SECTOR_7) return -1;
 
     HAL_FLASH_Unlock();
 
-    FLASH_EraseInitTypeDef erase;
-    uint32_t sector_error = 0;
+    sector_error = 0;
 
     erase.TypeErase    = FLASH_TYPEERASE_SECTORS;
     erase.Sector       = sector_num;
@@ -118,7 +126,7 @@ int BspFlash_EraseSector(uint32_t sector_num)
     erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;
 
     taskENTER_CRITICAL();
-    HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&erase, &sector_error);
+    status = HAL_FLASHEx_Erase(&erase, &sector_error);
     taskEXIT_CRITICAL();
 
     HAL_FLASH_Lock();
@@ -127,26 +135,32 @@ int BspFlash_EraseSector(uint32_t sector_num)
 
 int BspFlash_EraseSlot(ota_slot_t slot)
 {
+    FLASH_EraseInitTypeDef erase;
+    uint32_t               sector_error;
+    HAL_StatusTypeDef      status;
+
     if (slot != OTA_SLOT_A && slot != OTA_SLOT_B) return -1;
 
     HAL_FLASH_Unlock();
 
-    FLASH_EraseInitTypeDef erase;
-    uint32_t sector_error = 0;
+    sector_error = 0;
 
     erase.TypeErase    = FLASH_TYPEERASE_SECTORS;
     erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;
 
-    if (slot == OTA_SLOT_A) {
+    if (slot == OTA_SLOT_A)
+    {
         erase.Sector    = FLASH_SECTOR_2;
         erase.NbSectors = 4;  /* Sector 2,3,4,5 */
-    } else {
+    }
+    else
+    {
         erase.Sector    = FLASH_SECTOR_6;
         erase.NbSectors = 2;  /* Sector 6,7 */
     }
 
     taskENTER_CRITICAL();
-    HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&erase, &sector_error);
+    status = HAL_FLASHEx_Erase(&erase, &sector_error);
     taskEXIT_CRITICAL();
 
     HAL_FLASH_Lock();
@@ -157,22 +171,27 @@ int BspFlash_EraseSlot(ota_slot_t slot)
 
 int BspFlash_Write(uint32_t addr, const uint8_t *p_data, uint32_t len)
 {
+    uint32_t i;
+    int      result;
+    uint64_t dw;
+
     if (p_data == NULL || len == 0) return -1;
     /* 地址范围校验: 必须在 Flash 区域内 */
     if (addr < FLASH_ADDR_BOOT || addr + len > FLASH_ADDR_SLOT_B + SLOT_B_SIZE) return -1;
 
     HAL_FLASH_Unlock();
 
-    uint32_t i = 0;
-    int result = 0;
+    i      = 0;
+    result = 0;
 
     taskENTER_CRITICAL();
 
     /* Write 8-byte double words */
-    while (i + 8 <= len) {
-        uint64_t dw;
+    while (i + 8 <= len)
+    {
         memcpy(&dw, &p_data[i], 8);
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, addr + i, dw) != HAL_OK) {
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, addr + i, dw) != HAL_OK)
+        {
             result = -1;
             goto exit;
         }
@@ -180,13 +199,15 @@ int BspFlash_Write(uint32_t addr, const uint8_t *p_data, uint32_t len)
     }
 
     /* Pad remaining bytes with 0xFF */
-    if (i < len) {
+    if (i < len)
+    {
         uint8_t  buf[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
         uint32_t remain = len - i;
+
         memcpy(buf, &p_data[i], remain);
-        uint64_t dw;
         memcpy(&dw, buf, 8);
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, addr + i, dw) != HAL_OK) {
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, addr + i, dw) != HAL_OK)
+        {
             result = -1;
             goto exit;
         }
@@ -210,18 +231,22 @@ void BspFlash_Read(uint32_t addr, uint8_t *p_data, uint32_t len)
 
 int BspFlash_ReadConfig(ota_config_t *p_cfg)
 {
+    uint32_t crc;
+
     if (p_cfg == NULL) return -1;
 
     memcpy(p_cfg, (const void *)FLASH_ADDR_CONFIG, sizeof(ota_config_t));
 
-    if (p_cfg->magic != OTA_CONFIG_MAGIC) {
+    if (p_cfg->magic != OTA_CONFIG_MAGIC)
+    {
         memset(p_cfg, 0, sizeof(ota_config_t));
         return -1;
     }
 
-    uint32_t crc = calc_crc32((const uint8_t *)p_cfg,
-                              offsetof(ota_config_t, crc32));
-    if (crc != p_cfg->crc32) {
+    crc = calc_crc32((const uint8_t *)p_cfg,
+                     offsetof(ota_config_t, crc32));
+    if (crc != p_cfg->crc32)
+    {
         return -2;
     }
 
@@ -230,15 +255,18 @@ int BspFlash_ReadConfig(ota_config_t *p_cfg)
 
 int BspFlash_WriteConfig(const ota_config_t *p_cfg)
 {
+    ota_config_t tmp;
+
     if (p_cfg == NULL) return -1;
 
     /* Compute CRC over everything except the crc32 field */
-    ota_config_t tmp = *p_cfg;
+    tmp = *p_cfg;
     tmp.crc32 = calc_crc32((const uint8_t *)&tmp,
                            offsetof(ota_config_t, crc32));
 
     /* Sector 1 专用存放 Config，直接擦除后写入即可 */
-    if (BspFlash_EraseSector(FLASH_SECTOR_1) != 0) {
+    if (BspFlash_EraseSector(FLASH_SECTOR_1) != 0)
+    {
         return -1;
     }
 
@@ -249,9 +277,13 @@ int BspFlash_WriteConfig(const ota_config_t *p_cfg)
 
 int BspFlash_IsEmpty(uint32_t addr, uint32_t len)
 {
+    const uint8_t *p;
+    uint32_t       i;
+
     if (len == 0) return 1;
-    const uint8_t *p = (const uint8_t *)addr;
-    for (uint32_t i = 0; i < len; i++) {
+    p = (const uint8_t *)addr;
+    for (i = 0; i < len; i++)
+    {
         if (p[i] != 0xFF) return 0;
     }
     return 1;

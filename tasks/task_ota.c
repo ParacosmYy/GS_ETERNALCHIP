@@ -44,24 +44,33 @@ static int uart_recv_byte(uint8_t *p_byte, uint32_t timeout_ms, void *p_user)
 static int ymodem_data_callback(uint32_t offset, const uint8_t *p_data,
                                 uint16_t len, void *p_user)
 {
+    uint32_t addr;
+
     (void)p_user;
 
-    uint32_t addr = FLASH_ADDR_SLOT_B + offset - len;
-    if (BspFlash_Write(addr, p_data, len) != 0) {
+    addr = FLASH_ADDR_SLOT_B + offset - len;
+    if (BspFlash_Write(addr, p_data, len) != 0)
+    {
         log_e("Flash write error at 0x%08lX", addr);
         return -1;
     }
 
     /* Progress every 10 KB */
-    static uint32_t s_last_print = 0;
-    if (offset - s_last_print >= 10240u) {
-        log_i("%lu / %lu bytes", offset, s_fw_size);
-        s_last_print = offset;
+    {
+        static uint32_t s_last_print = 0;
+        if (offset - s_last_print >= 10240u)
+        {
+            log_i("%lu / %lu bytes", offset, s_fw_size);
+            s_last_print = offset;
+        }
     }
 
     HAL_IWDG_Refresh(&hiwdg);
 
-    if (s_exit_flag) return -1;
+    if (s_exit_flag)
+    {
+        return -1;
+    }
 
     return 0;
 }
@@ -71,11 +80,15 @@ static int ymodem_data_callback(uint32_t offset, const uint8_t *p_data,
 static int sha256_flash_region(uint32_t addr, uint32_t len, uint8_t hash[32])
 {
     SHA256_CTX ctx;
+    uint8_t    buf[256];
+    uint32_t   i;
+    uint32_t   chunk;
+
     sha256_init(&ctx);
 
-    uint8_t buf[256];
-    for (uint32_t i = 0; i < len; i += sizeof(buf)) {
-        uint32_t chunk = len - i;
+    for (i = 0; i < len; i += sizeof(buf))
+    {
+        chunk = len - i;
         if (chunk > sizeof(buf)) chunk = sizeof(buf);
         memcpy(buf, (const void *)(addr + i), chunk);
         sha256_update(&ctx, buf, chunk);
@@ -89,8 +102,8 @@ static int sha256_flash_region(uint32_t addr, uint32_t len, uint8_t hash[32])
 
 void TaskOta_Init(void)
 {
-    s_state       = OTA_TASK_NORMAL;
-    s_fw_size     = 0;
+    s_state        = OTA_TASK_NORMAL;
+    s_fw_size      = 0;
     s_trigger_flag = 0;
     s_exit_flag    = 0;
     BspFlash_Init();
@@ -119,23 +132,25 @@ void TaskOta_NotifyExit(void)        { s_exit_flag = 1; }
 
 void TaskOta_Run(void *p_argument)
 {
+    int            ret;
+    int            cfg_ret;
+    uint8_t        hash[32];
+    ota_config_t   cfg;
+    uint32_t       start;
+
     (void)p_argument;
     TaskOta_Init();
-
-    int       ret;
-    int       cfg_ret;
-    uint8_t   hash[32];
-    ota_config_t cfg;
-    uint32_t  start;
 
     /* ---- Phase 1: 5-second trigger window ---- */
     s_state = OTA_TASK_TRIGGER_WAIT;
     log_i("Waiting for trigger (5s)...");
 
     start = xTaskGetTickCount();
-    while ((xTaskGetTickCount() - start) < pdMS_TO_TICKS(5000)) {
+    while ((xTaskGetTickCount() - start) < pdMS_TO_TICKS(5000))
+    {
         if (s_trigger_flag) break;
-        if (s_exit_flag) {
+        if (s_exit_flag)
+        {
             s_state = OTA_TASK_NORMAL;
             log_i("Exit during trigger window.");
             vTaskDelete(NULL);
@@ -144,7 +159,8 @@ void TaskOta_Run(void *p_argument)
         osDelay(50);
     }
 
-    if (!s_trigger_flag) {
+    if (!s_trigger_flag)
+    {
         s_state = OTA_TASK_NORMAL;
         log_i("No trigger. Task exiting.");
         vTaskDelete(NULL);
@@ -157,7 +173,8 @@ void TaskOta_Run(void *p_argument)
     s_state = OTA_TASK_PREPARING;
     log_i("Erasing Slot B...");
 
-    if (BspFlash_EraseSlot(OTA_SLOT_B) != 0) {
+    if (BspFlash_EraseSlot(OTA_SLOT_B) != 0)
+    {
         log_e("Erase failed!");
         goto error;
     }
@@ -173,7 +190,8 @@ void TaskOta_Run(void *p_argument)
                          SLOT_MAX_APP_SIZE,
                          ymodem_data_callback, NULL);
 
-    if (ret != YMODEM_OK) {
+    if (ret != YMODEM_OK)
+    {
         log_e("YMODEM error: %d", ret);
         goto error;
     }
@@ -200,11 +218,12 @@ void TaskOta_Run(void *p_argument)
 
     cfg_ret = BspFlash_ReadConfig(&cfg);
 
-    if (cfg_ret != 0) {
+    if (cfg_ret != 0)
+    {
         /* First-time or corrupt config — initialise fresh */
         memset(&cfg, 0, sizeof(cfg));
-        cfg.magic   = OTA_CONFIG_MAGIC;
-        cfg.version = OTA_CONFIG_VERSION;
+        cfg.magic       = OTA_CONFIG_MAGIC;
+        cfg.version     = OTA_CONFIG_VERSION;
         cfg.active_slot = OTA_SLOT_A;
     }
 
@@ -214,7 +233,8 @@ void TaskOta_Run(void *p_argument)
     cfg.boot_count     = 0;
     cfg.upgrade_count += 1;
 
-    if (BspFlash_WriteConfig(&cfg) != 0) {
+    if (BspFlash_WriteConfig(&cfg) != 0)
+    {
         log_e("Config write failed!");
         goto error;
     }
@@ -235,7 +255,8 @@ error:
     log_e("ERROR! Long-press key or send UART cmd to exit.");
 
     s_exit_flag = 0;
-    while (!s_exit_flag) {
+    while (!s_exit_flag)
+    {
         HAL_IWDG_Refresh(&hiwdg);
         osDelay(100);
     }

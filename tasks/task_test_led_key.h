@@ -11,7 +11,8 @@
 #define TASK_TEST_LED_KEY_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /** @brief  Initialise LED & KEY BSP instances. Call once at startup. */
