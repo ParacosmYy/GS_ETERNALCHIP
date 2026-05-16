@@ -1,0 +1,99 @@
+---
+# STM32F411 OTA 项目代码格式化配置
+# 配合 VS Code clangd / C/C++ 扩展使用
+# 与 embedded-coding-standard skill 中 §3 代码格式规范保持一致
+#
+# 使用方式：
+#   VS Code: 安装 clang-format 扩展，保存时自动格式化
+#   命令行:  clang-format -i <file>
+#
+# 注意：clang-format 仅处理格式（大括号、缩进、对齐等），
+#       不处理语义规则（变量声明位置、返回值检查等）。
+#       语义规则由 skill 自检清单保障。
+
+Language: Cpp
+BasedOnStyle: LLVM
+
+# ========== 大括号风格：Allman ========== #
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeWhile: false
+  IndentBraces: false
+
+# ========== 缩进 ========== #
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
+
+# ========== 禁询单行压缩 ========== #
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# ========== 对齐 ========== #
+AlignConsecutiveMacros: Consecutive
+AlignConsecutiveDeclarations: Consecutive
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveBitFields: Consecutive
+AlignEscapedNewlines: Left
+AlignOperands: Align
+AlignTrailingComments: true
+AlignAfterOpenBracket: Align
+
+# ========== 间距 ========== #
+SpaceBeforeParens: ControlStatements
+SpaceBeforeAssignmentOperators: true
+SpaceInEmptyBlock: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpacesBeforeTrailingComments: 1
+BitFieldColonSpacing: Both
+
+# ========== 指针对齐（右对齐：int *p） ========== #
+PointerAlignment: Right
+DerivePointerAlignment: false
+
+# ========== 行宽与换行 ========== #
+ColumnLimit: 100
+ReflowComments: true
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: true
+InsertNewlineAtEOF: true
+
+# ========== C 风格初始化 ========== #
+Cpp11BracedListStyle: false
+
+# ========== Include 排序（禁止，由手动管理） ========== #
+SortIncludes: Never
+IncludeBlocks: Preserve
+
+# ========== 空行 ========== #
+MaxEmptyLinesToKeep: 1
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+# ========== 预处理指令 ========== #
+IndentPPDirectives: AfterHash
+
+# ========== switch/case 缩进 ========== #
+IndentCaseLabels: false
+IndentCaseBlocks: false
+
+# ========== 宏定义中的 do { } while(0) ========== #
+# clang-format 无法特殊处理宏中的紧凑风格，
+# Allman 规则同样适用于宏。可接受。

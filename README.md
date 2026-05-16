@@ -30,11 +30,28 @@ OTA/
 │   ├── led/                 #   LED 驱动：操作抽象 + 驱动实例化
 │   │   ├── bsp_led.h
 │   │   └── bsp_led.c
-│   └── key/                 #   KEY 驱动：消抖状态机 + 长短按检测
-│       ├── bsp_key.h
-│       └── bsp_key.c
-├── Drivers/                 # STM32 HAL 驱动库
-├── Middlewares/             # FreeRTOS + CMSIS-RTOS V2
+│   ├── key/                 #   KEY 驱动：消抖状态机 + 长短按检测
+│   │   ├── bsp_key.h
+│   │   └── bsp_key.c
+│   ├── flash/               #   Flash 操作（双区读写擦除）
+│   ├── uart/                #   UART 适配层
+│   └── rtt/                 #   SEGGER RTT 调试输出
+├── tasks/                   # FreeRTOS 任务入口
+│   ├── task_ota.c           #   OTA 升级任务
+│   └── task_test_led_key.c  #   LED/KEY 测试任务
+├── Drivers/                 # STM32 HAL 驱动库 + CMSIS
+├── Middlewares/             # FreeRTOS + 第三方中间件
+│   └── Third_Party/
+│       ├── FreeRTOS/        #   FreeRTOS 内核 + CMSIS-RTOS V2
+│       ├── SEGGER_RTT/      #   SEGGER RTT 调试终端
+│       ├── SHA256/          #   SHA-256 哈希库
+│       ├── YMODEM/          #   YMODEM 文件传输协议
+│       ├── CmBacktrace/     #   Cortex-M 故障追踪
+│       └── EasyLogger/      #   轻量级日志框架
+├── tools/                   # 开发工具脚本
+│   └── gen-clangd/          #   VS Code IntelliSense 配置生成器
+│       ├── gen-clangd.ps1   #     主脚本（解析 .uvprojx）
+│       └── run.bat          #     双击运行入口
 ├── MDK-ARM/                 # Keil MDK 工程文件
 └── OTA.ioc                  # STM32CubeMX 配置文件
 ```
@@ -79,10 +96,29 @@ BspKey_Init(&key, &key_cfg);
 
 ## 开发环境
 
-- **IDE**: Keil MDK-ARM (AC5)
+- **IDE**: Keil MDK-ARM (AC5 / ARMCC v5)
+- **编辑器**: VS Code + clangd / C/C++ 扩展（IntelliSense）
 - **配置工具**: STM32CubeMX
 - **烧录器**: J-Link / ST-Link
+- **工具链**: ARM GCC（仅用于 VS Code IntelliSense，实际编译由 Keil ARMCC 完成）
 - **添加 BSP 到工程**: Include Path 追加 `../bsp/led;../bsp/key`
+
+### VS Code IntelliSense 配置
+
+Keil ARMCC 是闭源编译器，VS Code 无法直接调用。项目提供自动化工具，从 `.uvprojx` 提取配置生成 IntelliSense 所需文件：
+
+```bash
+# 双击运行，或命令行执行：
+tools/gen-clangd/run.bat
+```
+
+自动生成：
+- `.clangd` — clangd 扩展配置
+- `.vscode/c_cpp_properties.json` — Microsoft C/C++ 扩展配置
+
+**特性**：自动解析 include 路径、宏定义、检测 ARM GCC 编译器、添加 `__GNUC__` 解决 CMSIS 兼容性。
+
+**迁移**：将 `tools/gen-clangd/` 文件夹复制到新 Keil 项目，双击 `run.bat` 即可。
 
 ---
 

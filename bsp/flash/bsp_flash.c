@@ -58,10 +58,9 @@ static const uint32_t s_crc32_table[256] = {
 
 static uint32_t calc_crc32(const uint8_t *p_data, uint32_t len)
 {
-    uint32_t crc;
+    uint32_t crc = 0xFFFFFFFFu;
     uint32_t i;
 
-    crc = 0xFFFFFFFFu;
     for (i = 0; i < len; i++)
     {
         crc = s_crc32_table[(crc ^ p_data[i]) & 0xFF] ^ (crc >> 8);
@@ -111,14 +110,12 @@ void BspFlash_Init(void)
 int BspFlash_EraseSector(uint32_t sector_num)
 {
     FLASH_EraseInitTypeDef erase;
-    uint32_t               sector_error;
+    uint32_t               sector_error = 0;
     HAL_StatusTypeDef      status;
 
     if (sector_num > FLASH_SECTOR_7) return -1;
 
     HAL_FLASH_Unlock();
-
-    sector_error = 0;
 
     erase.TypeErase    = FLASH_TYPEERASE_SECTORS;
     erase.Sector       = sector_num;
@@ -136,14 +133,12 @@ int BspFlash_EraseSector(uint32_t sector_num)
 int BspFlash_EraseSlot(ota_slot_t slot)
 {
     FLASH_EraseInitTypeDef erase;
-    uint32_t               sector_error;
+    uint32_t               sector_error = 0;
     HAL_StatusTypeDef      status;
 
     if (slot != OTA_SLOT_A && slot != OTA_SLOT_B) return -1;
 
     HAL_FLASH_Unlock();
-
-    sector_error = 0;
 
     erase.TypeErase    = FLASH_TYPEERASE_SECTORS;
     erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;
@@ -171,8 +166,8 @@ int BspFlash_EraseSlot(ota_slot_t slot)
 
 int BspFlash_Write(uint32_t addr, const uint8_t *p_data, uint32_t len)
 {
-    uint32_t i;
-    int      result;
+    uint32_t i      = 0;
+    int      result = 0;
     uint64_t dw;
 
     if (p_data == NULL || len == 0) return -1;
@@ -180,9 +175,6 @@ int BspFlash_Write(uint32_t addr, const uint8_t *p_data, uint32_t len)
     if (addr < FLASH_ADDR_BOOT || addr + len > FLASH_ADDR_SLOT_B + SLOT_B_SIZE) return -1;
 
     HAL_FLASH_Unlock();
-
-    i      = 0;
-    result = 0;
 
     taskENTER_CRITICAL();
 
