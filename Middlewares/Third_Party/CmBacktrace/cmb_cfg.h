@@ -12,16 +12,22 @@
 
 /* 输出方式: 使用 elog_raw 绕过 mutex，避免 Fault 时死锁 */
 #define cmb_println(...)                do { \
-                                            elog_raw(__VA_ARGS__); \
-                                            elog_raw("\r\n"); \
-                                        } while(0)
+                                             elog_raw(__VA_ARGS__); \
+                                             elog_raw("\r\n"); \
+                                         } while(0)
 
 #define CMB_USING_OS_PLATFORM
 #define CMB_OS_PLATFORM_TYPE            CMB_OS_PLATFORM_FREERTOS
 #define CMB_CPU_PLATFORM_TYPE           CMB_CPU_ARM_CORTEX_M4
 
-/* English output (ARM Compiler V5 does not support UTF-8 Chinese) */
+/*
+ * cmb_cfg.h is included by cmb_def.h BEFORE the CMB_PRINT_LANGUAGE_* macros
+ * are defined. Guard CMB_PRINT_LANGUAGE so it only takes effect when the
+ * caller is not cmb_def.h (i.e., the macros are already available).
+ */
+#ifdef CMB_PRINT_LANGUAGE_ENGLISH
 #define CMB_PRINT_LANGUAGE              CMB_PRINT_LANGUAGE_ENGLISH
+#endif
 
 /* 使能栈 dump */
 #define CMB_USING_DUMP_STACK_INFO

@@ -13,50 +13,7 @@
 #define BSP_FLASH_H
 
 #include "stm32f4xx_hal.h"
-#include <stdint.h>
-
-//*** Partition Addresses ***//
-
-#define FLASH_ADDR_BOOT   0x08000000u
-#define FLASH_ADDR_CONFIG 0x08004000u
-#define FLASH_ADDR_SLOT_A 0x08008000u
-#define FLASH_ADDR_SLOT_B 0x08040000u
-
-#define SLOT_A_SIZE       (224u * 1024u)
-#define SLOT_B_SIZE       (256u * 1024u)
-#define SLOT_MAX_APP_SIZE SLOT_A_SIZE
-
-//*** OTA Config Types ***//
-
-#define OTA_CONFIG_MAGIC   0x4F544131u /* "OTA1" */
-#define OTA_CONFIG_VERSION 1u
-
-typedef enum
-{
-    OTA_SLOT_A = 0,
-    OTA_SLOT_B = 1,
-} ota_slot_t;
-
-typedef enum
-{
-    OTA_STATE_IDLE             = 0,
-    OTA_STATE_UPGRADE_PENDING  = 1,
-    OTA_STATE_COPY_IN_PROGRESS = 2,
-    OTA_STATE_CONFIRMED        = 3,
-} ota_state_t;
-
-typedef struct
-{
-    uint32_t    magic;
-    uint32_t    version;
-    ota_slot_t  active_slot;
-    ota_state_t state;
-    uint32_t    fw_size;
-    uint8_t     fw_sha256[32];
-    uint32_t    boot_count;
-    uint32_t    upgrade_count;
-    uint32_t    crc32;
-} ota_config_t;
+#include "ota_config.h"
 
 //*** Public API ***//
 

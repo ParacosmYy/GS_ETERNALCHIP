@@ -27,6 +27,7 @@
 /* USER CODE BEGIN Includes */
 #include "task_test_led_key.h"
 #include "task_ota.h"
+#include "ota_confirm.h"
 #include "iwdg.h"
 /* USER CODE END Includes */
 
@@ -123,6 +124,7 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+  OTA_ConfirmBoot();
   TaskTestLedKey_Init();
   /* Infinite loop */
   for(;;)

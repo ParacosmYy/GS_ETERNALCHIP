@@ -86,8 +86,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  // TODO: Bootloader 开发完成后启用 VTOR 重定位
-  // SCB->VTOR = 0x08008000u;
+  SCB->VTOR = 0x08008000u;
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
