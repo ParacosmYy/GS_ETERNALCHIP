@@ -1,0 +1,29 @@
+# *** Keil MDK-ARM Build Output *** #
+*.o
+*.d
+*.crf
+*.axf
+*.hex
+*.map
+*.htm
+*.lnp
+*.sct
+*.dep
+*.lst
+*.bin
+
+# *** Keil Project Temp *** #
+MDK-ARM/OTA/
+MDK-ARM/RTE/
+MDK-ARM/DebugConfig/
+*.uvguix.*
+JLinkLog.txt
+JLinkSettings.ini
+
+# *** CubeMX Temp *** #
+.mxproject
+
+# *** OS Thumbnails *** #
+Thumbs.db
+Desktop.ini
+.DS_Store
