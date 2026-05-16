@@ -25,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "task_test_led_key.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -114,10 +114,12 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+  TaskTestLedKey_Init();
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    TaskTestLedKey_Process();
+    osDelay(10);
   }
   /* USER CODE END StartDefaultTask */
 }

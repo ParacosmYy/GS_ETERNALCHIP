@@ -85,8 +85,9 @@ void BspKey_Scan(bsp_key_driver_t *p_drv)
                 p_drv->state = BSP_KEY_STATE_STABLE;
             }
         } else {
-            /* Level bounced back — reject, restart idle */
-            p_drv->state = BSP_KEY_STATE_IDLE;
+            /* Level bounced back — return to previous logical state */
+            p_drv->state = (p_drv->stable_level == 1) ?
+                            BSP_KEY_STATE_STABLE : BSP_KEY_STATE_IDLE;
         }
         break;
 
