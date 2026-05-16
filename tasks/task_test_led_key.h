@@ -15,11 +15,11 @@ extern "C"
 {
 #endif
 
-/** @brief  Initialise LED & KEY BSP instances. Call once at startup. */
-void TaskTestLedKey_Init(void);
+    /** @brief  Initialise LED & KEY BSP instances. Call once at startup. */
+    void TaskTestLedKey_Init(void);
 
-/** @brief  Drive key scan and LED blink. Call periodically (~10 ms). */
-void TaskTestLedKey_Process(void);
+    /** @brief  Drive key scan and LED blink. Call periodically (~10 ms). */
+    void TaskTestLedKey_Process(void);
 
 #ifdef __cplusplus
 }

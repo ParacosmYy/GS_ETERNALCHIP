@@ -49,8 +49,7 @@ static bsp_uart_driver_t *find_instance(UART_HandleTypeDef *p_huart)
 
     for (i = 0; i < BSP_UART_MAX_INSTANCES; i++)
     {
-        if (s_instances[i] != NULL &&
-            s_instances[i]->p_config->p_huart == p_huart)
+        if (s_instances[i] != NULL && s_instances[i]->p_config->p_huart == p_huart)
         {
             return s_instances[i];
         }
@@ -58,13 +57,11 @@ static bsp_uart_driver_t *find_instance(UART_HandleTypeDef *p_huart)
     return NULL;
 }
 
-static void notify(bsp_uart_driver_t *p_drv, bsp_uart_event_t evt,
-                   uint8_t *p_data, uint16_t length)
+static void notify(bsp_uart_driver_t *p_drv, bsp_uart_event_t evt, uint8_t *p_data, uint16_t length)
 {
     if (p_drv->p_config->callback != NULL)
     {
-        p_drv->p_config->callback(evt, p_data, length,
-                                  p_drv->p_config->p_user_data);
+        p_drv->p_config->callback(evt, p_data, length, p_drv->p_config->p_user_data);
     }
 }
 
@@ -74,9 +71,7 @@ static int start_dma_rx(bsp_uart_driver_t *p_drv)
 
     cfg = p_drv->p_config;
 
-    if (HAL_UARTEx_ReceiveToIdle_DMA(cfg->p_huart,
-                                     cfg->p_rx_buf,
-                                     cfg->rx_buf_size) != HAL_OK)
+    if (HAL_UARTEx_ReceiveToIdle_DMA(cfg->p_huart, cfg->p_rx_buf, cfg->rx_buf_size) != HAL_OK)
     {
         return -1;
     }
@@ -115,8 +110,7 @@ int BspUart_Send(bsp_uart_driver_t *p_drv, const uint8_t *p_data, uint16_t len)
         return -1;
     }
 
-    if (HAL_UART_Transmit_DMA(p_drv->p_config->p_huart,
-                              p_data, len) != HAL_OK)
+    if (HAL_UART_Transmit_DMA(p_drv->p_config->p_huart, p_data, len) != HAL_OK)
     {
         return -1;
     }
@@ -125,11 +119,12 @@ int BspUart_Send(bsp_uart_driver_t *p_drv, const uint8_t *p_data, uint16_t len)
     return 0;
 }
 
-int BspUart_SendBlocking(bsp_uart_driver_t *p_drv, const uint8_t *p_data,
-                         uint16_t len, uint32_t timeout_ms)
+int BspUart_SendBlocking(bsp_uart_driver_t *p_drv,
+                         const uint8_t     *p_data,
+                         uint16_t           len,
+                         uint32_t           timeout_ms)
 {
-    if (HAL_UART_Transmit(p_drv->p_config->p_huart,
-                          p_data, len, timeout_ms) != HAL_OK)
+    if (HAL_UART_Transmit(p_drv->p_config->p_huart, p_data, len, timeout_ms) != HAL_OK)
     {
         return -1;
     }
@@ -156,8 +151,7 @@ int BspUart_Printf(bsp_uart_driver_t *p_drv, const char *fmt, ...)
         len = (int)(sizeof(buf) - 1);
     }
 
-    if (BspUart_SendBlocking(p_drv, (const uint8_t *)buf,
-                             (uint16_t)len, 100) != 0)
+    if (BspUart_SendBlocking(p_drv, (const uint8_t *)buf, (uint16_t)len, 100) != 0)
     {
         return -1;
     }

@@ -33,14 +33,14 @@ typedef enum
 //*** Public API ***//
 
 /** @brief  初始化 OTA 子系统和 EasyLogger，在 TaskOta_Run 前调用 */
-void             TaskOta_Init(void);
+void TaskOta_Init(void);
 
 /**
  * @brief  OTA 任务入口函数（FreeRTOS 任务函数）
  *         执行完整 OTA 流程：等待触发 → 擦除 → YMODEM 接收 → 校验 → 重启
  * @param  p_argument  未使用（传 NULL）
  */
-void             TaskOta_Run(void *p_argument);
+void TaskOta_Run(void *p_argument);
 
 /**
  * @brief  获取当前 OTA 任务状态

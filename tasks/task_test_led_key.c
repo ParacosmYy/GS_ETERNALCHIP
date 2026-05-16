@@ -30,43 +30,46 @@ static void OnKey(bsp_key_event_t evt, void *p_user)
 
     switch (evt)
     {
-    case BSP_KEY_EVT_PRESSED:
-        log_i("PRESSED");
-        break;
+        case BSP_KEY_EVT_PRESSED:
+            log_i("PRESSED");
+            break;
 
-    case BSP_KEY_EVT_RELEASED:
-        log_i("RELEASED");
-        break;
+        case BSP_KEY_EVT_RELEASED:
+            log_i("RELEASED");
+            break;
 
-    case BSP_KEY_EVT_SHORT_PRESS:
-        log_i("SHORT_PRESS");
-        if (s_blink_active)
-        {
-            BspLed_BlinkStop(&s_led);
-            s_blink_active = 0;
-        }
-        BspLed_Toggle(&s_led);
-        break;
+        case BSP_KEY_EVT_SHORT_PRESS:
+            log_i("SHORT_PRESS");
 
-    case BSP_KEY_EVT_LONG_PRESS:
-        log_i("LONG_PRESS");
-        if (!s_blink_active)
-        {
-            log_i("blink start");
-            BspLed_On(&s_led);
-            BspLed_BlinkStart(&s_led, 500);
-            s_blink_active = 1;
-        }
-        else
-        {
-            log_i("blink stop");
-            BspLed_BlinkStop(&s_led);
-            s_blink_active = 0;
-        }
-        break;
+            if (s_blink_active)
+            {
+                BspLed_BlinkStop(&s_led);
+                s_blink_active = 0;
+            }
 
-    default:
-        break;
+            BspLed_Toggle(&s_led);
+            break;
+
+        case BSP_KEY_EVT_LONG_PRESS:
+            log_i("LONG_PRESS");
+
+            if (!s_blink_active)
+            {
+                log_i("blink start");
+                BspLed_On(&s_led);
+                BspLed_BlinkStart(&s_led, 500);
+                s_blink_active = 1;
+            }
+            else
+            {
+                log_i("blink stop");
+                BspLed_BlinkStop(&s_led);
+                s_blink_active = 0;
+            }
+            break;
+
+        default:
+            break;
     }
 }
 
@@ -75,9 +78,7 @@ static void OnKey(bsp_key_event_t evt, void *p_user)
 void TaskTestLedKey_Init(void)
 {
     static const bsp_led_config_t led_cfg = { GPIOC, GPIO_PIN_13, 0 };
-    static const bsp_key_config_t key_cfg = {
-        GPIOA, GPIO_PIN_0, 0, 20, 1000, OnKey, NULL
-    };
+    static const bsp_key_config_t key_cfg = { GPIOA, GPIO_PIN_0, 0, 20, 1000, OnKey, NULL };
 
     BspLed_Init(&s_led, &led_cfg);
     BspKey_Init(&s_key, &key_cfg);

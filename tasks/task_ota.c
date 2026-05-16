@@ -36,13 +36,16 @@ static void uart_send_byte(uint8_t byte, void *p_user)
 static int uart_recv_byte(uint8_t *p_byte, uint32_t timeout_ms, void *p_user)
 {
     (void)p_user;
-    return (HAL_UART_Receive(&huart1, p_byte, 1, timeout_ms) == HAL_OK) ? 0 : -1;
+    if (HAL_UART_Receive(&huart1, p_byte, 1, timeout_ms) == HAL_OK)
+    {
+        return 0;
+    }
+    return -1;
 }
 
 //*** YMODEM Data Callback ***//
 
-static int ymodem_data_callback(uint32_t offset, const uint8_t *p_data,
-                                uint16_t len, void *p_user)
+static int ymodem_data_callback(uint32_t offset, const uint8_t *p_data, uint16_t len, void *p_user)
 {
     uint32_t addr;
 
@@ -89,7 +92,10 @@ static int sha256_flash_region(uint32_t addr, uint32_t len, uint8_t hash[32])
     for (i = 0; i < len; i += sizeof(buf))
     {
         chunk = len - i;
-        if (chunk > sizeof(buf)) chunk = sizeof(buf);
+        if (chunk > sizeof(buf))
+        {
+            chunk = sizeof(buf);
+        }
         memcpy(buf, (const void *)(addr + i), chunk);
         sha256_update(&ctx, buf, chunk);
     }
@@ -111,11 +117,11 @@ void TaskOta_Init(void)
     /* Initialize EasyLogger */
     elog_init();
     elog_set_fmt(ELOG_LVL_ASSERT, ELOG_FMT_ALL);
-    elog_set_fmt(ELOG_LVL_ERROR,  ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
-    elog_set_fmt(ELOG_LVL_WARN,   ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
-    elog_set_fmt(ELOG_LVL_INFO,   ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
-    elog_set_fmt(ELOG_LVL_DEBUG,  ELOG_FMT_LVL | ELOG_FMT_TAG);
-    elog_set_fmt(ELOG_LVL_VERBOSE,ELOG_FMT_TAG);
+    elog_set_fmt(ELOG_LVL_ERROR, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
+    elog_set_fmt(ELOG_LVL_WARN, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
+    elog_set_fmt(ELOG_LVL_INFO, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
+    elog_set_fmt(ELOG_LVL_DEBUG, ELOG_FMT_LVL | ELOG_FMT_TAG);
+    elog_set_fmt(ELOG_LVL_VERBOSE, ELOG_FMT_TAG);
     elog_start();
 }
 
@@ -124,19 +130,28 @@ ota_task_state_t TaskOta_GetState(void)
     return s_state;
 }
 
-void TaskOta_NotifyKeyTrigger(void)  { s_trigger_flag = 1; }
-void TaskOta_NotifyUartTrigger(void) { s_trigger_flag = 1; }
-void TaskOta_NotifyExit(void)        { s_exit_flag = 1; }
+void TaskOta_NotifyKeyTrigger(void)
+{
+    s_trigger_flag = 1;
+}
+void TaskOta_NotifyUartTrigger(void)
+{
+    s_trigger_flag = 1;
+}
+void TaskOta_NotifyExit(void)
+{
+    s_exit_flag = 1;
+}
 
 //*** Task Entry ***//
 
 void TaskOta_Run(void *p_argument)
 {
-    int            ret;
-    int            cfg_ret;
-    uint8_t        hash[32];
-    ota_config_t   cfg;
-    uint32_t       start;
+    int          ret;
+    int          cfg_ret;
+    uint8_t      hash[32];
+    ota_config_t cfg;
+    uint32_t     start;
 
     (void)p_argument;
     TaskOta_Init();
@@ -148,7 +163,10 @@ void TaskOta_Run(void *p_argument)
     start = xTaskGetTickCount();
     while ((xTaskGetTickCount() - start) < pdMS_TO_TICKS(5000))
     {
-        if (s_trigger_flag) break;
+        if (s_trigger_flag)
+        {
+            break;
+        }
         if (s_exit_flag)
         {
             s_state = OTA_TASK_NORMAL;
@@ -178,6 +196,7 @@ void TaskOta_Run(void *p_argument)
         log_e("Erase failed!");
         goto error;
     }
+
     log_i("Slot B erased.");
 
     /* ---- Phase 3: YMODEM receive ---- */
@@ -185,16 +204,20 @@ void TaskOta_Run(void *p_argument)
     log_i("Waiting for YMODEM transfer...");
 
     s_exit_flag = 0;
-    ret = Ymodem_Receive(uart_send_byte, uart_recv_byte,
-                         NULL, &s_fw_size,
-                         SLOT_MAX_APP_SIZE,
-                         ymodem_data_callback, NULL);
+    ret         = Ymodem_Receive(uart_send_byte,
+                                 uart_recv_byte,
+                                 NULL,
+                                 &s_fw_size,
+                                 SLOT_MAX_APP_SIZE,
+                                 ymodem_data_callback,
+                                 NULL);
 
     if (ret != YMODEM_OK)
     {
         log_e("YMODEM error: %d", ret);
         goto error;
     }
+
     log_i("Received %lu bytes.", s_fw_size);
 
     /* ---- Phase 4: SHA-256 verify ---- */
@@ -204,6 +227,7 @@ void TaskOta_Run(void *p_argument)
     sha256_flash_region(FLASH_ADDR_SLOT_B, s_fw_size, hash);
 
     /* Print hash for debug */
+    // clang-format off
     log_i("SHA-256: %02X%02X%02X%02X%02X%02X%02X%02X"
           "%02X%02X%02X%02X%02X%02X%02X%02X"
           "%02X%02X%02X%02X%02X%02X%02X%02X"
@@ -212,6 +236,7 @@ void TaskOta_Run(void *p_argument)
           hash[8],hash[9],hash[10],hash[11],hash[12],hash[13],hash[14],hash[15],
           hash[16],hash[17],hash[18],hash[19],hash[20],hash[21],hash[22],hash[23],
           hash[24],hash[25],hash[26],hash[27],hash[28],hash[29],hash[30],hash[31]);
+    // clang-format on
 
     /* ---- Phase 5: Update Config ---- */
     s_state = OTA_TASK_UPDATING_CONFIG;
@@ -227,10 +252,10 @@ void TaskOta_Run(void *p_argument)
         cfg.active_slot = OTA_SLOT_A;
     }
 
-    cfg.state          = OTA_STATE_UPGRADE_PENDING;
-    cfg.fw_size        = s_fw_size;
+    cfg.state   = OTA_STATE_UPGRADE_PENDING;
+    cfg.fw_size = s_fw_size;
     memcpy(cfg.fw_sha256, hash, 32);
-    cfg.boot_count     = 0;
+    cfg.boot_count = 0;
     cfg.upgrade_count += 1;
 
     if (BspFlash_WriteConfig(&cfg) != 0)
@@ -238,6 +263,7 @@ void TaskOta_Run(void *p_argument)
         log_e("Config write failed!");
         goto error;
     }
+
     log_i("Config updated.");
 
     /* ---- Phase 6: Reboot ---- */
