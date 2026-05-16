@@ -16,7 +16,7 @@
 
 //*** Debug Switch ***//
 #define TASK_LED_KEY_DEBUG  1
-#define TASK_LED_KEY_DEBUG_USE_RTT  0
+#define TASK_LED_KEY_DEBUG_USE_RTT  1
 
 #if TASK_LED_KEY_DEBUG
 #if TASK_LED_KEY_DEBUG_USE_RTT
