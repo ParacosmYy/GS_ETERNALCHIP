@@ -96,6 +96,8 @@ int main(void)
   MX_USART1_UART_Init();
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
+  /* 开发阶段注释掉 IWDG 可避免调试干扰, 发布时恢复:
+     注释掉上方的 MX_IWDG_Init() 以及 freertos.c 中的 HAL_IWDG_Refresh() */
   cm_backtrace_init("OTA_App", "V1.0", "V1.0");
   /* USER CODE END 2 */
 

@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "cm_backtrace.h"
+#include "iwdg.h"
 
 /* ARM Compiler V5 inline assembly for LR/SP access */
 #if defined(__CC_ARM)
@@ -101,6 +102,7 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
+  HAL_IWDG_Refresh(&hiwdg);
   cm_backtrace_fault(__get_LR(), __get_SP());
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
