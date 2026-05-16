@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\led;..\tasks;..\bsp\key;..\bsp\uart;..\bsp\rtt;../Middlewares/Third_Party/SEGGER_RTT</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\led;..\tasks;..\bsp\key;..\bsp\uart;..\bsp\rtt;..\bsp\flash;../Middlewares/Third_Party/SEGGER_RTT;../Middlewares/Third_Party/SHA256;../Middlewares/Third_Party/YMODEM</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -620,6 +620,11 @@
               <FilePath>..\bsp\rtt\bsp_rtt.c</FilePath>
             </File>
             <File>
+              <FileName>bsp_flash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\flash\bsp_flash.c</FilePath>
+            </File>
+            <File>
               <FileName>SEGGER_RTT.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Middlewares\Third_Party\SEGGER_RTT\SEGGER_RTT.c</FilePath>
@@ -638,6 +643,31 @@
               <FileName>task_test_led_key.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\tasks\task_test_led_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>task_ota.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\tasks\task_ota.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>SHA256</GroupName>
+          <Files>
+            <File>
+              <FileName>sha256.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middlewares/Third_Party/SHA256/sha256.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>YMODEM</GroupName>
+          <Files>
+            <File>
+              <FileName>ymodem.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middlewares/Third_Party/YMODEM/ymodem.c</FilePath>
             </File>
           </Files>
         </Group>

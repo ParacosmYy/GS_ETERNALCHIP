@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "task_test_led_key.h"
+#include "task_ota.h"
 #include "iwdg.h"
 /* USER CODE END Includes */
 
@@ -96,7 +97,14 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  {
+    osThreadAttr_t otaTask_attributes = {
+      .name       = "otaTask",
+      .stack_size = 512 * 4,
+      .priority   = (osPriority_t) osPriorityAboveNormal,
+    };
+    osThreadNew(TaskOta_Run, NULL, &otaTask_attributes);
+  }
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */

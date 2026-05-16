@@ -86,7 +86,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  SCB->VTOR = 0x08008000u;  /* Relocate vector table to Slot A */
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
