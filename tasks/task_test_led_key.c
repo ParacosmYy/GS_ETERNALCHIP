@@ -8,41 +8,19 @@
  */
 
 //*** Includes ***//
+#define LOG_TAG "KEY"
+#include "elog.h"
 #include "stm32f4xx_hal.h"
 #include "main.h"
 #include "task_test_led_key.h"
 #include "bsp_led.h"
 #include "bsp_key.h"
 
-//*** Debug Switch ***//
-#define TASK_LED_KEY_DEBUG  1
-#define TASK_LED_KEY_DEBUG_USE_RTT  1
-
-#if TASK_LED_KEY_DEBUG
-#if TASK_LED_KEY_DEBUG_USE_RTT
-#include "bsp_rtt.h"
-#define DBG_PRINT(fmt, ...)  BspRtt_Printf(fmt, ##__VA_ARGS__)
-#else
-#include "bsp_uart.h"
-#include "usart.h"
-#define DBG_PRINT(fmt, ...)  BspUart_Printf(&s_uart, fmt, ##__VA_ARGS__)
-#endif
-#else
-#define DBG_PRINT(fmt, ...)  ((void)0)
-#endif
-
 //*** Private Variables ***//
 
 static bsp_led_driver_t s_led;
 static bsp_key_driver_t s_key;
 static uint8_t          s_blink_active;
-
-#if TASK_LED_KEY_DEBUG
-#if !TASK_LED_KEY_DEBUG_USE_RTT
-static bsp_uart_driver_t s_uart;
-static uint8_t           s_uart_rx_buf[64];
-#endif
-#endif
 
 //*** Private Functions ***//
 
@@ -52,15 +30,15 @@ static void OnKey(bsp_key_event_t evt, void *p_user)
 
     switch (evt) {
     case BSP_KEY_EVT_PRESSED:
-        DBG_PRINT("[KEY] PRESSED\r\n");
+        log_i("PRESSED");
         break;
 
     case BSP_KEY_EVT_RELEASED:
-        DBG_PRINT("[KEY] RELEASED\r\n");
+        log_i("RELEASED");
         break;
 
     case BSP_KEY_EVT_SHORT_PRESS:
-        DBG_PRINT("[KEY] SHORT_PRESS\r\n");
+        log_i("SHORT_PRESS");
         if (s_blink_active) {
             BspLed_BlinkStop(&s_led);
             s_blink_active = 0;
@@ -69,14 +47,14 @@ static void OnKey(bsp_key_event_t evt, void *p_user)
         break;
 
     case BSP_KEY_EVT_LONG_PRESS:
-        DBG_PRINT("[KEY] LONG_PRESS\r\n");
+        log_i("LONG_PRESS");
         if (!s_blink_active) {
-            DBG_PRINT("[KEY] -> blink start\r\n");
+            log_i("blink start");
             BspLed_On(&s_led);
             BspLed_BlinkStart(&s_led, 500);
             s_blink_active = 1;
         } else {
-            DBG_PRINT("[KEY] -> blink stop\r\n");
+            log_i("blink stop");
             BspLed_BlinkStop(&s_led);
             s_blink_active = 0;
         }
@@ -101,19 +79,7 @@ void TaskTestLedKey_Init(void)
 
     s_blink_active = 0;
 
-#if TASK_LED_KEY_DEBUG
-#if TASK_LED_KEY_DEBUG_USE_RTT
-    BspRtt_Init();
-    DBG_PRINT("--- LED/KEY Test Ready ---\r\n");
-#else
-    static const bsp_uart_config_t uart_cfg = {
-        &huart1, s_uart_rx_buf, sizeof(s_uart_rx_buf), NULL, NULL
-    };
-    BspUart_Init(&s_uart, &uart_cfg);
-    BspUart_StartReceive(&s_uart);
-    DBG_PRINT("--- LED/KEY Test Ready ---\r\n");
-#endif
-#endif
+    log_i("--- LED/KEY Test Ready ---");
 }
 
 void TaskTestLedKey_Process(void)

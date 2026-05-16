@@ -7,24 +7,16 @@
  */
 
 //*** Includes ***//
+#define LOG_TAG "OTA"
+#include "elog.h"
 #include "task_ota.h"
 #include "bsp_flash.h"
-#include "bsp_rtt.h"
 #include "sha256.h"
 #include "ymodem.h"
 #include "usart.h"
 #include "iwdg.h"
 #include "cmsis_os.h"
 #include <string.h>
-
-//*** Debug Switch ***//
-#define TASK_OTA_DEBUG  1
-
-#if TASK_OTA_DEBUG
-#define DBG_PRINT(fmt, ...)  BspRtt_Printf(fmt, ##__VA_ARGS__)
-#else
-#define DBG_PRINT(fmt, ...)  ((void)0)
-#endif
 
 //*** Private Variables ***//
 
@@ -56,14 +48,14 @@ static int ymodem_data_callback(uint32_t offset, const uint8_t *p_data,
 
     uint32_t addr = FLASH_ADDR_SLOT_B + offset - len;
     if (BspFlash_Write(addr, p_data, len) != 0) {
-        DBG_PRINT("[OTA] Flash write error at 0x%08lX\r\n", addr);
+        log_e("Flash write error at 0x%08lX", addr);
         return -1;
     }
 
     /* Progress every 10 KB */
     static uint32_t s_last_print = 0;
     if (offset - s_last_print >= 10240u) {
-        DBG_PRINT("[OTA] %lu / %lu bytes\r\n", offset, s_fw_size);
+        log_i("%lu / %lu bytes", offset, s_fw_size);
         s_last_print = offset;
     }
 
@@ -102,6 +94,16 @@ void TaskOta_Init(void)
     s_trigger_flag = 0;
     s_exit_flag    = 0;
     BspFlash_Init();
+
+    /* Initialize EasyLogger */
+    elog_init();
+    elog_set_fmt(ELOG_LVL_ASSERT, ELOG_FMT_ALL);
+    elog_set_fmt(ELOG_LVL_ERROR,  ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
+    elog_set_fmt(ELOG_LVL_WARN,   ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
+    elog_set_fmt(ELOG_LVL_INFO,   ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
+    elog_set_fmt(ELOG_LVL_DEBUG,  ELOG_FMT_LVL | ELOG_FMT_TAG);
+    elog_set_fmt(ELOG_LVL_VERBOSE,ELOG_FMT_TAG);
+    elog_start();
 }
 
 ota_task_state_t TaskOta_GetState(void)
@@ -128,14 +130,14 @@ void TaskOta_Run(void *p_argument)
 
     /* ---- Phase 1: 5-second trigger window ---- */
     s_state = OTA_TASK_TRIGGER_WAIT;
-    DBG_PRINT("[OTA] Waiting for trigger (5s)...\r\n");
+    log_i("Waiting for trigger (5s)...");
 
     start = xTaskGetTickCount();
     while ((xTaskGetTickCount() - start) < pdMS_TO_TICKS(5000)) {
         if (s_trigger_flag) break;
         if (s_exit_flag) {
             s_state = OTA_TASK_NORMAL;
-            DBG_PRINT("[OTA] Exit during trigger window.\r\n");
+            log_i("Exit during trigger window.");
             vTaskDelete(NULL);
             return;
         }
@@ -144,26 +146,26 @@ void TaskOta_Run(void *p_argument)
 
     if (!s_trigger_flag) {
         s_state = OTA_TASK_NORMAL;
-        DBG_PRINT("[OTA] No trigger. Task exiting.\r\n");
+        log_i("No trigger. Task exiting.");
         vTaskDelete(NULL);
         return;
     }
 
-    DBG_PRINT("[OTA] Triggered! Starting upgrade...\r\n");
+    log_i("Triggered! Starting upgrade...");
 
     /* ---- Phase 2: Erase Slot B ---- */
     s_state = OTA_TASK_PREPARING;
-    DBG_PRINT("[OTA] Erasing Slot B...\r\n");
+    log_i("Erasing Slot B...");
 
     if (BspFlash_EraseSlot(OTA_SLOT_B) != 0) {
-        DBG_PRINT("[OTA] Erase failed!\r\n");
+        log_e("Erase failed!");
         goto error;
     }
-    DBG_PRINT("[OTA] Slot B erased.\r\n");
+    log_i("Slot B erased.");
 
     /* ---- Phase 3: YMODEM receive ---- */
     s_state = OTA_TASK_RECEIVING;
-    DBG_PRINT("[OTA] Waiting for YMODEM transfer...\r\n");
+    log_i("Waiting for YMODEM transfer...");
 
     s_exit_flag = 0;
     ret = Ymodem_Receive(uart_send_byte, uart_recv_byte,
@@ -172,26 +174,26 @@ void TaskOta_Run(void *p_argument)
                          ymodem_data_callback, NULL);
 
     if (ret != YMODEM_OK) {
-        DBG_PRINT("[OTA] YMODEM error: %d\r\n", ret);
+        log_e("YMODEM error: %d", ret);
         goto error;
     }
-    DBG_PRINT("[OTA] Received %lu bytes.\r\n", s_fw_size);
+    log_i("Received %lu bytes.", s_fw_size);
 
     /* ---- Phase 4: SHA-256 verify ---- */
     s_state = OTA_TASK_VERIFYING;
-    DBG_PRINT("[OTA] Verifying SHA-256...\r\n");
+    log_i("Verifying SHA-256...");
 
     sha256_flash_region(FLASH_ADDR_SLOT_B, s_fw_size, hash);
 
     /* Print hash for debug */
-    DBG_PRINT("[OTA] SHA-256: ");
-    {
-        int i;
-        for (i = 0; i < 32; i++) {
-            DBG_PRINT("%02X", hash[i]);
-        }
-    }
-    DBG_PRINT("\r\n");
+    log_i("SHA-256: %02X%02X%02X%02X%02X%02X%02X%02X"
+          "%02X%02X%02X%02X%02X%02X%02X%02X"
+          "%02X%02X%02X%02X%02X%02X%02X%02X"
+          "%02X%02X%02X%02X%02X%02X%02X%02X",
+          hash[0],hash[1],hash[2],hash[3],hash[4],hash[5],hash[6],hash[7],
+          hash[8],hash[9],hash[10],hash[11],hash[12],hash[13],hash[14],hash[15],
+          hash[16],hash[17],hash[18],hash[19],hash[20],hash[21],hash[22],hash[23],
+          hash[24],hash[25],hash[26],hash[27],hash[28],hash[29],hash[30],hash[31]);
 
     /* ---- Phase 5: Update Config ---- */
     s_state = OTA_TASK_UPDATING_CONFIG;
@@ -213,14 +215,14 @@ void TaskOta_Run(void *p_argument)
     cfg.upgrade_count += 1;
 
     if (BspFlash_WriteConfig(&cfg) != 0) {
-        DBG_PRINT("[OTA] Config write failed!\r\n");
+        log_e("Config write failed!");
         goto error;
     }
-    DBG_PRINT("[OTA] Config updated.\r\n");
+    log_i("Config updated.");
 
     /* ---- Phase 6: Reboot ---- */
     s_state = OTA_TASK_REBOOT_PENDING;
-    DBG_PRINT("[OTA] Upgrade ready. Rebooting in 3s...\r\n");
+    log_i("Upgrade ready. Rebooting in 3s...");
     osDelay(3000);
     NVIC_SystemReset();
 
@@ -230,7 +232,7 @@ void TaskOta_Run(void *p_argument)
 
 error:
     s_state = OTA_TASK_ERROR;
-    DBG_PRINT("[OTA] ERROR! Long-press key or send UART cmd to exit.\r\n");
+    log_e("ERROR! Long-press key or send UART cmd to exit.");
 
     s_exit_flag = 0;
     while (!s_exit_flag) {
@@ -239,6 +241,6 @@ error:
     }
 
     s_state = OTA_TASK_NORMAL;
-    DBG_PRINT("[OTA] Exited. Task ending.\r\n");
+    log_i("Exited. Task ending.");
     vTaskDelete(NULL);
 }

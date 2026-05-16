@@ -56,6 +56,13 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for otaTask */
+osThreadId_t otaTaskHandle;
+const osThreadAttr_t otaTask_attributes = {
+  .name = "otaTask",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityAboveNormal,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -97,14 +104,7 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  {
-    osThreadAttr_t otaTask_attributes = {
-      .name       = "otaTask",
-      .stack_size = 512 * 4,
-      .priority   = (osPriority_t) osPriorityAboveNormal,
-    };
-    osThreadNew(TaskOta_Run, NULL, &otaTask_attributes);
-  }
+  otaTaskHandle = osThreadNew(TaskOta_Run, NULL, &otaTask_attributes);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
