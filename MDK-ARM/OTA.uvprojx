@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\led;..\tasks;..\bsp\key;..\bsp\uart;..\bsp\rtt;..\bsp\flash;../Middlewares/Third_Party/SEGGER_RTT;../Middlewares/Third_Party/SHA256;../Middlewares/Third_Party/YMODEM</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\led;..\tasks;..\bsp\key;..\bsp\uart;..\bsp\rtt;..\bsp\flash;../Middlewares/Third_Party/SEGGER_RTT;../Middlewares/Third_Party/SHA256;../Middlewares/Third_Party/YMODEM;../Middlewares/Third_Party/EasyLogger/inc;../Middlewares/Third_Party/EasyLogger/port;../Middlewares/Third_Party/CmBacktrace</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -668,6 +668,36 @@
               <FileName>ymodem.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Middlewares/Third_Party/YMODEM/ymodem.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>EasyLogger</GroupName>
+          <Files>
+            <File>
+              <FileName>elog.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middlewares/Third_Party/EasyLogger/src/elog.c</FilePath>
+            </File>
+            <File>
+              <FileName>elog_utils.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middlewares/Third_Party/EasyLogger/src/elog_utils.c</FilePath>
+            </File>
+            <File>
+              <FileName>elog_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middlewares/Third_Party/EasyLogger/port/elog_port.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>CmBacktrace</GroupName>
+          <Files>
+            <File>
+              <FileName>cm_backtrace.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middlewares/Third_Party/CmBacktrace/cm_backtrace.c</FilePath>
             </File>
           </Files>
         </Group>

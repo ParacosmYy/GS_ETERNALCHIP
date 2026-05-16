@@ -26,7 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "cm_backtrace.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -86,7 +86,8 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  SCB->VTOR = 0x08008000u;  /* Relocate vector table to Slot A */
+  // TODO: Bootloader 开发完成后启用 VTOR 重定位
+  // SCB->VTOR = 0x08008000u;
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -95,7 +96,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
-
+  cm_backtrace_init("OTA_App", "V1.0", "V1.0");
   /* USER CODE END 2 */
 
   /* Init scheduler */

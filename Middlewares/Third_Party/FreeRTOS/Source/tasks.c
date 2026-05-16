@@ -5308,3 +5308,16 @@ when performing module tests). */
 #endif
 
 
+
+/* CmBacktrace helper functions — expose current task stack info */
+uint32_t *vTaskStackAddr(void) {
+    return (uint32_t *)pxCurrentTCB->pxStack;
+}
+
+uint32_t vTaskStackSize(void) {
+    return (uint32_t)(pxCurrentTCB->pxEndOfStack - pxCurrentTCB->pxStack + 1);
+}
+
+char *vTaskName(void) {
+    return (char *)&(pxCurrentTCB->pcTaskName);
+}

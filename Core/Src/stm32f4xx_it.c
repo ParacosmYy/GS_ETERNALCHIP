@@ -22,6 +22,19 @@
 #include "stm32f4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "cm_backtrace.h"
+
+/* ARM Compiler V5 inline assembly for LR/SP access */
+#if defined(__CC_ARM)
+static __inline __asm uint32_t __get_LR(void) {
+    mov r0, lr
+    bx lr
+}
+static __inline __asm uint32_t __get_SP(void) {
+    mov r0, sp
+    bx lr
+}
+#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -88,7 +101,7 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-
+  cm_backtrace_fault(__get_LR(), __get_SP());
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -103,7 +116,7 @@ void HardFault_Handler(void)
 void MemManage_Handler(void)
 {
   /* USER CODE BEGIN MemoryManagement_IRQn 0 */
-
+  cm_backtrace_fault(__get_LR(), __get_SP());
   /* USER CODE END MemoryManagement_IRQn 0 */
   while (1)
   {
@@ -118,7 +131,7 @@ void MemManage_Handler(void)
 void BusFault_Handler(void)
 {
   /* USER CODE BEGIN BusFault_IRQn 0 */
-
+  cm_backtrace_fault(__get_LR(), __get_SP());
   /* USER CODE END BusFault_IRQn 0 */
   while (1)
   {
@@ -133,7 +146,7 @@ void BusFault_Handler(void)
 void UsageFault_Handler(void)
 {
   /* USER CODE BEGIN UsageFault_IRQn 0 */
-
+  cm_backtrace_fault(__get_LR(), __get_SP());
   /* USER CODE END UsageFault_IRQn 0 */
   while (1)
   {
