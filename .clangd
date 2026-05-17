@@ -1,0 +1,14 @@
+CompileFlags:
+  CompilationDatabase: .
+
+Diagnostics:
+  Suppress:
+    - pp_file_not_found
+    - drv_unknown_argument
+    - pp_macro_not_defined
+    - drv_int_to_void_pointer_cast
+  UnusedIncludes: None
+  MissingIncludes: None
+
+InlayHints:
+  Enabled: No
