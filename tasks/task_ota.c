@@ -27,12 +27,25 @@ static volatile uint8_t s_exit_flag;
 
 //*** UART Adapters for YMODEM (polling mode) ***//
 
+/**
+ * @brief  UART 单字节发送适配器（供 YMODEM 协议层调用）
+ * @param  byte    待发送字节
+ * @param  p_user  用户上下文（未使用）
+ */
 static void uart_send_byte(uint8_t byte, void *p_user)
 {
     (void)p_user;
     HAL_UART_Transmit(&huart1, &byte, 1, 100);
 }
 
+/**
+ * @brief  UART 单字节接收适配器（供 YMODEM 协议层调用）
+ * @param  p_byte      接收字节输出
+ * @param  timeout_ms  超时时间（毫秒）
+ * @param  p_user      用户上下文（未使用）
+ * @retval 0   成功接收一字节
+ * @retval -1  超时或 HAL 错误
+ */
 static int uart_recv_byte(uint8_t *p_byte, uint32_t timeout_ms, void *p_user)
 {
     (void)p_user;
@@ -45,6 +58,19 @@ static int uart_recv_byte(uint8_t *p_byte, uint32_t timeout_ms, void *p_user)
 
 //*** YMODEM Data Callback ***//
 
+/**
+ * @brief  YMODEM 数据接收回调，将固件数据写入 Slot B Flash
+ *
+ *         每收到一帧数据即写入对应 Flash 地址，每 10KB 打印进度。
+ *         写入过程中刷新看门狗，检测退出标志。
+ *
+ * @param  offset  当前累计接收字节数
+ * @param  p_data  本次接收的数据缓冲区
+ * @param  len     本次数据长度
+ * @param  p_user  用户上下文（未使用）
+ * @retval 0   写入成功
+ * @retval -1  Flash 写入失败或收到退出信号
+ */
 static int ymodem_data_callback(uint32_t offset, const uint8_t *p_data, uint16_t len, void *p_user)
 {
     uint32_t addr;
@@ -80,6 +106,17 @@ static int ymodem_data_callback(uint32_t offset, const uint8_t *p_data, uint16_t
 
 //*** SHA-256 of Flash Region ***//
 
+/**
+ * @brief  计算 Flash 指定区域的 SHA-256 哈希值
+ *
+ *         分块读取 Flash 内容（256 字节/块）并逐步更新哈希。
+ *         使用内存映射直接读取，无需 BspFlash_Read。
+ *
+ * @param  addr  Flash 起始地址
+ * @param  len   数据长度（字节）
+ * @param  hash  输出 32 字节 SHA-256 哈希值
+ * @retval 0  成功
+ */
 static int sha256_flash_region(uint32_t addr, uint32_t len, uint8_t hash[32])
 {
     SHA256_CTX ctx;
@@ -106,6 +143,12 @@ static int sha256_flash_region(uint32_t addr, uint32_t len, uint8_t hash[32])
 
 //*** Public API ***//
 
+/**
+ * @brief  初始化 OTA 子系统和 EasyLogger
+ *
+ *         重置 OTA 状态、初始化 Flash 驱动、配置并启动 EasyLogger 日志框架。
+ *         在 TaskOta_Run 前调用。
+ */
 void TaskOta_Init(void)
 {
     s_state        = OTA_TASK_NORMAL;
@@ -125,19 +168,25 @@ void TaskOta_Init(void)
     elog_start();
 }
 
+/** @brief  获取当前 OTA 任务状态 */
 ota_task_state_t TaskOta_GetState(void)
 {
     return s_state;
 }
 
+/** @brief  通知 OTA 任务：检测到按键触发 */
 void TaskOta_NotifyKeyTrigger(void)
 {
     s_trigger_flag = 1;
 }
+
+/** @brief  通知 OTA 任务：收到 UART 触发命令 */
 void TaskOta_NotifyUartTrigger(void)
 {
     s_trigger_flag = 1;
 }
+
+/** @brief  通知 OTA 任务：请求退出（错误恢复或外部请求） */
 void TaskOta_NotifyExit(void)
 {
     s_exit_flag = 1;
@@ -145,6 +194,21 @@ void TaskOta_NotifyExit(void)
 
 //*** Task Entry ***//
 
+/**
+ * @brief  OTA 任务入口函数（FreeRTOS 任务）
+ *
+ *         执行完整 OTA 升级流程：
+ *         1. 5 秒触发等待窗口（按键或 UART 命令）
+ *         2. 擦除 Slot B
+ *         3. YMODEM 接收固件 → 写入 Slot B
+ *         4. SHA-256 校验
+ *         5. 更新 OTA Config（UPGRADE_PENDING）
+ *         6. 3 秒后软件复位 → Bootloader 复制 B→A
+ *
+ *         错误时进入等待循环，长按按键或 UART 命令退出。
+ *
+ * @param  p_argument  未使用（传 NULL）
+ */
 void TaskOta_Run(void *p_argument)
 {
     int          ret;
