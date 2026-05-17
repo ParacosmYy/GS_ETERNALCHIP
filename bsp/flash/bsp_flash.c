@@ -266,6 +266,8 @@ int BspFlash_ReadConfig(ota_config_t *p_cfg)
 int BspFlash_WriteConfig(const ota_config_t *p_cfg)
 {
     ota_config_t tmp;
+    ota_config_t verify;
+    int          ret;
 
     if (p_cfg == NULL)
     {
@@ -280,7 +282,18 @@ int BspFlash_WriteConfig(const ota_config_t *p_cfg)
         return -1;
     }
 
-    return BspFlash_Write(FLASH_ADDR_CONFIG, (const uint8_t *)&tmp, sizeof(ota_config_t));
+    ret = BspFlash_Write(FLASH_ADDR_CONFIG, (const uint8_t *)&tmp, sizeof(ota_config_t));
+    if (ret != 0)
+    {
+        return -1;
+    }
+
+    if (BspFlash_ReadConfig(&verify) != 0)
+    {
+        return -2;
+    }
+
+    return 0;
 }
 
 //*** Utility ***//
