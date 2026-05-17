@@ -15,10 +15,10 @@ extern "C"
 {
 #endif
 
-    /** @brief  Initialise LED & KEY BSP instances. Call once at startup. */
+    /** @brief  初始化 LED 和 KEY 的 BSP 实例，启动时调用一次 */
     void TaskTestLedKey_Init(void);
 
-    /** @brief  Drive key scan and LED blink. Call periodically (~10 ms). */
+    /** @brief  驱动按键扫描和 LED 闪烁，周期性调用（约 10ms） */
     void TaskTestLedKey_Process(void);
 
 #ifdef __cplusplus

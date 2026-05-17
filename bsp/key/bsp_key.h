@@ -70,16 +70,16 @@ extern "C"
     //*** Public API ***//
 
     /**
-     * @brief  Initialise key driver instance.
-     * @param  p_drv    Pointer to driver instance (caller-allocated)
-     * @param  p_config Pointer to configuration (must remain valid)
+     * @brief  初始化按键驱动实例
+     * @param  p_drv    驱动实例（调用者分配）
+     * @param  p_config 硬件配置（需保持有效，通常为 const 全局变量）
      */
     void BspKey_Init(bsp_key_driver_t *p_drv, const bsp_key_config_t *p_config);
 
     /**
-     * @brief  Scan key state — call periodically (5-10 ms recommended).
-     *         Runs the debounce state machine and fires callbacks on events.
-     * @param  p_drv Driver instance
+     * @brief  扫描按键状态（建议 5-10 ms 周期调用）
+     *         运行消抖状态机，检测到事件时触发回调。
+     * @param  p_drv  驱动实例
      */
     void BspKey_Scan(bsp_key_driver_t *p_drv);
 

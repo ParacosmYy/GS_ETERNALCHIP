@@ -58,35 +58,35 @@ extern "C"
     //*** Public API ***//
 
     /**
-     * @brief  Initialise LED driver with default HAL operations.
-     * @param  p_drv   Pointer to driver instance (caller-allocated)
-     * @param  p_config Pointer to hardware configuration (must remain valid)
+     * @brief  初始化 LED 驱动（使用默认 HAL GPIO 操作）
+     * @param  p_drv    驱动实例（调用者分配）
+     * @param  p_config 硬件配置（需保持有效，通常为 const 全局变量）
      */
     void BspLed_Init(bsp_led_driver_t *p_drv, const bsp_led_config_t *p_config);
 
-    /** @brief  Turn LED on */
+    /** @brief  点亮 LED */
     void BspLed_On(bsp_led_driver_t *p_drv);
 
-    /** @brief  Turn LED off */
+    /** @brief  熄灭 LED */
     void BspLed_Off(bsp_led_driver_t *p_drv);
 
-    /** @brief  Toggle LED state */
+    /** @brief  翻转 LED 状态 */
     void BspLed_Toggle(bsp_led_driver_t *p_drv);
 
     /**
-     * @brief  Start non-blocking blink.
-     * @param  p_drv       Driver instance
-     * @param  interval_ms Toggle period in milliseconds
+     * @brief  启动非阻塞闪烁
+     * @param  p_drv        驱动实例
+     * @param  interval_ms  翻转周期（毫秒）
      */
     void BspLed_BlinkStart(bsp_led_driver_t *p_drv, uint32_t interval_ms);
 
-    /** @brief  Stop blink and turn LED off */
+    /** @brief  停止闪烁并熄灭 LED */
     void BspLed_BlinkStop(bsp_led_driver_t *p_drv);
 
     /**
-     * @brief  Timebase hook — call periodically (e.g. from SysTick or timer).
-     *         Drives the blink state machine.
-     * @param  p_drv Driver instance
+     * @brief  时基钩子函数（周期性调用，如 SysTick 或定时器中断）
+     *         驱动闪烁状态机，检查是否到达翻转时间。
+     * @param  p_drv  驱动实例
      */
     void BspLed_TimebaseHook(bsp_led_driver_t *p_drv);
 

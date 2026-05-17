@@ -7,10 +7,10 @@
 #define OTA_CONFIRM_H
 
 /**
- * @brief  Confirm successful boot to Bootloader
+ * @brief  确认启动成功，通知 Bootloader
  *
- *         Reads OTA Config; if state is CONFIRMING, sets CONFIRMED
- *         and resets boot_count. Called once after App init completes.
+ *         读取 OTA Config，若状态为 CONFIRMING，则置为 CONFIRMED
+ *         并清零 boot_count。在 App 初始化完成后调用一次。
  */
 void OTA_ConfirmBoot(void);
 

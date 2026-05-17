@@ -68,34 +68,46 @@ extern "C"
     //*** Public API ***//
 
     /**
-     * @brief  Initialise UART driver and register instance.
-     * @param  p_drv    Driver instance (caller-allocated)
-     * @param  p_config Hardware configuration (must remain valid)
+     * @brief  初始化 UART 驱动并注册实例
+     * @param  p_drv     驱动实例（调用者分配）
+     * @param  p_config  硬件配置（需保持有效，通常为 const 全局变量）
      */
     void BspUart_Init(bsp_uart_driver_t *p_drv, const bsp_uart_config_t *p_config);
 
     /**
-     * @brief  Start DMA + IDLE reception.
-     *         Received data reported via BSP_UART_EVT_RX_DONE callback.
-     *         Reception auto-restarts after each packet.
-     * @return 0 on success, -1 on HAL error
+     * @brief  启动 DMA + IDLE 接收
+     *         接收到的数据通过 BSP_UART_EVT_RX_DONE 回调上报。
+     *         每次接收完成后自动重启接收。
+     * @param  p_drv  驱动实例
+     * @retval 0   成功
+     * @retval -1  HAL 错误
      */
     int BspUart_StartReceive(bsp_uart_driver_t *p_drv);
 
     /**
-     * @brief  Stop DMA reception.
+     * @brief  停止 DMA 接收
+     * @param  p_drv  驱动实例
      */
     void BspUart_StopReceive(bsp_uart_driver_t *p_drv);
 
     /**
-     * @brief  Non-blocking DMA transmit.
-     * @return 0 on success, -1 if previous TX still busy or HAL error
+     * @brief  非阻塞 DMA 发送
+     * @param  p_drv   驱动实例
+     * @param  p_data  发送数据缓冲区
+     * @param  len     发送字节数
+     * @retval 0   成功
+     * @retval -1  前一次发送未完成或 HAL 错误
      */
     int BspUart_Send(bsp_uart_driver_t *p_drv, const uint8_t *p_data, uint16_t len);
 
     /**
-     * @brief  Blocking transmit with timeout.
-     * @return 0 on success, -1 on timeout or error
+     * @brief  阻塞式发送数据（带超时）
+     * @param  p_drv       驱动实例
+     * @param  p_data      发送数据缓冲区
+     * @param  len         发送字节数
+     * @param  timeout_ms  超时时间（毫秒）
+     * @retval 0   成功
+     * @retval -1  超时或发送失败
      */
     int BspUart_SendBlocking(bsp_uart_driver_t *p_drv,
                              const uint8_t     *p_data,
@@ -103,17 +115,28 @@ extern "C"
                              uint32_t           timeout_ms);
 
     /**
-     * @brief  Printf-style formatted output (blocking).
-     *         Uses stack buffer, thread-safe across FreeRTOS tasks.
-     *         Do NOT call from ISR context.
-     * @return Number of characters written, or -1 on error
+     * @brief  格式化打印输出（阻塞式，线程安全）
+     *         使用栈缓冲区，可安全跨 FreeRTOS 任务调用。
+     *         禁止在 ISR 中使用。
+     * @param  p_drv  驱动实例
+     * @param  fmt    格式化字符串
+     * @param  ...    可变参数
+     * @return 实际写入字符数，失败返回 -1
      */
     int BspUart_Printf(bsp_uart_driver_t *p_drv, const char *fmt, ...);
 
-    /** @brief  Query TX busy state */
+    /**
+     * @brief  查询 TX 是否忙碌
+     * @param  p_drv  驱动实例
+     * @return 1 忙碌, 0 空闲
+     */
     uint8_t BspUart_IsTxBusy(const bsp_uart_driver_t *p_drv);
 
-    /** @brief  Query RX busy state */
+    /**
+     * @brief  查询 RX 是否忙碌
+     * @param  p_drv  驱动实例
+     * @return 1 忙碌, 0 空闲
+     */
     uint8_t BspUart_IsRxBusy(const bsp_uart_driver_t *p_drv);
 
 #ifdef __cplusplus
