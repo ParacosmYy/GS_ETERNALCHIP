@@ -16,6 +16,10 @@
 
 #include <stdint.h>
 
+//*** Firmware Version ***//
+
+#define OTA_FW_VERSION  "V1.0.0"
+
 //*** OTA Task States ***//
 
 typedef enum

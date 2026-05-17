@@ -71,7 +71,7 @@ extern "C" {
 
 /** @brief OTA Config magic and version */
 #define OTA_CONFIG_MAGIC   0x4F544131u     /* "OTA1" */
-#define OTA_CONFIG_VERSION 1u
+#define OTA_CONFIG_VERSION 2u
 
 /** @brief Max unconfirmed boots before entering recovery */
 #define OTA_BOOT_COUNT_THRESHOLD 3u
@@ -106,6 +106,7 @@ typedef struct
     uint8_t     fw_sha256[32];  /**< SHA-256 hash of firmware */
     uint32_t    boot_count;     /**< Unconfirmed boot counter */
     uint32_t    upgrade_count;  /**< Total upgrade counter */
+    char        prev_fw_version[16]; /**< Firmware version before upgrade */
     uint32_t    crc32;          /**< CRC-32 over all fields above this */
 } ota_config_t;
 

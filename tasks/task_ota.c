@@ -20,9 +20,6 @@
 #include "cmsis_os.h"
 #include <string.h>
 
-//*** OTA Firmware Version ***//
-#define OTA_FW_VERSION  "V1.0.0"
-
 //*** Private Variables ***//
 
 static ota_task_state_t s_state;
@@ -317,6 +314,8 @@ void TaskOta_Run(void *p_argument)
     memcpy(cfg.fw_sha256, hash, 32);
     cfg.boot_count = 0;
     cfg.upgrade_count += 1;
+    strncpy(cfg.prev_fw_version, OTA_FW_VERSION, sizeof(cfg.prev_fw_version) - 1);
+    cfg.prev_fw_version[sizeof(cfg.prev_fw_version) - 1] = '\0';
 
     if (BspFlash_WriteConfig(&cfg) != 0)
     {
@@ -329,8 +328,8 @@ void TaskOta_Run(void *p_argument)
     /* ---- Phase 6: Reboot ---- */
     s_state = OTA_TASK_REBOOT_PENDING;
     BspLed_BlinkStart(&s_led, 100);
-    log_i("Upgrade ready. Rebooting in 3s...");
-    osDelay(3000);
+    log_i("Upgrade ready. Rebooting in 1s...");
+    osDelay(1000);
     NVIC_SystemReset();
 
     /* Should never reach here */

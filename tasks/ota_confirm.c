@@ -8,6 +8,8 @@
 #include "elog.h"
 #include "ota_confirm.h"
 #include "bsp_flash.h"
+#include "task_ota.h"
+#include <string.h>
 
 //*** Public API ***//
 
@@ -31,6 +33,15 @@ void OTA_ConfirmBoot(void)
 
     if (cfg.state == OTA_STATE_CONFIRMING)
     {
+        if (strncmp(cfg.prev_fw_version, OTA_FW_VERSION, sizeof(cfg.prev_fw_version)) != 0)
+        {
+            log_i("OTA OK: %s -> %s", cfg.prev_fw_version, OTA_FW_VERSION);
+        }
+        else
+        {
+            log_i("OTA OK: version unchanged (%s)", OTA_FW_VERSION);
+        }
+
         cfg.state      = OTA_STATE_CONFIRMED;
         cfg.boot_count = 0;
         BspFlash_WriteConfig(&cfg);
