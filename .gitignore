@@ -1,0 +1,19 @@
+# Keil MDK-ARM build output
+MDK-ARM/Boot/*.axf
+MDK-ARM/Boot/*.hex
+MDK-ARM/Boot/*.htm
+MDK-ARM/Boot/*.lnp
+MDK-ARM/Boot/*.map
+MDK-ARM/Boot/*.crf
+MDK-ARM/Boot/*.d
+MDK-ARM/Boot/*.o
+MDK-ARM/Boot/*.dep
+MDK-ARM/Boot/Listings/
+MDK-ARM/Boot/Objects/
+MDK-ARM/Boot/RTE/
+
+# Keil project backups
+*.bak
+*.dep
+*.uvguix.*
+*.scvd
