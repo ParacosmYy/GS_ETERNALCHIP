@@ -11,6 +11,8 @@
 #include "elog.h"
 #include "task_ota.h"
 #include "bsp_flash.h"
+#include "bsp_led.h"
+#include "bsp_key.h"
 #include "sha256.h"
 #include "ymodem.h"
 #include "usart.h"
@@ -18,12 +20,28 @@
 #include "cmsis_os.h"
 #include <string.h>
 
+//*** OTA Firmware Version ***//
+#define OTA_FW_VERSION  "V1.0.0"
+
 //*** Private Variables ***//
 
 static ota_task_state_t s_state;
 static uint32_t         s_fw_size;
 static volatile uint8_t s_trigger_flag;
-static volatile uint8_t s_exit_flag;
+static bsp_led_driver_t s_led;
+static bsp_key_driver_t s_key;
+
+//*** Key Callback ***//
+
+static void OnKey(bsp_key_event_t evt, void *p_user)
+{
+    (void)p_user;
+    if (evt == BSP_KEY_EVT_SHORT_PRESS)
+    {
+        log_i("Key: SHORT_PRESS");
+        s_trigger_flag = 1;
+    }
+}
 
 //*** UART Adapters for YMODEM (polling mode) ***//
 
@@ -80,7 +98,7 @@ static int ymodem_data_callback(uint32_t offset, const uint8_t *p_data, uint16_t
     addr = FLASH_ADDR_SLOT_B + offset - len;
     if (BspFlash_Write(addr, p_data, len) != 0)
     {
-        log_e("Flash write error at 0x%08lX", addr);
+        log_e("Flash write error at 0x%08lX (HAL err=0x%08lX)", addr, HAL_FLASH_GetError());
         return -1;
     }
 
@@ -96,15 +114,10 @@ static int ymodem_data_callback(uint32_t offset, const uint8_t *p_data, uint16_t
 
     HAL_IWDG_Refresh(&hiwdg);
 
-    if (s_exit_flag)
-    {
-        return -1;
-    }
-
     return 0;
 }
 
-//*** SHA-256 of Flash Region ***//
+//*** SHA-256 Flash Hash ***//
 
 /**
  * @brief  计算 Flash 指定区域的 SHA-256 哈希值
@@ -154,7 +167,6 @@ void TaskOta_Init(void)
     s_state        = OTA_TASK_NORMAL;
     s_fw_size      = 0;
     s_trigger_flag = 0;
-    s_exit_flag    = 0;
     BspFlash_Init();
 
     /* Initialize EasyLogger */
@@ -174,38 +186,20 @@ ota_task_state_t TaskOta_GetState(void)
     return s_state;
 }
 
-/** @brief  通知 OTA 任务：检测到按键触发 */
-void TaskOta_NotifyKeyTrigger(void)
-{
-    s_trigger_flag = 1;
-}
-
-/** @brief  通知 OTA 任务：收到 UART 触发命令 */
-void TaskOta_NotifyUartTrigger(void)
-{
-    s_trigger_flag = 1;
-}
-
-/** @brief  通知 OTA 任务：请求退出（错误恢复或外部请求） */
-void TaskOta_NotifyExit(void)
-{
-    s_exit_flag = 1;
-}
-
 //*** Task Entry ***//
 
 /**
  * @brief  OTA 任务入口函数（FreeRTOS 任务）
  *
  *         执行完整 OTA 升级流程：
- *         1. 5 秒触发等待窗口（按键或 UART 命令）
+ *         1. 无限等待按键短按触发
  *         2. 擦除 Slot B
  *         3. YMODEM 接收固件 → 写入 Slot B
  *         4. SHA-256 校验
  *         5. 更新 OTA Config（UPGRADE_PENDING）
  *         6. 3 秒后软件复位 → Bootloader 复制 B→A
  *
- *         错误时进入等待循环，长按按键或 UART 命令退出。
+ *         错误时 3 秒后自动复位。
  *
  * @param  p_argument  未使用（传 NULL）
  */
@@ -215,45 +209,42 @@ void TaskOta_Run(void *p_argument)
     int          cfg_ret;
     uint8_t      hash[32];
     ota_config_t cfg;
-    uint32_t     start;
 
     (void)p_argument;
     TaskOta_Init();
 
-    /* ---- Phase 1: 5-second trigger window ---- */
+    /* LED 初始化：PC13, 低有效 */
+    {
+        static const bsp_led_config_t led_cfg = { GPIOC, GPIO_PIN_13, 0 };
+        BspLed_Init(&s_led, &led_cfg);
+    }
+
+    /* KEY 初始化：PA0, 低有效, 20ms 消抖, 1000ms 长按 */
+    {
+        static const bsp_key_config_t key_cfg = { GPIOA, GPIO_PIN_0, 0, 20, 1000, OnKey, NULL };
+        BspKey_Init(&s_key, &key_cfg);
+    }
+
+    /* ---- Phase 1: 等待触发（无限期，按键短按触发）---- */
     s_state = OTA_TASK_TRIGGER_WAIT;
-    log_i("Waiting for trigger (5s)...");
+    log_i("Firmware %s", OTA_FW_VERSION);
+    log_i("Waiting for trigger... (short press key)");
 
-    start = xTaskGetTickCount();
-    while ((xTaskGetTickCount() - start) < pdMS_TO_TICKS(5000))
+    while (!s_trigger_flag)
     {
-        if (s_trigger_flag)
-        {
-            break;
-        }
-        if (s_exit_flag)
-        {
-            s_state = OTA_TASK_NORMAL;
-            log_i("Exit during trigger window.");
-            vTaskDelete(NULL);
-            return;
-        }
-        osDelay(50);
+        BspKey_Scan(&s_key);
+        osDelay(10);
     }
 
-    if (!s_trigger_flag)
-    {
-        s_state = OTA_TASK_NORMAL;
-        log_i("No trigger. Task exiting.");
-        vTaskDelete(NULL);
-        return;
-    }
-
-    log_i("Triggered! Starting upgrade...");
+    /* 触发成功，LED 开始指示 OTA 状态 */
+    log_i("Triggered! Current: %s", OTA_FW_VERSION);
+    log_i("Starting upgrade...");
 
     /* ---- Phase 2: Erase Slot B ---- */
     s_state = OTA_TASK_PREPARING;
+    BspLed_BlinkStart(&s_led, 500);
     log_i("Erasing Slot B...");
+    HAL_IWDG_Refresh(&hiwdg);
 
     if (BspFlash_EraseSlot(OTA_SLOT_B) != 0)
     {
@@ -261,14 +252,18 @@ void TaskOta_Run(void *p_argument)
         goto error;
     }
 
+    BspLed_BlinkStop(&s_led);
     log_i("Slot B erased.");
 
     /* ---- Phase 3: YMODEM receive ---- */
     s_state = OTA_TASK_RECEIVING;
+    BspLed_On(&s_led);
     log_i("Waiting for YMODEM transfer...");
 
-    s_exit_flag = 0;
-    ret         = Ymodem_Receive(uart_send_byte,
+    /* 排空 UART RX 缓冲区（清除串口连接产生的残留字节） */
+    __HAL_UART_FLUSH_DRREGISTER(&huart1);
+
+    ret = Ymodem_Receive(uart_send_byte,
                                  uart_recv_byte,
                                  NULL,
                                  &s_fw_size,
@@ -286,6 +281,7 @@ void TaskOta_Run(void *p_argument)
 
     /* ---- Phase 4: SHA-256 verify ---- */
     s_state = OTA_TASK_VERIFYING;
+    /* LED 保持常亮 */
     log_i("Verifying SHA-256...");
 
     sha256_flash_region(FLASH_ADDR_SLOT_B, s_fw_size, hash);
@@ -332,6 +328,7 @@ void TaskOta_Run(void *p_argument)
 
     /* ---- Phase 6: Reboot ---- */
     s_state = OTA_TASK_REBOOT_PENDING;
+    BspLed_BlinkStart(&s_led, 100);
     log_i("Upgrade ready. Rebooting in 3s...");
     osDelay(3000);
     NVIC_SystemReset();
@@ -342,16 +339,14 @@ void TaskOta_Run(void *p_argument)
 
 error:
     s_state = OTA_TASK_ERROR;
-    log_e("ERROR! Long-press key or send UART cmd to exit.");
+    BspLed_BlinkStart(&s_led, 1000);
+    log_e("ERROR! Rebooting in 3s...");
 
-    s_exit_flag = 0;
-    while (!s_exit_flag)
+    for (int i = 0; i < 30; i++)
     {
-        HAL_IWDG_Refresh(&hiwdg);
+        BspLed_TimebaseHook(&s_led);
         osDelay(100);
     }
 
-    s_state = OTA_TASK_NORMAL;
-    log_i("Exited. Task ending.");
-    vTaskDelete(NULL);
+    NVIC_SystemReset();
 }

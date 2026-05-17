@@ -25,7 +25,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "task_test_led_key.h"
 #include "task_ota.h"
 #include "ota_confirm.h"
 #include "iwdg.h"
@@ -125,13 +124,11 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   OTA_ConfirmBoot();
-  TaskTestLedKey_Init();
   /* Infinite loop */
   for(;;)
   {
     HAL_IWDG_Refresh(&hiwdg);
-    TaskTestLedKey_Process();
-    osDelay(10);
+    osDelay(100);
   }
   /* USER CODE END StartDefaultTask */
 }
