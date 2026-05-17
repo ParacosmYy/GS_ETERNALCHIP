@@ -18,20 +18,26 @@
 //*** Public API ***//
 
 /**
- * @brief  Initialize UART BSP driver
- * @param  p_huart  HAL UART handle (must already be initialized)
+ * @brief  初始化 UART BSP 驱动
+ * @param  p_huart  HAL UART 句柄（需已完成 HAL 初始化）
  */
 void BspUart_Init(UART_HandleTypeDef *p_huart);
 
 /**
- * @brief  Blocking transmit with timeout
- * @return 0 success, -1 error
+ * @brief  阻塞式发送数据
+ * @param  p_data      发送数据缓冲区
+ * @param  len         发送字节数
+ * @param  timeout_ms  超时时间（毫秒）
+ * @retval 0   成功
+ * @retval -1  超时或发送失败
  */
 int BspUart_SendBlocking(const uint8_t *p_data, uint16_t len, uint32_t timeout_ms);
 
 /**
- * @brief  Printf-style formatted output (blocking)
- * @return chars written, or -1 on error
+ * @brief  格式化打印输出（阻塞式，使用栈缓冲区）
+ * @param  fmt  格式化字符串
+ * @param  ...  可变参数
+ * @return 实际写入字符数，失败返回 -1
  */
 int BspUart_Printf(const char *fmt, ...);
 
