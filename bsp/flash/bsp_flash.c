@@ -120,7 +120,11 @@ uint32_t BspFlash_GetSlotAddress(ota_slot_t slot)
 
 void BspFlash_Init(void)
 {
-    /* Nothing to do — HAL already initialises Flash. */
+    /* 清除上电/复位后可能残留的 FLASH_SR 错误标志 */
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR |
+                           FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR |
+                           FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR |
+                           FLASH_FLAG_RDERR);
 }
 
 //*** Erase ***//
@@ -137,6 +141,11 @@ int BspFlash_EraseSector(uint32_t sector_num)
     }
 
     HAL_FLASH_Unlock();
+
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR |
+                           FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR |
+                           FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR |
+                           FLASH_FLAG_RDERR);
 
     erase.TypeErase    = FLASH_TYPEERASE_SECTORS;
     erase.Sector       = sector_num;
@@ -168,6 +177,12 @@ int BspFlash_EraseSlot(ota_slot_t slot)
     }
 
     HAL_FLASH_Unlock();
+
+    /* 清除残留错误标志，防止跨复位遗留 */
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR |
+                           FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR |
+                           FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR |
+                           FLASH_FLAG_RDERR);
 
     erase.TypeErase    = FLASH_TYPEERASE_SECTORS;
     erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;
@@ -202,7 +217,7 @@ int BspFlash_Write(uint32_t addr, const uint8_t *p_data, uint32_t len)
 {
     uint32_t i      = 0;
     int      result = 0;
-    uint64_t dw;
+    uint32_t word;
 
     if (p_data == NULL || len == 0)
     {
@@ -216,29 +231,35 @@ int BspFlash_Write(uint32_t addr, const uint8_t *p_data, uint32_t len)
 
     HAL_FLASH_Unlock();
 
+    /* 清除残留错误标志 */
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR |
+                           FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR |
+                           FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR |
+                           FLASH_FLAG_RDERR);
+
     taskENTER_CRITICAL();
 
-    /* Write 8-byte double words */
-    while (i + 8 <= len)
+    /* Write 4-byte words (x32 parallelism, no VPP required) */
+    while (i + 4 <= len)
     {
-        memcpy(&dw, &p_data[i], 8);
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, addr + i, dw) != HAL_OK)
+        memcpy(&word, &p_data[i], 4);
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr + i, word) != HAL_OK)
         {
             result = -1;
             goto exit;
         }
-        i += 8;
+        i += 4;
     }
 
     /* Pad remaining bytes with 0xFF */
     if (i < len)
     {
-        uint8_t  buf[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+        uint8_t  buf[4] = { 0xFF, 0xFF, 0xFF, 0xFF };
         uint32_t remain = len - i;
 
         memcpy(buf, &p_data[i], remain);
-        memcpy(&dw, buf, 8);
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, addr + i, dw) != HAL_OK)
+        memcpy(&word, buf, 4);
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr + i, word) != HAL_OK)
         {
             result = -1;
             goto exit;
