@@ -11,6 +11,7 @@
 #include "usart.h"
 #include "gpio.h"
 #include "stm32f4xx_hal.h"
+#include <string.h>
 
 //*** Jump to Application ***//
 
@@ -24,7 +25,7 @@ static void JumpToApp(uint32_t app_addr)
     app_stack = *(volatile uint32_t *)app_addr;
     app_entry = *(volatile uint32_t *)(app_addr + 4);
 
-    if (app_stack < 0x20000000u || app_stack > 0x20020000u)
+    if (app_stack < SRAM_BASE || app_stack > SRAM_END)
     {
         BspUart_Printf("[BOOT] Invalid app stack: 0x%08X\r\n", app_stack);
         return;
@@ -51,6 +52,12 @@ static int Boot_CopySlot(uint32_t fw_size)
     uint32_t offset = 0;
     uint32_t chunk;
     uint32_t count  = 0;
+
+    if (fw_size == 0 || fw_size > SLOT_MAX_APP_SIZE)
+    {
+        BspUart_Printf("[BOOT] Invalid fw_size: %lu\r\n", fw_size);
+        return -1;
+    }
 
     BspUart_Printf("[BOOT] Erasing Slot A ...\r\n");
     if (BspFlash_EraseSlot(OTA_SLOT_A) != 0)
@@ -84,7 +91,27 @@ static int Boot_CopySlot(uint32_t fw_size)
         }
     }
 
-    BspUart_Printf("[BOOT] Copy complete.\r\n");
+    BspUart_Printf("[BOOT] Copy complete. Verifying ...\r\n");
+    offset = 0;
+    while (offset < fw_size)
+    {
+        chunk = fw_size - offset;
+        if (chunk > sizeof(buf))
+        {
+            chunk = sizeof(buf);
+        }
+
+        BspFlash_Read(FLASH_ADDR_SLOT_A + offset, buf, chunk);
+        if (memcmp(buf, (const void *)(FLASH_ADDR_SLOT_B + offset), chunk) != 0)
+        {
+            BspUart_Printf("[BOOT] Verify failed at offset 0x%08lX!\r\n", offset);
+            return -1;
+        }
+
+        offset += chunk;
+    }
+
+    BspUart_Printf("[BOOT] Verify OK.\r\n");
     return 0;
 }
 
@@ -132,7 +159,10 @@ void Boot_Run(void)
             {
                 cfg.state      = OTA_STATE_CONFIRMING;
                 cfg.boot_count = 0;
-                BspFlash_WriteConfig(&cfg);
+                if (BspFlash_WriteConfig(&cfg) != 0)
+                {
+                    BspUart_Printf("[BOOT] Config write failed!\r\n");
+                }
                 BspUart_Printf("[BOOT] Upgrade done. Jumping to app.\r\n");
                 JumpToApp(FLASH_ADDR_SLOT_A);
             }
@@ -143,12 +173,18 @@ void Boot_Run(void)
             if (cfg.boot_count >= OTA_BOOT_COUNT_THRESHOLD)
             {
                 cfg.state = OTA_STATE_ROLLBACK;
-                BspFlash_WriteConfig(&cfg);
+                if (BspFlash_WriteConfig(&cfg) != 0)
+                {
+                    BspUart_Printf("[BOOT] Config write failed!\r\n");
+                }
                 BspUart_Printf("[BOOT] ROLLBACK: boot count exceeded!\r\n");
             }
             else
             {
-                BspFlash_WriteConfig(&cfg);
+                if (BspFlash_WriteConfig(&cfg) != 0)
+                {
+                    BspUart_Printf("[BOOT] Config write failed!\r\n");
+                }
                 BspUart_Printf("[BOOT] Confirming (%lu/%u). Jumping to app.\r\n",
                                cfg.boot_count, OTA_BOOT_COUNT_THRESHOLD);
                 JumpToApp(FLASH_ADDR_SLOT_A);
