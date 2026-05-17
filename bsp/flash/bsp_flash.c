@@ -205,7 +205,7 @@ int BspFlash_EraseSlot(ota_slot_t slot)
 //*** Write ***//
 
 /**
- * @brief  向 Flash 写入数据（双字对齐，内部处理末尾补 0xFF）
+ * @brief  向 Flash 写入数据（单字对齐，内部处理末尾补 0xFF）
  *         写入期间关中断防止 Flash 操作冲突。
  * @param  addr    目标地址（必须在 Flash 地址范围内）
  * @param  p_data  源数据缓冲区
@@ -217,7 +217,7 @@ int BspFlash_Write(uint32_t addr, const uint8_t *p_data, uint32_t len)
 {
     uint32_t i      = 0;
     int      result = 0;
-    uint64_t dw;
+    uint32_t word;
 
     if (p_data == NULL || len == 0)
     {
@@ -230,27 +230,34 @@ int BspFlash_Write(uint32_t addr, const uint8_t *p_data, uint32_t len)
 
     HAL_FLASH_Unlock();
 
+    /* 清除残留错误标志 */
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR |
+                           FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR |
+                           FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR |
+                           FLASH_FLAG_RDERR);
+
     __disable_irq();
 
-    while (i + 8 <= len)
+    /* Write 4-byte words (x32 parallelism, no VPP required) */
+    while (i + 4 <= len)
     {
-        memcpy(&dw, &p_data[i], 8);
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, addr + i, dw) != HAL_OK)
+        memcpy(&word, &p_data[i], 4);
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr + i, word) != HAL_OK)
         {
             result = -1;
             goto exit;
         }
-        i += 8;
+        i += 4;
     }
 
     if (i < len)
     {
-        uint8_t  buf[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+        uint8_t  buf[4] = { 0xFF, 0xFF, 0xFF, 0xFF };
         uint32_t remain = len - i;
 
         memcpy(buf, &p_data[i], remain);
-        memcpy(&dw, buf, 8);
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, addr + i, dw) != HAL_OK)
+        memcpy(&word, buf, 4);
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr + i, word) != HAL_OK)
         {
             result = -1;
             goto exit;
