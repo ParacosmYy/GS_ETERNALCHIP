@@ -4,10 +4,10 @@
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include
 -IDrivers/CMSIS/Include
 -IDrivers/CMSIS/Core/Include
--IMiddlewares/Third_Party/FreeRTOS/Source/include
--IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
--IMiddlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F
--IMiddlewares/Third_Party
+-Ibsp/uart
+-Ibsp/flash
+-Ibootloader
+-I../APP/Shared
 -DUSE_HAL_DRIVER
 -DSTM32F411xE
 -D__GNUC__
