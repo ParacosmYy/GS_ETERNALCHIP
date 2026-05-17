@@ -64,6 +64,11 @@ extern "C" {
 #define SLOT_B_SIZE       (256u * 1024u)   /* Sectors 6-7: 2*128K */
 #define SLOT_MAX_APP_SIZE SLOT_A_SIZE      /* App must fit in Slot A */
 
+/** @brief SRAM address range (STM32F411CEUx, 128 KB) */
+#define SRAM_BASE         0x20000000u
+#define SRAM_SIZE         (128u * 1024u)
+#define SRAM_END          (SRAM_BASE + SRAM_SIZE)
+
 /** @brief OTA Config magic and version */
 #define OTA_CONFIG_MAGIC   0x4F544131u     /* "OTA1" */
 #define OTA_CONFIG_VERSION 1u
@@ -85,7 +90,6 @@ typedef enum
 {
     OTA_STATE_IDLE             = 0,  /**< Normal operation */
     OTA_STATE_UPGRADE_PENDING  = 1,  /**< App received firmware, waiting for Bootloader copy */
-    OTA_STATE_COPY_IN_PROGRESS = 2,  /**< Reserved for compatibility */
     OTA_STATE_CONFIRMED        = 3,  /**< App confirmed successful boot */
     OTA_STATE_CONFIRMING       = 4,  /**< Bootloader copied, waiting for App confirmation */
     OTA_STATE_ROLLBACK         = 5,  /**< Boot failed, enter recovery mode */
