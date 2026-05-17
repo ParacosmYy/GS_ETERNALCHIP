@@ -15,6 +15,16 @@
 
 //*** Jump to Application ***//
 
+/**
+ * @brief  跳转到 APP（Cortex-M 标准跳转流程）
+ *
+ *         从指定地址读取栈顶指针和复位向量，校验栈指针合法性后：
+ *         关中断 → HAL 反初始化 → 停 SysTick → 重定位 VTOR → 设 MSP → 跳转。
+ *         成功后不返回。
+ *
+ * @param  app_addr  APP 起始地址（向量表所在 Flash 地址）
+ * @note   栈指针范围校验使用 SRAM_BASE ~ SRAM_END（128KB SRAM）
+ */
 static void JumpToApp(uint32_t app_addr)
 {
     uint32_t app_stack;
@@ -46,6 +56,16 @@ static void JumpToApp(uint32_t app_addr)
 
 //*** Copy Slot B to Slot A ***//
 
+/**
+ * @brief  复制 Slot B 固件到 Slot A（带校验）
+ *
+ *         流程：校验 fw_size → 擦除 Slot A → 逐块复制（256 字节） → 逐块读回对比校验
+ *         每 16KB 打印一次进度。
+ *
+ * @param  fw_size  固件大小（字节）
+ * @retval 0   复制并校验成功
+ * @retval -1  fw_size 非法、擦除失败、写入失败或校验不通过
+ */
 static int Boot_CopySlot(uint32_t fw_size)
 {
     uint8_t  buf[256];
@@ -117,6 +137,18 @@ static int Boot_CopySlot(uint32_t fw_size)
 
 //*** Public API ***//
 
+/**
+ * @brief  Bootloader 主入口
+ *
+ *         初始化 UART + Flash，打印启动信息，读取 OTA Config。
+ *         根据 OTA 状态机分支处理：
+ *         - IDLE / CONFIRMED → 直接跳转 Slot A
+ *         - UPGRADE_PENDING  → 复制 Slot B→A → 跳转
+ *         - CONFIRMING       → boot_count++ → 跳转（≥3 则 ROLLBACK）
+ *         - ROLLBACK         → 停留在 Boot，等待恢复
+ *         Config 无效时尝试直接跳转 Slot A。
+ *         跳转成功后不返回；无有效 APP 时返回。
+ */
 void Boot_Run(void)
 {
     ota_config_t cfg;
@@ -207,6 +239,12 @@ void Boot_Run(void)
     }
 }
 
+/**
+ * @brief  恢复等待循环（在 main while(1) 中调用）
+ *
+ *         当 Bootloader 无法跳转到 APP 时（无有效 APP / ROLLBACK 状态），
+ *         每 200ms 翻转 PC13 LED 并通过 UART 输出等待恢复信息。
+ */
 void Boot_RecoveryLoop(void)
 {
     static uint32_t tick = 0;

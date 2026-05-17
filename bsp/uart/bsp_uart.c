@@ -15,11 +15,23 @@ static UART_HandleTypeDef *s_p_huart = NULL;
 
 //*** Public API ***//
 
+/**
+ * @brief  初始化 UART BSP 驱动
+ * @param  p_huart  HAL UART 句柄（需已完成 HAL 初始化，如 &huart1）
+ */
 void BspUart_Init(UART_HandleTypeDef *p_huart)
 {
     s_p_huart = p_huart;
 }
 
+/**
+ * @brief  阻塞式发送数据
+ * @param  p_data      发送数据缓冲区
+ * @param  len         发送字节数
+ * @param  timeout_ms  超时时间（毫秒）
+ * @retval 0   成功
+ * @retval -1  句柄无效、参数错误或 HAL 超时
+ */
 int BspUart_SendBlocking(const uint8_t *p_data, uint16_t len, uint32_t timeout_ms)
 {
     if (s_p_huart == NULL || p_data == NULL || len == 0)
@@ -34,6 +46,12 @@ int BspUart_SendBlocking(const uint8_t *p_data, uint16_t len, uint32_t timeout_m
     return 0;
 }
 
+/**
+ * @brief  格式化打印输出（阻塞式，使用栈缓冲区）
+ * @param  fmt  格式化字符串
+ * @param  ...  可变参数
+ * @return 实际写入字符数，失败返回 -1
+ */
 int BspUart_Printf(const char *fmt, ...)
 {
     char    buf[BSP_UART_PRINTF_BUF_SIZE];
