@@ -1,8 +1,6 @@
 /**
  * @file    bsp_key.h
  * @brief   Key BSP driver — debounce state machine + long/short press detection
- * @note    Call BspKey_Scan() periodically (recommended 5-10 ms) from a timer
- *          or RTOS task. The driver is bare-metal friendly (no RTOS dependency).
  */
 
 #ifndef BSP_KEY_H
@@ -19,68 +17,56 @@ extern "C"
 
     //*** Type Definitions ***//
 
-    /** @brief  Key event types reported via callback */
+    /** @brief  按键事件类型 */
     typedef enum
     {
         BSP_KEY_EVT_NONE = 0,
-        BSP_KEY_EVT_PRESSED,     /**< Key pressed (debounce confirmed)          */
-        BSP_KEY_EVT_RELEASED,    /**< Key released (debounce confirmed)         */
-        BSP_KEY_EVT_SHORT_PRESS, /**< Short press completed (release detected)  */
-        BSP_KEY_EVT_LONG_PRESS,  /**< Long press detected (hold timeout)        */
+        BSP_KEY_EVT_PRESSED,     /**< 按下（消抖确认） */
+        BSP_KEY_EVT_RELEASED,    /**< 释放（消抖确认） */
+        BSP_KEY_EVT_SHORT_PRESS, /**< 短按完成（释放检测） */
+        BSP_KEY_EVT_LONG_PRESS,  /**< 长按触发（保持超时） */
     } bsp_key_event_t;
 
-    /** @brief  Key event callback function type */
+    /** @brief  按键事件回调函数类型 */
     typedef void (*bsp_key_callback_t)(bsp_key_event_t event, void *p_user_data);
 
-    /**
-     * @brief  Key hardware configuration (immutable, usually const)
-     */
+    /** @brief  按键硬件配置 */
     typedef struct
     {
-        GPIO_TypeDef      *p_port;        /**< GPIO port                    */
-        uint16_t           pin;           /**< GPIO pin                     */
-        uint8_t            active_level;  /**< 0 = low-active, 1 = high    */
-        uint32_t           debounce_ms;   /**< Debounce duration (default 20)   */
-        uint32_t           long_press_ms; /**< Long press threshold (default 1000) */
-        bsp_key_callback_t callback;      /**< Event callback               */
-        void              *p_user_data;   /**< User context passed to cb    */
+        GPIO_TypeDef      *p_port;        /**< GPIO 端口 */
+        uint16_t           pin;           /**< GPIO 引脚 */
+        uint8_t            active_level;  /**< 0 = 低有效, 1 = 高有效 */
+        uint32_t           debounce_ms;   /**< 消抖时长（默认 20ms） */
+        uint32_t           long_press_ms; /**< 长按阈值（默认 1000ms） */
+        bsp_key_callback_t callback;      /**< 事件回调 */
+        void              *p_user_data;   /**< 回调用户上下文 */
     } bsp_key_config_t;
 
-    /** @brief  Internal debounce states */
+    /** @brief  内部消抖状态 */
     enum
     {
-        BSP_KEY_STATE_IDLE       = 0, /**< Waiting for level change     */
-        BSP_KEY_STATE_DEBOUNCING = 1, /**< Debounce timer running       */
-        BSP_KEY_STATE_STABLE     = 2, /**< Stable state, tracking press */
+        BSP_KEY_STATE_IDLE       = 0, /**< 等待电平变化 */
+        BSP_KEY_STATE_DEBOUNCING = 1, /**< 消抖计时中 */
+        BSP_KEY_STATE_STABLE     = 2, /**< 稳定状态，跟踪按压 */
     };
 
-    /**
-     * @brief  Key driver instance (one per physical key)
-     */
+    /** @brief  按键驱动实例 */
     typedef struct
     {
-        const bsp_key_config_t *p_config;         /**< Configuration reference     */
-        uint8_t                 state;            /**< Current FSM state           */
-        uint8_t                 stable_level;     /**< Current stable pin level    */
-        uint32_t                last_tick;        /**< Timestamp for debounce      */
-        uint32_t                press_tick;       /**< Timestamp when pressed      */
-        uint8_t                 long_press_fired; /**< 1 = long press already sent */
+        const bsp_key_config_t *p_config;         /**< 配置引用 */
+        uint8_t                 state;            /**< 当前 FSM 状态 */
+        uint8_t                 stable_level;     /**< 当前稳定电平 */
+        uint32_t                last_tick;        /**< 消抖时间戳 */
+        uint32_t                press_tick;       /**< 按下时间戳 */
+        uint8_t                 long_press_fired; /**< 1 = 长按已触发 */
     } bsp_key_driver_t;
 
     //*** Public API ***//
 
-    /**
-     * @brief  初始化按键驱动实例
-     * @param  p_drv    驱动实例（调用者分配）
-     * @param  p_config 硬件配置（需保持有效，通常为 const 全局变量）
-     */
+    /** @brief  初始化按键驱动实例 */
     void BspKey_Init(bsp_key_driver_t *p_drv, const bsp_key_config_t *p_config);
 
-    /**
-     * @brief  扫描按键状态（建议 5-10 ms 周期调用）
-     *         运行消抖状态机，检测到事件时触发回调。
-     * @param  p_drv  驱动实例
-     */
+    /** @brief  扫描按键状态（建议 5-10ms 周期调用） */
     void BspKey_Scan(bsp_key_driver_t *p_drv);
 
 #ifdef __cplusplus

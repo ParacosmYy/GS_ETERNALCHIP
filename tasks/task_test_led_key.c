@@ -24,6 +24,16 @@ static uint8_t          s_blink_active;
 
 //*** Private Functions ***//
 
+/**
+ * @brief  按键事件回调函数
+ *
+ *         根据按键事件类型执行不同操作：
+ *         - SHORT_PRESS：若 LED 正在闪烁则停止，然后翻转 LED
+ *         - LONG_PRESS ：切换 LED 500ms 闪烁模式（开/关）
+ *
+ * @param  evt     按键事件类型
+ * @param  p_user  用户数据（未使用）
+ */
 static void OnKey(bsp_key_event_t evt, void *p_user)
 {
     (void)p_user;
@@ -75,6 +85,12 @@ static void OnKey(bsp_key_event_t evt, void *p_user)
 
 //*** Public API ***//
 
+/**
+ * @brief  初始化 LED 和按键测试任务
+ *
+ *         配置 LED（PC13，低有效）和按键（PA0，低有效，20ms 消抖，1000ms 长按），
+ *         注册按键事件回调
+ */
 void TaskTestLedKey_Init(void)
 {
     static const bsp_led_config_t led_cfg = { GPIOC, GPIO_PIN_13, 0 };
@@ -88,6 +104,11 @@ void TaskTestLedKey_Init(void)
     log_i("--- LED/KEY Test Ready ---");
 }
 
+/**
+ * @brief  测试任务主处理函数，需在主循环中周期调用
+ *
+ *         轮询按键扫描并驱动 LED 闪烁时基
+ */
 void TaskTestLedKey_Process(void)
 {
     BspKey_Scan(&s_key);

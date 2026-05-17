@@ -59,6 +59,14 @@ const led_operations_t bsp_led_hal_ops = {
 
 //*** Public API ***//
 
+/**
+ * @brief  初始化 LED 驱动实例
+ *
+ *         将驱动结构体清零，绑定硬件配置和 HAL 操作函数表
+ *
+ * @param  p_drv     LED 驱动实例指针
+ * @param  p_config  LED 硬件配置（GPIO 端口、引脚、有效电平）
+ */
 void BspLed_Init(bsp_led_driver_t *p_drv, const bsp_led_config_t *p_config)
 {
     memset(p_drv, 0, sizeof(*p_drv));
@@ -66,21 +74,33 @@ void BspLed_Init(bsp_led_driver_t *p_drv, const bsp_led_config_t *p_config)
     p_drv->p_ops    = &bsp_led_hal_ops;
 }
 
+/** @brief  点亮 LED */
 void BspLed_On(bsp_led_driver_t *p_drv)
 {
     p_drv->p_ops->p_On(p_drv);
 }
 
+/** @brief  熄灭 LED */
 void BspLed_Off(bsp_led_driver_t *p_drv)
 {
     p_drv->p_ops->p_Off(p_drv);
 }
 
+/** @brief  翻转 LED 状态 */
 void BspLed_Toggle(bsp_led_driver_t *p_drv)
 {
     p_drv->p_ops->p_Toggle(p_drv);
 }
 
+/**
+ * @brief  启动 LED 闪烁
+ *
+ *         设置闪烁间隔并记录起始时刻，需在主循环中周期调用
+ *         BspLed_TimebaseHook() 来驱动翻转
+ *
+ * @param  p_drv        LED 驱动实例指针
+ * @param  interval_ms  闪烁间隔，单位 ms
+ */
 void BspLed_BlinkStart(bsp_led_driver_t *p_drv, uint32_t interval_ms)
 {
     p_drv->blink_interval_ms = interval_ms;
@@ -88,6 +108,11 @@ void BspLed_BlinkStart(bsp_led_driver_t *p_drv, uint32_t interval_ms)
     p_drv->is_blinking       = 1;
 }
 
+/**
+ * @brief  停止 LED 闪烁并熄灭
+ *
+ * @param  p_drv  LED 驱动实例指针
+ */
 void BspLed_BlinkStop(bsp_led_driver_t *p_drv)
 {
     p_drv->is_blinking       = 0;
@@ -95,6 +120,14 @@ void BspLed_BlinkStop(bsp_led_driver_t *p_drv)
     BspLed_Off(p_drv);
 }
 
+/**
+ * @brief  LED 闪烁时基钩子，需在主循环中周期调用
+ *
+ *         检查是否到达闪烁间隔，到达后自动翻转 LED；
+ *         若未启动闪烁则直接返回
+ *
+ * @param  p_drv  LED 驱动实例指针
+ */
 void BspLed_TimebaseHook(bsp_led_driver_t *p_drv)
 {
     uint32_t now;

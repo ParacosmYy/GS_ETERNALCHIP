@@ -49,6 +49,14 @@ static void Key_Notify(const bsp_key_driver_t *p_drv, bsp_key_event_t evt)
 
 //*** Public API ***//
 
+/**
+ * @brief  初始化按键驱动实例
+ *
+ *         将驱动结构体清零，绑定硬件配置，初始状态设为 IDLE
+ *
+ * @param  p_drv     按键驱动实例指针
+ * @param  p_config  按键硬件配置（GPIO 端口、引脚、有效电平、消抖时间、长按时间、回调）
+ */
 void BspKey_Init(bsp_key_driver_t *p_drv, const bsp_key_config_t *p_config)
 {
     memset(p_drv, 0, sizeof(*p_drv));
@@ -58,6 +66,18 @@ void BspKey_Init(bsp_key_driver_t *p_drv, const bsp_key_config_t *p_config)
     p_drv->stable_level = 0;
 }
 
+/**
+ * @brief  按键扫描处理（需在主循环中周期调用）
+ *
+ *         内部实现三态 FSM：IDLE -> DEBOUNCING -> STABLE
+ *         - IDLE       ：等待电平变化
+ *         - DEBOUNCING ：消抖计时，确认电平变化有效后触发 PRESSED / RELEASED 事件
+ *         - STABLE     ：稳定状态，持续检测长按超时
+ *
+ * @note   消抖和长按判定均依赖此函数的调用频率，建议每 1~10 ms 调用一次
+ *
+ * @param  p_drv  按键驱动实例指针
+ */
 void BspKey_Scan(bsp_key_driver_t *p_drv)
 {
     const bsp_key_config_t *p_cfg;
