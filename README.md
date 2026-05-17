@@ -23,6 +23,8 @@
 
 ```
 OTA/
+├── Shared/                  # Bootloader + App 共享定义
+│   └── ota_config.h         #   分区地址、枚举、结构体（单一真相源）
 ├── Core/                    # CubeMX 生成的应用代码
 │   ├── Inc/                 #   头文件 (main.h, gpio.h, usart.h ...)
 │   └── Src/                 #   源文件 (main.c, freertos.c, gpio.c ...)
@@ -37,7 +39,8 @@ OTA/
 │   ├── uart/                #   UART 适配层
 │   └── rtt/                 #   SEGGER RTT 调试输出
 ├── tasks/                   # FreeRTOS 任务入口
-│   ├── task_ota.c           #   OTA 升级任务
+│   ├── task_ota.c           #   OTA 升级任务（YMODEM 接收 → Slot B）
+│   ├── ota_confirm.c        #   OTA 启动确认（App 确认后写入 Config）
 │   └── task_test_led_key.c  #   LED/KEY 测试任务
 ├── Drivers/                 # STM32 HAL 驱动库 + CMSIS
 ├── Middlewares/             # FreeRTOS + 第三方中间件
@@ -148,17 +151,40 @@ tools/gen-clangd/run.bat
 
 本项目旨在构建一套面向嵌入式设备的**企业级 OTA 安全升级框架**，通过多层密码学机制协同保障固件传输与烧录的机密性、完整性与真实性。传输通道基于 UART + DMA，适用于无网络连接的离线设备。
 
+### 项目时间线
+
+| 时间 | 里程碑 | 状态 |
+|------|--------|------|
+| 2025-05 | 项目立项，架构规划 | ✅ 完成 |
+| 2025-05 | UART + DMA 通信基础 | ✅ 完成 |
+| 2025-05 | LED/KEY BSP 驱动 + FreeRTOS 集成 | ✅ 完成 |
+| 2025-05 | Flash 双区管理（A/B 分区读写擦除 + CRC-32） | ✅ 完成 |
+| 2025-05 | SHA-256 完整性校验 + YMODEM 传输协议 | ✅ 完成 |
+| 2025-05 | OTA 升级任务（App 侧完整流程） | ✅ 完成 |
+| 2025-05 | CmBacktrace 故障诊断集成 | ✅ 完成 |
+| 2025-05 | 代码规范统一（Allman 风格 + clang-format） | ✅ 完成 |
+| 2025-05 | App 适配 Bootloader（VTOR / 链接脚本 / 确认机制） | ✅ 完成 |
+| 2025-05 | Bootloader 引导程序（独立工程） | 🔧 开发中 |
+| 2025-05 | Bootloader YMODEM 恢复模式 + 自动回滚 | 📋 计划中 |
+| TBD | AES-256-CBC 固件加解密 | 📋 计划中 |
+| TBD | ECDSA-P256 数字签名验签 | 📋 计划中 |
+| TBD | OTA 传输协议层（分包、重传、CRC16） | 📋 计划中 |
+
 ### 整体进度
 
 - [x] UART + DMA 通信基础（`freertos_uart_output` 分支已完成）
-- [ ] OTA 传输协议层（分包、重传、CRC16 帧校验）
+- [x] Flash 双区管理 — A/B 分区读写擦除 + CRC-32 Config（`bsp_flash`）
+- [x] SHA-256 完整性校验（固件接收后计算哈希，写入 Config）
+- [x] YMODEM 固件传输协议（App 侧接收，写入 Slot B）
+- [x] App 侧 VTOR 重定位（0x08008000）+ 链接脚本适配 Slot A
+- [x] OTA 启动确认机制（boot_count + CONFIRMED/CONFIRMING 状态）
+- [x] 共享配置头文件（Shared/ota_config.h — Bootloader 与 App 统一）
+- [ ] Bootloader 引导程序（独立工程，搬运 Slot B → Slot A）
+- [ ] Bootloader YMODEM 恢复模式（安全网）
+- [ ] 升级失败自动回滚（boot_count >= 3 → Recovery）
 - [ ] AES-256-CBC 固件加解密
-- [ ] SHA-256 完整性校验（逐包 + 全局摘要）
 - [ ] ECDSA-P256 数字签名验签
-- [ ] Flash 双区管理（A/B 分区读写擦除）
-- [ ] Bootloader 引导程序
-- [ ] 升级状态机（握手→传输→验签→烧录→生效）
-- [ ] 升级失败自动回滚机制
+- [ ] OTA 传输协议层（分包、重传、CRC16 帧校验）
 
 ### 协议工作流程
 
@@ -197,9 +223,14 @@ tools/gen-clangd/run.bat
 
 | 模块 | 职责 | 状态 |
 |------|------|------|
+| `bsp_flash` | Flash 双区管理，读写擦除 + CRC-32 Config | ✅ 已完成 |
+| `SHA256` | SHA-256 哈希校验 | ✅ 已完成 |
+| `YMODEM` | YMODEM 文件传输协议 | ✅ 已完成 |
+| `task_ota` | OTA 升级任务（YMODEM → Slot B → SHA-256 → Config） | ✅ 已完成 |
+| `ota_confirm` | OTA 启动确认（App → Bootloader） | ✅ 已完成 |
+| `Shared/ota_config` | Bootloader + App 共享配置定义 | ✅ 已完成 |
+| `Bootloader` | 引导程序（搬运 Slot B → A + 恢复模式） | 🔧 开发中 |
 | `ota_transport` | UART 传输协议层，分包收发与重传 | ❌ 待开发 |
-| `ota_crypto` | AES-256 加解密 + SHA-256 哈希计算 | ❌ 待开发 |
+| `ota_crypto` | AES-256 加解密 | ❌ 待开发 |
 | `ota_verify` | ECDSA-P256 签名验证 | ❌ 待开发 |
-| `ota_flash` | Flash 双区管理，读写擦除 | ❌ 待开发 |
-| `ota_manager` | 升级状态机，协调上述模块完成全流程 | ❌ 待开发 |
 | `ota_rollback` | 启动自检 + 失败回滚 | ❌ 待开发 |
