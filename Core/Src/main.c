@@ -93,7 +93,7 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_USART1_UART_Init();
-  MX_IWDG_Init();
+  /* MX_IWDG_Init();  禁用看门狗，发布时恢复 */
   /* USER CODE BEGIN 2 */
   /* 开发阶段注释掉 IWDG 可避免调试干扰, 发布时恢复:
      注释掉上方的 MX_IWDG_Init() 以及 freertos.c 中的 HAL_IWDG_Refresh() */
