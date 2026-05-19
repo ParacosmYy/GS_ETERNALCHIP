@@ -12,6 +12,27 @@
 #include "gpio.h"
 #include "stm32f4xx_hal.h"
 #include <string.h>
+#include "sha256.h"
+
+//*** Utility ***//
+
+/**
+ * @brief  OTA 状态枚举转可读字符串
+ * @param  state  OTA 状态值
+ * @return 状态名称字符串
+ */
+static const char *StateStr(ota_state_t state)
+{
+    switch (state)
+    {
+        case OTA_STATE_IDLE:            return "IDLE";
+        case OTA_STATE_UPGRADE_PENDING: return "UPGRADE_PENDING";
+        case OTA_STATE_CONFIRMED:       return "CONFIRMED";
+        case OTA_STATE_CONFIRMING:      return "CONFIRMING";
+        case OTA_STATE_ROLLBACK:        return "ROLLBACK";
+        default:                        return "UNKNOWN";
+    }
+}
 
 //*** Jump to Application ***//
 
@@ -135,6 +156,82 @@ static int Boot_CopySlot(uint32_t fw_size)
     return 0;
 }
 
+//*** SHA-256 Verification ***//
+
+/**
+ * @brief  计算 Flash 区域的 SHA-256 并与期望值比对
+ *
+ *         分块读取 Flash 内容（256 字节/块），计算 SHA-256 摘要，
+ *         与 OTA Config 中存储的哈希值比对。
+ *         不匹配则拒绝启动，防止损坏固件运行。
+ *
+ * @param  addr      Flash 起始地址
+ * @param  fw_size   固件大小（字节）
+ * @param  expected  期望的 32 字节 SHA-256 哈希值
+ * @retval 0   哈希匹配
+ * @retval -1  哈希不匹配
+ *
+ * @note   栈开销约 420 字节（SHA256_CTX 112 + buf 256 + hash 32）
+ */
+static int Boot_VerifySHA256(uint32_t addr, uint32_t fw_size,
+                              const uint8_t expected[32])
+{
+    SHA256_CTX ctx;
+    uint8_t    buf[256];
+    uint8_t    hash[32];
+    uint32_t   offset = 0;
+    uint32_t   chunk;
+    uint32_t   count  = 0;
+
+    BspUart_Printf("[BOOT] SHA-256 verifying (%lu bytes) ...\r\n", fw_size);
+
+    sha256_init(&ctx);
+
+    while (offset < fw_size)
+    {
+        chunk = fw_size - offset;
+        if (chunk > sizeof(buf))
+        {
+            chunk = sizeof(buf);
+        }
+
+        BspFlash_Read(addr + offset, buf, chunk);
+        sha256_update(&ctx, buf, chunk);
+
+        offset += chunk;
+        count++;
+
+        if ((count % 64) == 0)
+        {
+            BspUart_Printf("[BOOT]   %lu / %lu bytes\r\n", offset, fw_size);
+        }
+    }
+
+    sha256_final(&ctx, hash);
+
+    /* 打印计算哈希（调试用） */
+    // clang-format off
+    BspUart_Printf("[BOOT] SHA-256: "
+                   "%02X%02X%02X%02X%02X%02X%02X%02X"
+                   "%02X%02X%02X%02X%02X%02X%02X%02X"
+                   "%02X%02X%02X%02X%02X%02X%02X%02X"
+                   "%02X%02X%02X%02X%02X%02X%02X%02X\r\n",
+                   hash[0],hash[1],hash[2],hash[3],hash[4],hash[5],hash[6],hash[7],
+                   hash[8],hash[9],hash[10],hash[11],hash[12],hash[13],hash[14],hash[15],
+                   hash[16],hash[17],hash[18],hash[19],hash[20],hash[21],hash[22],hash[23],
+                   hash[24],hash[25],hash[26],hash[27],hash[28],hash[29],hash[30],hash[31]);
+    // clang-format on
+
+    if (memcmp(hash, expected, 32) != 0)
+    {
+        BspUart_Printf("[BOOT] SHA-256 MISMATCH!\r\n");
+        return -1;
+    }
+
+    BspUart_Printf("[BOOT] SHA-256 OK.\r\n");
+    return 0;
+}
+
 //*** Public API ***//
 
 /**
@@ -181,14 +278,24 @@ void Boot_Run(void)
         return;
     }
 
-    BspUart_Printf("[BOOT] State=%d, boot_count=%lu, fw_size=%lu\r\n",
-                   cfg.state, cfg.boot_count, cfg.fw_size);
+    BspUart_Printf("[BOOT] State=%s, boot_count=%lu, fw_size=%lu\r\n",
+                   StateStr(cfg.state), cfg.boot_count, cfg.fw_size);
 
     switch (cfg.state)
     {
         case OTA_STATE_UPGRADE_PENDING:
             if (Boot_CopySlot(cfg.fw_size) == 0)
             {
+                /* SHA-256 完整性校验 */
+                if (Boot_VerifySHA256(FLASH_ADDR_SLOT_A, cfg.fw_size,
+                                      cfg.fw_sha256) != 0)
+                {
+                    cfg.state = OTA_STATE_ROLLBACK;
+                    BspFlash_WriteConfig(&cfg);
+                    BspUart_Printf("[BOOT] SHA-256 failed! Recovery mode.\r\n");
+                    break;
+                }
+
                 cfg.state      = OTA_STATE_CONFIRMING;
                 cfg.boot_count = 0;
                 if (BspFlash_WriteConfig(&cfg) != 0)
