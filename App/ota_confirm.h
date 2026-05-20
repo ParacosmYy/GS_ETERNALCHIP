@@ -1,6 +1,7 @@
 /**
  * @file    ota_confirm.h
  * @brief   OTA boot confirmation — App notifies Bootloader that boot succeeded
+ * @author  GS_Mark
  */
 
 #ifndef OTA_CONFIRM_H
