@@ -35,6 +35,19 @@ static __inline __asm uint32_t __get_SP(void) {
     mov r0, sp
     bx lr
 }
+#elif defined(__GNUC__)
+static __inline uint32_t __get_LR(void)
+{
+    register uint32_t result;
+    __asm__ volatile("mov %0, lr" : "=r"(result));
+    return result;
+}
+static __inline uint32_t __get_SP(void)
+{
+    register uint32_t result;
+    __asm__ volatile("mov %0, sp" : "=r"(result));
+    return result;
+}
 #endif
 /* USER CODE END Includes */
 
