@@ -76,6 +76,7 @@ extern "C" {
 /** @brief Max unconfirmed boots before entering recovery */
 #define OTA_BOOT_COUNT_THRESHOLD 3u
 
+
 //******************************* Types *************************************//
 
 /** @brief OTA slot identifier */

@@ -12,6 +12,9 @@
 *.lst
 *.bin
 
+# *** GCC Build Output *** #
+build/
+
 # *** Keil Project Temp *** #
 MDK-ARM/OTA/
 MDK-ARM/RTE/

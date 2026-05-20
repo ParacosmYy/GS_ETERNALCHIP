@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\led;..\tasks;..\bsp\key;..\bsp\uart;..\bsp\rtt;..\bsp\flash;../Middlewares/Third_Party/SEGGER_RTT;../Middlewares/Third_Party/SHA256;../Middlewares/Third_Party/YMODEM;../Middlewares/Third_Party/EasyLogger/inc;../Middlewares/Third_Party/EasyLogger/port;../Middlewares/Third_Party/CmBacktrace;../Shared</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\led;..\App;..\Module\ota;..\bsp\key;..\bsp\uart;..\bsp\rtt;..\bsp\flash;../Middlewares/Third_Party/SEGGER_RTT;../Middlewares/Third_Party/SHA256;../Middlewares/Third_Party/YMODEM;../Middlewares/Third_Party/EasyLogger/inc;../Middlewares/Third_Party/EasyLogger/port;../Middlewares/Third_Party/CmBacktrace;../Middlewares/Third_Party/micro-ecc;../Shared</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -637,22 +637,47 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Task</GroupName>
+          <GroupName>App</GroupName>
           <Files>
-            <File>
-              <FileName>task_test_led_key.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\tasks\task_test_led_key.c</FilePath>
-            </File>
             <File>
               <FileName>task_ota.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\tasks\task_ota.c</FilePath>
+              <FilePath>..\App\task_ota.c</FilePath>
             </File>
             <File>
               <FileName>ota_confirm.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\tasks\ota_confirm.c</FilePath>
+              <FilePath>..\App\ota_confirm.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Module</GroupName>
+          <Files>
+            <File>
+              <FileName>ota_transport.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Module\ota\ota_transport.c</FilePath>
+            </File>
+            <File>
+              <FileName>ota_verify.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Module\ota\ota_verify.c</FilePath>
+            </File>
+            <File>
+              <FileName>ota_ecdsa.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Module\ota\ota_ecdsa.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>micro-ecc</GroupName>
+          <Files>
+            <File>
+              <FileName>uECC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middlewares/Third_Party/micro-ecc/uECC.c</FilePath>
             </File>
           </Files>
         </Group>
