@@ -12,6 +12,9 @@ MDK-ARM/Boot/Listings/
 MDK-ARM/Boot/Objects/
 MDK-ARM/Boot/RTE/
 
+# GCC Build Output
+build/
+
 # Keil project backups
 *.bak
 *.dep

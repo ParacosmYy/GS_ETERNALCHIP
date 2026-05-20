@@ -111,9 +111,13 @@ uint32_t BspFlash_GetSlotAddress(ota_slot_t slot)
 
 //*** Init ***//
 
-/** @brief  初始化 Flash 驱动（当前为空操作，HAL 已完成初始化） */
+/** @brief  初始化 Flash 驱动（清除残留错误标志） */
 void BspFlash_Init(void)
 {
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR |
+                           FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR |
+                           FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR |
+                           FLASH_FLAG_RDERR);
 }
 
 //*** Erase ***//
