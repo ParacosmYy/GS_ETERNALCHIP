@@ -1,6 +1,7 @@
 /**
  * @file    bsp_uart.h
  * @brief   UART BSP driver — DMA + IDLE reception, Printf support
+ * @author  GS_Mark
  */
 
 #ifndef BSP_UART_H

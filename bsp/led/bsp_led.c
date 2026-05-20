@@ -1,6 +1,10 @@
 /**
  * @file    bsp_led.c
  * @brief   LED BSP driver implementation — STM32 HAL backend
+ * @author  GS_Mark
+ *
+ * @par dependencies
+ * - bsp_led.h
  */
 
 //*** Includes ***//
@@ -10,9 +14,11 @@
 //*** Private Functions — HAL Backend ***//
 
 /**
- * @brief  HAL implementation: turn LED on.
- *         For low-active LED, writes RESET; for high-active, writes SET.
- */
+ * @brief  HAL 实现：点亮 LED。
+ *         低有效 LED 写 RESET，高有效 LED 写 SET。
+ *
+ * @param[in] p_drv : LED 驱动实例指针。
+ * */
 static void HalLed_On(bsp_led_driver_t *p_drv)
 {
     if (p_drv->p_config->active_level == 0)
@@ -26,9 +32,11 @@ static void HalLed_On(bsp_led_driver_t *p_drv)
 }
 
 /**
- * @brief  HAL implementation: turn LED off.
- *         Opposite polarity of On.
- */
+ * @brief  HAL 实现：熄灭 LED。
+ *         与 On 极性相反。
+ *
+ * @param[in] p_drv : LED 驱动实例指针。
+ * */
 static void HalLed_Off(bsp_led_driver_t *p_drv)
 {
     if (p_drv->p_config->active_level == 0)
@@ -42,8 +50,10 @@ static void HalLed_Off(bsp_led_driver_t *p_drv)
 }
 
 /**
- * @brief  HAL implementation: toggle LED.
- */
+ * @brief  HAL 实现：翻转 LED 状态。
+ *
+ * @param[in] p_drv : LED 驱动实例指针。
+ * */
 static void HalLed_Toggle(bsp_led_driver_t *p_drv)
 {
     HAL_GPIO_TogglePin(p_drv->p_config->p_port, p_drv->p_config->pin);
@@ -60,13 +70,15 @@ const led_operations_t bsp_led_hal_ops = {
 //*** Public API ***//
 
 /**
- * @brief  初始化 LED 驱动实例
+ * @brief  初始化 LED 驱动实例。
  *
- *         将驱动结构体清零，绑定硬件配置和 HAL 操作函数表
+ * Steps:
+ *  1. 将驱动结构体清零。
+ *  2. 绑定硬件配置和 HAL 操作函数表。
  *
- * @param  p_drv     LED 驱动实例指针
- * @param  p_config  LED 硬件配置（GPIO 端口、引脚、有效电平）
- */
+ * @param[out] p_drv    : LED 驱动实例指针。
+ * @param[in]  p_config : LED 硬件配置（GPIO 端口、引脚、有效电平）。
+ * */
 void BspLed_Init(bsp_led_driver_t *p_drv, const bsp_led_config_t *p_config)
 {
     memset(p_drv, 0, sizeof(*p_drv));
@@ -74,33 +86,45 @@ void BspLed_Init(bsp_led_driver_t *p_drv, const bsp_led_config_t *p_config)
     p_drv->p_ops    = &bsp_led_hal_ops;
 }
 
-/** @brief  点亮 LED */
+/**
+ * @brief  点亮 LED。
+ *
+ * @param[in] p_drv : LED 驱动实例指针。
+ * */
 void BspLed_On(bsp_led_driver_t *p_drv)
 {
     p_drv->p_ops->p_On(p_drv);
 }
 
-/** @brief  熄灭 LED */
+/**
+ * @brief  熄灭 LED。
+ *
+ * @param[in] p_drv : LED 驱动实例指针。
+ * */
 void BspLed_Off(bsp_led_driver_t *p_drv)
 {
     p_drv->p_ops->p_Off(p_drv);
 }
 
-/** @brief  翻转 LED 状态 */
+/**
+ * @brief  翻转 LED 状态。
+ *
+ * @param[in] p_drv : LED 驱动实例指针。
+ * */
 void BspLed_Toggle(bsp_led_driver_t *p_drv)
 {
     p_drv->p_ops->p_Toggle(p_drv);
 }
 
 /**
- * @brief  启动 LED 闪烁
+ * @brief  启动 LED 闪烁。
  *
  *         设置闪烁间隔并记录起始时刻，需在主循环中周期调用
- *         BspLed_TimebaseHook() 来驱动翻转
+ *         BspLed_TimebaseHook() 来驱动翻转。
  *
- * @param  p_drv        LED 驱动实例指针
- * @param  interval_ms  闪烁间隔，单位 ms
- */
+ * @param[in] p_drv        : LED 驱动实例指针。
+ * @param[in] interval_ms  : 闪烁间隔，单位 ms。
+ * */
 void BspLed_BlinkStart(bsp_led_driver_t *p_drv, uint32_t interval_ms)
 {
     p_drv->blink_interval_ms = interval_ms;
@@ -109,10 +133,10 @@ void BspLed_BlinkStart(bsp_led_driver_t *p_drv, uint32_t interval_ms)
 }
 
 /**
- * @brief  停止 LED 闪烁并熄灭
+ * @brief  停止 LED 闪烁并熄灭。
  *
- * @param  p_drv  LED 驱动实例指针
- */
+ * @param[in] p_drv : LED 驱动实例指针。
+ * */
 void BspLed_BlinkStop(bsp_led_driver_t *p_drv)
 {
     p_drv->is_blinking       = 0;
@@ -121,13 +145,14 @@ void BspLed_BlinkStop(bsp_led_driver_t *p_drv)
 }
 
 /**
- * @brief  LED 闪烁时基钩子，需在主循环中周期调用
+ * @brief  LED 闪烁时基钩子，需在主循环中周期调用。
  *
- *         检查是否到达闪烁间隔，到达后自动翻转 LED；
- *         若未启动闪烁则直接返回
+ * Steps:
+ *  1. 检查是否启动了闪烁，未启动则直接返回。
+ *  2. 判断是否到达闪烁间隔，到达后翻转 LED。
  *
- * @param  p_drv  LED 驱动实例指针
- */
+ * @param[in] p_drv : LED 驱动实例指针。
+ * */
 void BspLed_TimebaseHook(bsp_led_driver_t *p_drv)
 {
     uint32_t now;

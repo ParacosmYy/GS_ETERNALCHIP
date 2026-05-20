@@ -1,6 +1,7 @@
 /**
  * @file    bsp_key.h
  * @brief   Key BSP driver — debounce state machine + long/short press detection
+ * @author  GS_Mark
  */
 
 #ifndef BSP_KEY_H

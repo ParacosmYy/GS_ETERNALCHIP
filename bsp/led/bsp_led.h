@@ -1,6 +1,7 @@
 /**
  * @file    bsp_led.h
  * @brief   LED BSP driver - operation abstraction + driver instance
+ * @author  GS_Mark
  */
 
 #ifndef BSP_LED_H

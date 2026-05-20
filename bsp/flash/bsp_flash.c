@@ -1,6 +1,12 @@
 /**
  * @file    bsp_flash.c
  * @brief   Internal Flash BSP driver implementation
+ * @author  GS_Mark
+ *
+ * @par dependencies
+ * - bsp_flash.h
+ * - FreeRTOS.h
+ * - task.h
  */
 
 #include "bsp_flash.h"
@@ -45,6 +51,14 @@ static const uint32_t s_crc32_table[256] = {
     0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94, 0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D,
 };
 
+/**
+ * @brief  计算 CRC-32（IEEE 802.3 多项式）。
+ *
+ * @param[in] p_data : 数据缓冲区指针。
+ * @param[in] len    : 数据长度（字节）。
+ *
+ * @return  uint32_t : CRC-32 校验值。
+ * */
 static uint32_t calc_crc32(const uint8_t *p_data, uint32_t len)
 {
     uint32_t crc = 0xFFFFFFFFu;
@@ -62,9 +76,15 @@ static uint32_t calc_crc32(const uint8_t *p_data, uint32_t len)
 // Sector 0-3 各 16KB, Sector 4 = 64KB, Sector 5-7 各 128KB
 // 合计: 4×16K + 64K + 3×128K = 64K + 64K + 384K = 512KB
 
+/**
+ * @brief  获取指定扇区的大小。
+ *
+ * @param[in] sector_num : 扇区编号（FLASH_SECTOR_0 ~ FLASH_SECTOR_7）。
+ *
+ * @return  扇区大小（字节），无效编号返回 0。
+ * */
 uint32_t BspFlash_GetSectorSize(uint32_t sector_num)
 {
-    /* 参数校验: sector_num 有效范围 FLASH_SECTOR_0 ~ FLASH_SECTOR_7 */
     if (sector_num > FLASH_SECTOR_7)
     {
         return 0;
@@ -103,12 +123,20 @@ uint32_t BspFlash_GetSectorSize(uint32_t sector_num)
     // clang-format on
 }
 
+/**
+ * @brief  根据 Slot 编号获取 Flash 起始地址。
+ *
+ * @param[in] slot : OTA 槽位（OTA_SLOT_A 或 OTA_SLOT_B）。
+ *
+ * @return  Flash 起始地址，无效槽位返回 0。
+ * */
 uint32_t BspFlash_GetSlotAddress(ota_slot_t slot)
 {
     if (slot != OTA_SLOT_A && slot != OTA_SLOT_B)
     {
         return 0;
     }
+
     if (slot == OTA_SLOT_A)
     {
         return FLASH_ADDR_SLOT_A;
@@ -118,6 +146,12 @@ uint32_t BspFlash_GetSlotAddress(ota_slot_t slot)
 
 //*** Init ***//
 
+/**
+ * @brief  初始化 Flash 驱动，清除上电残留的 FLASH_SR 错误标志。
+ *
+ * Steps:
+ *  1. 清除 EOP/OPERR/WRPERR/PGAERR/PGPERR/PGSERR/RDERR 等错误标志。
+ * */
 void BspFlash_Init(void)
 {
     /* 清除上电/复位后可能残留的 FLASH_SR 错误标志 */
@@ -129,6 +163,20 @@ void BspFlash_Init(void)
 
 //*** Erase ***//
 
+/**
+ * @brief  擦除单个 Flash 扇区。
+ *
+ * Steps:
+ *  1. 解锁 Flash，清除残留错误标志。
+ *  2. 配置擦除参数（单扇区，Voltage Range 3）。
+ *  3. 临界区内执行擦除，防止中断干扰。
+ *  4. 锁定 Flash，返回结果。
+ *
+ * @param[in] sector_num : 扇区编号（FLASH_SECTOR_0 ~ FLASH_SECTOR_7）。
+ *
+ * @return   0 : 擦除成功。
+ * @return  -1 : 参数无效或擦除失败。
+ * */
 int BspFlash_EraseSector(uint32_t sector_num)
 {
     FLASH_EraseInitTypeDef erase;
@@ -142,6 +190,7 @@ int BspFlash_EraseSector(uint32_t sector_num)
 
     HAL_FLASH_Unlock();
 
+    /* 清除残留错误标志，防止跨复位遗留 */
     __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR |
                            FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR |
                            FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR |
@@ -152,6 +201,7 @@ int BspFlash_EraseSector(uint32_t sector_num)
     erase.NbSectors    = 1;
     erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;
 
+    /* 临界区内执行擦除，防止中断导致超时 */
     taskENTER_CRITICAL();
     status = HAL_FLASHEx_Erase(&erase, &sector_error);
     taskEXIT_CRITICAL();
@@ -165,6 +215,20 @@ int BspFlash_EraseSector(uint32_t sector_num)
     return -1;
 }
 
+/**
+ * @brief  擦除指定 OTA Slot 的所有扇区。
+ *
+ * Steps:
+ *  1. 解锁 Flash，清除残留错误标志。
+ *  2. 根据 Slot 选择扇区范围（Slot A: 2-5, Slot B: 6-7）。
+ *  3. 临界区内执行擦除。
+ *  4. 锁定 Flash，返回结果。
+ *
+ * @param[in] slot : OTA 槽位（OTA_SLOT_A 或 OTA_SLOT_B）。
+ *
+ * @return   0 : 擦除成功。
+ * @return  -1 : 参数无效或擦除失败。
+ * */
 int BspFlash_EraseSlot(ota_slot_t slot)
 {
     FLASH_EraseInitTypeDef erase;
@@ -187,15 +251,16 @@ int BspFlash_EraseSlot(ota_slot_t slot)
     erase.TypeErase    = FLASH_TYPEERASE_SECTORS;
     erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;
 
+    /* Slot A 占 Sector 2-5 (224KB), Slot B 占 Sector 6-7 (256KB) */
     if (slot == OTA_SLOT_A)
     {
         erase.Sector    = FLASH_SECTOR_2;
-        erase.NbSectors = 4; /* Sector 2,3,4,5 */
+        erase.NbSectors = 4;
     }
     else
     {
         erase.Sector    = FLASH_SECTOR_6;
-        erase.NbSectors = 2; /* Sector 6,7 */
+        erase.NbSectors = 2;
     }
 
     taskENTER_CRITICAL();
@@ -213,6 +278,25 @@ int BspFlash_EraseSlot(ota_slot_t slot)
 
 //*** Write ***//
 
+/**
+ * @brief  向 Flash 写入数据（4 字节对齐写入，末尾不足 4 字节补 0xFF）。
+ *
+ * Steps:
+ *  1. 校验参数（非空指针、长度非零、地址范围合法）。
+ *  2. 解锁 Flash，清除残留错误标志。
+ *  3. 临界区内以 4 字节（WORD）为单位写入。
+ *  4. 末尾不足 4 字节时补 0xFF 后写入。
+ *  5. 退出临界区并锁定 Flash。
+ *
+ * @param[in] addr   : 目标 Flash 地址。
+ * @param[in] p_data : 待写入数据缓冲区。
+ * @param[in] len    : 数据长度（字节）。
+ *
+ * @return   0 : 写入成功。
+ * @return  -1 : 参数无效或写入失败。
+ *
+ * @note  F411 必须使用 FLASH_TYPEPROGRAM_WORD（x32 并行度），不能用 BYTE/HALFWORD。
+ * */
 int BspFlash_Write(uint32_t addr, const uint8_t *p_data, uint32_t len)
 {
     uint32_t i      = 0;
@@ -223,6 +307,7 @@ int BspFlash_Write(uint32_t addr, const uint8_t *p_data, uint32_t len)
     {
         return -1;
     }
+
     /* 地址范围校验: 必须在 Flash 区域内 */
     if (addr < FLASH_ADDR_BOOT || addr + len > FLASH_ADDR_SLOT_B + SLOT_B_SIZE)
     {
@@ -239,7 +324,7 @@ int BspFlash_Write(uint32_t addr, const uint8_t *p_data, uint32_t len)
 
     taskENTER_CRITICAL();
 
-    /* Write 4-byte words (x32 parallelism, no VPP required) */
+    /* 以 4 字节为单位写入（F411 x32 并行度） */
     while (i + 4 <= len)
     {
         memcpy(&word, &p_data[i], 4);
@@ -251,7 +336,7 @@ int BspFlash_Write(uint32_t addr, const uint8_t *p_data, uint32_t len)
         i += 4;
     }
 
-    /* Pad remaining bytes with 0xFF */
+    /* 末尾不足 4 字节，用 0xFF 填充后写入 */
     if (i < len)
     {
         uint8_t  buf[4] = { 0xFF, 0xFF, 0xFF, 0xFF };
@@ -274,17 +359,40 @@ exit:
 
 //*** Read ***//
 
+/**
+ * @brief  从 Flash 读取数据（直接内存映射读取）。
+ *
+ * @param[in]  addr   : Flash 起始地址。
+ * @param[out] p_data : 输出数据缓冲区。
+ * @param[in]  len    : 读取长度（字节）。
+ * */
 void BspFlash_Read(uint32_t addr, uint8_t *p_data, uint32_t len)
 {
     if (p_data == NULL || len == 0)
     {
         return;
     }
+
+    /* STM32 Flash 可直接按地址寻址读取 */
     memcpy(p_data, (const void *)addr, len);
 }
 
 //*** Config R/W ***//
 
+/**
+ * @brief  从 Flash Config 区读取 OTA 配置，并校验 CRC-32。
+ *
+ * Steps:
+ *  1. 从 FLASH_ADDR_CONFIG 复制 ota_config_t 结构。
+ *  2. 校验 magic 字段，不匹配则清零返回 -1。
+ *  3. 计算并校验 CRC-32，不匹配返回 -2。
+ *
+ * @param[out] p_cfg : 输出 OTA 配置结构。
+ *
+ * @return   0 : 读取成功且 CRC 校验通过。
+ * @return  -1 : 参数无效或 magic 不匹配。
+ * @return  -2 : CRC 校验失败。
+ * */
 int BspFlash_ReadConfig(ota_config_t *p_cfg)
 {
     uint32_t crc;
@@ -296,12 +404,14 @@ int BspFlash_ReadConfig(ota_config_t *p_cfg)
 
     memcpy(p_cfg, (const void *)FLASH_ADDR_CONFIG, sizeof(ota_config_t));
 
+    /* 首次上电或 Config 区未初始化 */
     if (p_cfg->magic != OTA_CONFIG_MAGIC)
     {
         memset(p_cfg, 0, sizeof(ota_config_t));
         return -1;
     }
 
+    /* CRC 校验覆盖除 crc32 字段外的所有字段 */
     crc = calc_crc32((const uint8_t *)p_cfg, offsetof(ota_config_t, crc32));
     if (crc != p_cfg->crc32)
     {
@@ -311,6 +421,19 @@ int BspFlash_ReadConfig(ota_config_t *p_cfg)
     return 0;
 }
 
+/**
+ * @brief  将 OTA 配置写入 Flash Config 区（计算 CRC 后擦写）。
+ *
+ * Steps:
+ *  1. 计算配置结构的 CRC-32。
+ *  2. 擦除 Sector 1（Config 专用扇区）。
+ *  3. 写入完整的 ota_config_t 结构。
+ *
+ * @param[in] p_cfg : OTA 配置结构指针。
+ *
+ * @return   0 : 写入成功。
+ * @return  -1 : 参数无效、擦除或写入失败。
+ * */
 int BspFlash_WriteConfig(const ota_config_t *p_cfg)
 {
     ota_config_t tmp;
@@ -320,11 +443,11 @@ int BspFlash_WriteConfig(const ota_config_t *p_cfg)
         return -1;
     }
 
-    /* Compute CRC over everything except the crc32 field */
+    /* 计算 CRC，覆盖除 crc32 字段外的所有字段 */
     tmp       = *p_cfg;
     tmp.crc32 = calc_crc32((const uint8_t *)&tmp, offsetof(ota_config_t, crc32));
 
-    /* Sector 1 专用存放 Config，直接擦除后写入即可 */
+    /* Sector 1 专用存放 Config，擦除后写入 */
     if (BspFlash_EraseSector(FLASH_SECTOR_1) != 0)
     {
         return -1;
@@ -335,6 +458,15 @@ int BspFlash_WriteConfig(const ota_config_t *p_cfg)
 
 //*** Utility ***//
 
+/**
+ * @brief  检查 Flash 指定区域是否全为 0xFF（已擦除状态）。
+ *
+ * @param[in] addr : Flash 起始地址。
+ * @param[in] len  : 检查长度（字节）。
+ *
+ * @return  1 : 区域为空（全 0xFF）。
+ * @return  0 : 区域非空。
+ * */
 int BspFlash_IsEmpty(uint32_t addr, uint32_t len)
 {
     const uint8_t *p;
