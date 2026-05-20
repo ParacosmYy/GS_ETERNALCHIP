@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../bsp/uart;../bsp/flash;../bootloader;../../APP/Shared;../../APP/Middlewares/Third_Party/SHA256</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../bsp/uart;../bsp/flash;../bootloader;../Shared;../Middlewares/SHA256</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -547,7 +547,7 @@
             <File>
               <FileName>sha256.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../../APP/Middlewares/Third_Party/SHA256/sha256.c</FilePath>
+              <FilePath>../Middlewares/SHA256/sha256.c</FilePath>
             </File>
           </Files>
         </Group>
