@@ -146,7 +146,8 @@ C_SRCS += App/task_ota.c \
 # Module
 C_SRCS += Module/ota/ota_transport.c \
           Module/ota/ota_verify.c \
-          Module/ota/ota_ecdsa.c
+          Module/ota/ota_ecdsa.c \
+          Module/ota/ota_led.c
 
 # Third-party Middlewares
 C_SRCS += Middlewares/Third_Party/micro-ecc/uECC.c \
