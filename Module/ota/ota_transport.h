@@ -9,8 +9,8 @@
 
 #include <stdint.h>
 
-/** @brief  初始化 OTA 传输模块 */
-void OtaTransport_Init(uint32_t *p_fw_size);
+/** @brief  初始化 OTA 传输模块（p_uart_drv 为 bsp_uart_driver_t*，传 NULL 则降级为轮询） */
+void OtaTransport_Init(uint32_t *p_fw_size, uint32_t target_base, void *p_uart_drv);
 
 /** @brief  UART 发送单字节（适配 YMODEM 接口） */
 void OtaTransport_SendByte(uint8_t byte, void *p_user);

@@ -18,24 +18,30 @@
 #include "elog.h"
 #include "ota_transport.h"
 #include "bsp_flash.h"
+#include "bsp_uart.h"
 #include "iwdg.h"
 #include "usart.h"
 #include <string.h>
 
 //*** Private Variables ***//
 
-static uint32_t *s_p_fw_size;
+static uint32_t  *s_p_fw_size;
+static uint32_t  s_target_base;
+static bsp_uart_driver_t *s_p_uart_drv;
 
 //*** Init ***//
 
 /**
- * @brief  初始化 OTA 传输模块，保存固件大小指针供回调使用。
+ * @brief  初始化 OTA 传输模块，保存固件大小指针和目标 Bank 基地址。
  *
- * @param[in] p_fw_size : 指向任务级固件大小变量（回调中用于进度日志）。
+ * @param[in] p_fw_size   : 指向任务级固件大小变量（回调中用于进度日志）。
+ * @param[in] target_base : 目标 Bank 的 Flash 基地址。
  * */
-void OtaTransport_Init(uint32_t *p_fw_size)
+void OtaTransport_Init(uint32_t *p_fw_size, uint32_t target_base, void *p_uart_drv)
 {
-    s_p_fw_size = p_fw_size;
+    s_p_fw_size  = p_fw_size;
+    s_target_base = target_base;
+    s_p_uart_drv = (bsp_uart_driver_t *)p_uart_drv;
 }
 
 //*** UART Adapters for YMODEM (polling mode) ***//
@@ -66,6 +72,12 @@ int OtaTransport_RecvByte(uint8_t *p_byte, uint32_t timeout_ms, void *p_user)
 {
     (void)p_user;
 
+    if (s_p_uart_drv != NULL)
+    {
+        return BspUart_ReadByte(s_p_uart_drv, p_byte, timeout_ms);
+    }
+
+    /* 降级：无 ring buffer 时回退到轮询 */
     if (HAL_UART_Receive(&huart1, p_byte, 1, timeout_ms) == HAL_OK)
     {
         return 0;
@@ -101,7 +113,7 @@ int OtaTransport_DataCallback(uint32_t offset, const uint8_t *p_data,
     (void)p_user;
 
     /* offset 是累计值（含本次），减去 len 得到本次写入的起始地址 */
-    addr = FLASH_ADDR_SLOT_B + offset - len;
+    addr = s_target_base + offset - len;
 
     if (BspFlash_Write(addr, p_data, len) != 0)
     {

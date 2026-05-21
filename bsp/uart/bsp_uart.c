@@ -12,6 +12,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include "cmsis_os.h"
 
 //*** Private Variables — Instance Registry ***//
 
@@ -285,6 +286,56 @@ uint8_t BspUart_IsRxBusy(const bsp_uart_driver_t *p_drv)
     return p_drv->rx_busy;
 }
 
+//*** Ring Buffer Mode API ***//
+
+/**
+ * @brief  绑定 ring buffer 到 UART 驱动。
+ *
+ * @param[in] p_drv  : UART 驱动实例指针。
+ * @param[in] p_ring : 外部分配的 ring buffer。
+ * */
+void BspUart_BindRingBuffer(bsp_uart_driver_t *p_drv, circular_buffer_t *p_ring)
+{
+    p_drv->p_ring     = p_ring;
+    p_drv->ring_mode  = (p_ring != NULL) ? 1 : 0;
+}
+
+/**
+ * @brief  从 ring buffer 读取一个字节（带超时）。
+ *
+ * @param[in]  p_drv      : UART 驱动实例指针。
+ * @param[out] p_byte     : 存放读取的字节。
+ * @param[in]  timeout_ms : 超时时间（毫秒）。
+ *
+ * @return   0 : 成功。
+ * @return  -1 : 超时。
+ * */
+int BspUart_ReadByte(bsp_uart_driver_t *p_drv, uint8_t *p_byte, uint32_t timeout_ms)
+{
+    uint32_t start = HAL_GetTick();
+
+    while ((HAL_GetTick() - start) < timeout_ms)
+    {
+        int16_t val;
+
+        if (p_drv->p_ring == NULL)
+        {
+            return -1;
+        }
+
+        val = ring_buffer_get_byte(p_drv->p_ring);
+        if (val >= 0)
+        {
+            *p_byte = (uint8_t)val;
+            return 0;
+        }
+
+        osDelay(1);
+    }
+
+    return -1;
+}
+
 //*** HAL Weak Callback Overrides ***//
 
 /**
@@ -310,7 +361,26 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
 
     p_drv->rx_busy = 0;
 
-    notify(p_drv, BSP_UART_EVT_RX_DONE, p_drv->p_config->p_rx_buf, size);
+    /* Ring buffer 模式：push 数据到 ring buffer，不调回调 */
+    if (p_drv->ring_mode && p_drv->p_ring != NULL)
+    {
+        uint8_t *p_data;
+        uint16_t i;
+
+        p_data = p_drv->p_config->p_rx_buf;
+
+        for (i = 0; i < size; i++)
+        {
+            if (!ring_buffer_put_byte(p_drv->p_ring, p_data[i]))
+            {
+                break;
+            }
+        }
+    }
+    else
+    {
+        notify(p_drv, BSP_UART_EVT_RX_DONE, p_drv->p_config->p_rx_buf, size);
+    }
 
     /* 自动重启 DMA 接收 */
     if (p_drv->p_config->p_huart->gState != HAL_UART_STATE_RESET)

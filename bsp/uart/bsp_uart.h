@@ -14,6 +14,7 @@ extern "C"
 
 //*** Includes ***//
 #include "stm32f4xx_hal.h"
+#include "../../utils/ring_buffer.h"
 #include <stdint.h>
 
     //*** Configurable Macros ***//
@@ -58,6 +59,8 @@ extern "C"
         const bsp_uart_config_t *p_config; /**< 配置引用 */
         volatile uint8_t         tx_busy;  /**< 1 = DMA 发送中 */
         volatile uint8_t         rx_busy;  /**< 1 = DMA 接收中 */
+        circular_buffer_t       *p_ring;   /**< ring buffer（可选） */
+        volatile uint8_t         ring_mode;/**< 1 = ring buffer 模式 */
     } bsp_uart_driver_t;
 
     //*** Public API ***//
@@ -88,6 +91,33 @@ extern "C"
 
     /** @brief  查询 RX 是否忙碌 */
     uint8_t BspUart_IsRxBusy(const bsp_uart_driver_t *p_drv);
+
+    //*** Ring Buffer Mode API ***//
+
+    /**
+     * @brief  绑定 ring buffer 到 UART 驱动（DMA + IDLE 模式）。
+     *
+     *         ISR 收到数据后 push 到 ring buffer，应用层通过
+     *         BspUart_ReadByte() pop 读取。
+     *
+     * @param[in] p_drv  : UART 驱动实例指针。
+     * @param[in] p_ring : 外部分配的 ring buffer。
+     * */
+    void BspUart_BindRingBuffer(bsp_uart_driver_t *p_drv, circular_buffer_t *p_ring);
+
+    /**
+     * @brief  从 ring buffer 读取一个字节（带超时）。
+     *
+     *         在 FreeRTOS 任务中调用，超时期间让出 CPU。
+     *
+     * @param[in]  p_drv      : UART 驱动实例指针。
+     * @param[out] p_byte     : 存放读取的字节。
+     * @param[in]  timeout_ms : 超时时间（毫秒）。
+     *
+     * @return   0 : 成功。
+     * @return  -1 : 超时。
+     * */
+    int BspUart_ReadByte(bsp_uart_driver_t *p_drv, uint8_t *p_byte, uint32_t timeout_ms);
 
 #ifdef __cplusplus
 }
