@@ -12,6 +12,7 @@
 - Slot B→A 复制后二次 SHA-256 校验，确保数据完整性
 - UART 串口状态输出（2Mbps，PA9/PA10）
 - Cortex-M 标准跳转（VTOR 重定位 + MSP 设置）
+- 固件版本号显示（Banner 打印 Boot 版本）
 
 ---
 
@@ -62,16 +63,17 @@ Boot/
 ### 升级日志示例
 
 ```
-[BOOT] GS_ETERNALCHIP Bootloader v1.0
-[BOOT] STM32F411CEUx @ 96MHz
-[BOOT] State=UPGRADE_PENDING, boot_count=0, fw_size=40524
+[BOOT] ========================================
+[BOOT]   GS_ETERNALCHIP Bootloader
+[BOOT]   STM32F411CEUx @ 96MHz (Dual Bank)
+[BOOT]   Boot : V2.0.0
+[BOOT] ========================================
+[BOOT] State=UPGRADE_PENDING, boot_count=0, fw_size=42828
 [BOOT] Erasing Slot A ...
-[BOOT] Copying Slot B -> Slot A (40524 bytes) ...
-[BOOT]   16384 / 40524 bytes
-[BOOT]   32768 / 40524 bytes
+[BOOT] Copying Slot B -> Slot A (42828 bytes) ...
 [BOOT] Copy complete. Verifying ...
 [BOOT] Verify OK.
-[BOOT] SHA-256 verifying (40524 bytes) ...
+[BOOT] SHA-256 verifying (42828 bytes) ...
 [BOOT] SHA-256: 9B63D617...F7A9
 [BOOT] SHA-256 OK.
 [BOOT] Upgrade done. Jumping to app.
