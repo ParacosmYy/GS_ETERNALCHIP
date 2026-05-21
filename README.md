@@ -13,7 +13,7 @@ ECDSA-P256 签名验证 + SHA-256 完整性校验 + YMODEM-CRC 传输。
 | LED | PC13，推挽输出，低电平点亮 |
 | KEY | PA0，上拉输入，按下低电平 |
 | 调试接口 | SWD (SWDIO/SWCLK) |
-| 通信接口 | USART1 (PA9/PA10) @ 2Mbps |
+| 通信接口 | USART1 (PA9/PA10) @ 2Mbps，DMA + IDLE + 环形缓冲区 |
 
 ---
 
@@ -47,6 +47,21 @@ Bootloader:
   检测 UPGRADE_PENDING → Slot B 复制到 Slot A → SHA-256 二次校验 → 跳转
 ```
 
+### 双固件构建
+
+同一源码编译两次，仅链接脚本 FLASH ORIGIN 不同：
+
+| 固件 | 链接脚本 | FLASH ORIGIN | 说明 |
+|------|---------|-------------|------|
+| `OTA_A.bin` | `STM32F411CEUx_BANK_A.ld` | 0x08008000 | 运行在 Bank A |
+| `OTA_B.bin` | `STM32F411CEUx_BANK_B.ld` | 0x08040000 | 运行在 Bank B |
+
+```bash
+make build_a    # 编译 Bank A 固件
+make build_b    # 编译 Bank B 固件
+make all        # 编译两个 Bank 固件
+```
+
 ### 签名工具链
 
 ```bash
@@ -54,15 +69,15 @@ Bootloader:
 python tools/firmware_sign.py --genkey --keydir tools/keys/
 
 # 2. 编译固件
+#    GCC  编译 → APP/build/OTA_A.bin / OTA_B.bin
 #    Keil 编译 → APP/MDK-ARM/OTA/OTA.bin
-#    GCC  编译 → APP/build/OTA.bin
 
 # 3. 签名
-python tools/firmware_sign.py --sign APP/build/OTA.bin --keydir tools/keys/ -o tools/upload.bin
+python tools/firmware_sign.py --sign APP/build/OTA_B.bin --keydir tools/keys/ -o tools/upload_B.bin
 
 # 4. OTA 传输
 python tools/ota_upgrade.py
-#    自动选择 upload.bin（签名包），YMODEM-CRC 发送
+#    选择 upload_B.bin（签名包），YMODEM-CRC 发送
 ```
 
 ### 密钥安全
@@ -99,20 +114,23 @@ IDLE --(YMODEM receive)--> UPGRADE_PENDING
 
 ```
 APP/
-├── App/                     # FreeRTOS 任务（从 tasks/ 重命名）
+├── App/                     # FreeRTOS 任务
 │   ├── task_ota.c/h         #   OTA 升级任务入口 + 7 阶段状态机
 │   └── ota_confirm.c/h      #   启动确认（boot_count 计数）
-├── Module/                  # 业务模块层（新增）
+├── Module/                  # 业务模块层
 │   └── ota/
-│       ├── ota_transport.c/h  # UART 适配 + YMODEM 数据回调
+│       ├── ota_transport.c/h  # UART DMA ring buffer 适配 + YMODEM 数据回调
 │       ├── ota_verify.c/h     # SHA-256 Flash 哈希校验
-│       └── ota_ecdsa.c/h      # ECDSA-P256 签名验证（micro-ecc）
+│       ├── ota_ecdsa.c/h      # ECDSA-P256 签名验证（micro-ecc）
+│       └── ota_led.c/h        # OTA 状态 LED 控制
 ├── bsp/                     # 板级支持包
 │   ├── led/                 #   LED 驱动（操作抽象 + 实例化）
 │   ├── key/                 #   KEY 驱动（消抖状态机 + 长短按）
 │   ├── flash/               #   Flash 双区管理 + CRC-32 Config
-│   ├── uart/                #   UART DMA + IDLE + Printf
+│   ├── uart/                #   UART DMA + IDLE + 环形缓冲区 + Printf
 │   └── rtt/                 #   SEGGER RTT 调试输出
+├── utils/                   # 通用工具组件
+│   └── ring_buffer.c/h      #   环形缓冲区（无硬件依赖，纯数据结构）
 ├── Core/                    # CubeMX 生成代码
 ├── Drivers/                 # STM32 HAL + CMSIS
 ├── Middlewares/             # 中间件
@@ -125,9 +143,35 @@ APP/
 │       └── EasyLogger/      #   日志框架
 ├── Shared/                  # Bootloader + App 共享
 │   └── ota_config.h         #   分区地址 + 状态枚举（单一真相源）
-├── STM32F411CEUx_APP.ld     # GCC 链接脚本
+├── STM32F411CEUx_BANK_A.ld  # GCC 链接脚本 (0x08008000)
+├── STM32F411CEUx_BANK_B.ld  # GCC 链接脚本 (0x08040000)
 ├── Makefile                 # GCC 构建文件
 └── MDK-ARM/                 # Keil 工程文件
+```
+
+---
+
+## 数据流架构
+
+### UART DMA + 环形缓冲区
+
+```
+PC → UART → DMA Normal + IDLE → ISR push to ring buffer (2048B)
+                                        ↓
+                               BspUart_ReadByte(pop tail)
+                                        ↓
+                               YMODEM 解包 → Flash 写入
+               CPU 不阻塞，DMA 自动接收，应用层按需取数据
+```
+
+### 三层架构
+
+```
+Layer 1: utils/ring_buffer     纯数据结构，无硬件依赖
+   ↓
+Layer 2: bsp/uart              DMA + IDLE 写入 ring buffer (ISR push)
+   ↓
+Layer 3: Module/ota/transport  从 bsp_uart 读字节 (pop from ring buffer)
 ```
 
 ---
@@ -147,8 +191,8 @@ APP/
 ### 编译命令
 
 ```bash
-# GCC 编译（APP）
-cd APP && make clean && make
+# GCC 编译（APP — 双 Bank）
+cd APP && make clean && make all
 
 # GCC 编译（Boot）
 cd Boot && make clean && make
@@ -194,6 +238,12 @@ bash scripts/linux/build_all.sh
 - [x] DJI 风格分层重构 (tasks → App + Module/ota)
 - [x] ARM GCC 双构建系统 (Makefile + 链接脚本)
 - [x] 编译脚本 (Windows PS + Linux Bash + 资源统计)
+- [x] 环形缓冲区基础组件 (utils/ring_buffer)
+- [x] UART DMA + 环形缓冲区接收模式
+- [x] 双 Bank 固件构建 (Bank A + Bank B)
+- [x] 固件版本号管理 (MAJOR.MINOR.PATCH)
+- [x] LED 状态指示 + 按键强制回退
+- [x] 上位机串口连接/断开管理
 
 ---
 
@@ -217,13 +267,14 @@ Boot: 复制 Slot B→A → SHA-256校验 → 跳转
 | 固件打包工具升级 | Python 端: 签名 → 加密 → 打包 |
 | 密钥管理 | AES 密钥编译时嵌入或安全通道下发 |
 
-### Phase 2 — 产品化体验
+### Phase 2 — 公共技术组件
 
 | 任务 | 说明 |
 |------|------|
-| LED 升级状态指示 | 快闪=传输, 慢闪=校验, 常亮=成功, N次闪=错误码 |
-| 按键强制回退 | 长按 > 3s 触发 ROLLBACK |
-| App 自检 | 启动后检查关键外设，失败主动回退 |
+| 栈水位监控 | FreeRTOS 任务栈使用率运行时检测 |
+| 多任务看门狗 | 任务健康监控 + 超时复位 |
+| 静态内存池 | 替代 malloc，固定大小块分配 |
+| OSAL 抽象层 | 隔离 FreeRTOS，统一 IPC 接口 |
 
 ### Phase 3 — 应用层协议
 
@@ -233,13 +284,13 @@ Boot: 复制 Slot B→A → SHA-256校验 → 跳转
 | 命令集 | QUERY_VERSION / START_UPGRADE / VERIFY / GET_STATUS |
 | 断点续传 | 记录已接收偏移，支持中断后继续 |
 
-### Phase 4 — OSAL 抽象 + 五层架构
+### Phase 4 — 五层架构
 
 | 任务 | 说明 |
 |------|------|
-| OSAL 层 | 抽象 mutex/queue/task/delay，隔离 FreeRTOS |
+| 平台类型/错误码 | platform_type.h + platform_error.h 统一抽象 |
+| 传感器 ops 接口 | sensor_hal_interface.h，驱动可插拔 |
 | 传输接口抽象 | ota_transport_t 接口，支持 UART/SPI/BLE 扩展 |
-| 五层架构 | Vendor(HAL) → BSP → Platform → Service → App |
 
 ### Phase 5 — 高级特性
 
