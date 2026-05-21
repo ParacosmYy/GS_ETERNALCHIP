@@ -8,6 +8,13 @@
 
 #include <stdint.h>
 
+//*** Bootloader Version ***//
+
+#define BOOT_FW_MAJOR  2
+#define BOOT_FW_MINOR  0
+#define BOOT_FW_PATCH  0
+#define BOOT_FW_VERSION "V2.0.0"
+
 //*** Public API ***//
 
 /** @brief  Bootloader 主入口，初始化外设并执行 OTA 状态机 */
