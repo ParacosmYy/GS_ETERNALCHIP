@@ -111,7 +111,7 @@ void OtaLed_SetMode(ota_led_mode_t mode)
             break;
 
         case OTA_LED_RECEIVING:
-            log_i("LED mode: RECEIVING (solid on)");
+            log_i("LED mode: RX (solid on)");
             BspLed_On(&s_led);
             break;
 

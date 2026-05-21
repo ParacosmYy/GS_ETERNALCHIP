@@ -1,11 +1,12 @@
 # ============================================================================
-# APP Makefile - STM32F411CEUx OTA Application (ARM GCC)
+# APP Makefile - STM32F411CEUx Dual Bank OTA Application (ARM GCC)
 # ============================================================================
 # Usage:
-#   make          - build firmware
-#   make clean    - remove build artifacts
-#   make flash    - flash via ST-Link (optional)
-#   make size     - show firmware size
+#   make            - build both Bank A + Bank B firmware
+#   make build_a    - build Bank A only (0x08008000)
+#   make build_b    - build Bank B only (0x08040000)
+#   make clean      - remove build artifacts
+#   make size       - show firmware size
 # ============================================================================
 
 # ----------------------------- Toolchain ----------------------------------- #
@@ -21,8 +22,9 @@ BUILDDIR = build
 # ----------------------------- MCU ----------------------------------------- #
 MCU      = -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 
-# ----------------------------- Linker Script ------------------------------ #
-LDSCRIPT = STM32F411CEUx_APP.ld
+# ----------------------------- Linker Scripts ------------------------------ #
+LDSCRIPT_A = STM32F411CEUx_BANK_A.ld
+LDSCRIPT_B = STM32F411CEUx_BANK_B.ld
 
 # ----------------------------- Defines ------------------------------------- #
 DEFS = -DUSE_HAL_DRIVER \
@@ -50,6 +52,7 @@ INCDIRS = Core/Inc \
           bsp/uart \
           bsp/rtt \
           bsp/flash \
+          utils \
           App \
           Module/ota \
           Middlewares/Third_Party/SEGGER_RTT \
@@ -75,9 +78,8 @@ CFLAGS += -O2 -g3
 CFLAGS += -Wshadow -Wdouble-promotion -Wundef
 
 # ----------------------------- Linker Flags -------------------------------- #
-LDFLAGS  = $(MCU) -T$(LDSCRIPT)
+LDFLAGS  = $(MCU)
 LDFLAGS += -Wl,--gc-sections -Wl,--print-memory-usage
-LDFLAGS += -Wl,-Map=$(BUILDDIR)/$(TARGET).map
 LDFLAGS += --specs=nano.specs --specs=nosys.specs
 LDFLAGS += -Wl,--start-group -lc -lm -Wl,--end-group
 
@@ -135,6 +137,9 @@ C_SRCS += bsp/key/bsp_key.c \
           bsp/rtt/bsp_rtt.c \
           bsp/flash/bsp_flash.c
 
+# Utils
+C_SRCS += utils/ring_buffer.c
+
 # SEGGER RTT
 C_SRCS += Middlewares/Third_Party/SEGGER_RTT/SEGGER_RTT.c \
           Middlewares/Third_Party/SEGGER_RTT/SEGGER_RTT_printf.c
@@ -165,22 +170,42 @@ ASM_OBJS = $(OBJDIR)/$(STARTUP:.s=.o)
 OBJS     = $(C_OBJS) $(ASM_OBJS)
 
 # ----------------------------- Targets ------------------------------------- #
-.PHONY: all clean size
+.PHONY: all build_a build_b clean size
 
-all: $(BUILDDIR)/$(TARGET).elf $(BUILDDIR)/$(TARGET).hex $(BUILDDIR)/$(TARGET).bin size
+all: build_a build_b
 
-$(BUILDDIR)/$(TARGET).elf: $(OBJS) $(LDSCRIPT)
+# --- Bank A (0x08008000) ---
+build_a: $(BUILDDIR)/OTA_A.elf $(BUILDDIR)/OTA_A.hex $(BUILDDIR)/OTA_A.bin
+
+$(BUILDDIR)/OTA_A.elf: $(OBJS) $(LDSCRIPT_A)
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS)
+	$(CC) $(LDFLAGS) -T$(LDSCRIPT_A) -Wl,-Map=$(BUILDDIR)/OTA_A.map -o $@ $(OBJS)
 
-$(BUILDDIR)/$(TARGET).hex: $(BUILDDIR)/$(TARGET).elf
+$(BUILDDIR)/OTA_A.hex: $(BUILDDIR)/OTA_A.elf
 	$(OBJCOPY) -O ihex $< $@
 
-$(BUILDDIR)/$(TARGET).bin: $(BUILDDIR)/$(TARGET).elf
+$(BUILDDIR)/OTA_A.bin: $(BUILDDIR)/OTA_A.elf
 	$(OBJCOPY) -O binary $< $@
 
-size: $(BUILDDIR)/$(TARGET).elf
-	$(SIZE) --format=berkeley $<
+# --- Bank B (0x08040000) ---
+build_b: $(BUILDDIR)/OTA_B.elf $(BUILDDIR)/OTA_B.hex $(BUILDDIR)/OTA_B.bin
+
+$(BUILDDIR)/OTA_B.elf: $(OBJS) $(LDSCRIPT_B)
+	@mkdir -p $(dir $@)
+	$(CC) $(LDFLAGS) -T$(LDSCRIPT_B) -Wl,-Map=$(BUILDDIR)/OTA_B.map -o $@ $(OBJS)
+
+$(BUILDDIR)/OTA_B.hex: $(BUILDDIR)/OTA_B.elf
+	$(OBJCOPY) -O ihex $< $@
+
+$(BUILDDIR)/OTA_B.bin: $(BUILDDIR)/OTA_B.elf
+	$(OBJCOPY) -O binary $< $@
+
+# --- Size ---
+size: $(BUILDDIR)/OTA_A.elf $(BUILDDIR)/OTA_B.elf
+	@echo "=== Bank A ==="
+	$(SIZE) --format=berkeley $(BUILDDIR)/OTA_A.elf
+	@echo "=== Bank B ==="
+	$(SIZE) --format=berkeley $(BUILDDIR)/OTA_B.elf
 
 # ----------------------------- Compile Rules ------------------------------- #
 $(OBJDIR)/%.o: %.c

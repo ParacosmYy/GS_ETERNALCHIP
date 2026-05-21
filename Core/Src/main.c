@@ -27,6 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "cm_backtrace.h"
+#include "ota_config.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -86,7 +87,23 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  SCB->VTOR = 0x08008000u;
+  {
+      /* 动态检测当前运行 Bank，设置 VTOR（支持双 Bank 直接切换） */
+      uint32_t pc_val;
+#if defined(__CC_ARM)
+      pc_val = __current_pc();                /* ARMCC V5 内建函数 */
+#else
+      __asm volatile ("mov %0, pc" : "=r" (pc_val));  /* GCC */
+#endif
+      if (pc_val >= FLASH_ADDR_BANK_B)
+      {
+          SCB->VTOR = FLASH_ADDR_BANK_B;
+      }
+      else
+      {
+          SCB->VTOR = FLASH_ADDR_BANK_A;
+      }
+  }
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */

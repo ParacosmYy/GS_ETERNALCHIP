@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\led;..\App;..\Module\ota;..\bsp\key;..\bsp\uart;..\bsp\rtt;..\bsp\flash;../Middlewares/Third_Party/SEGGER_RTT;../Middlewares/Third_Party/SHA256;../Middlewares/Third_Party/YMODEM;../Middlewares/Third_Party/EasyLogger/inc;../Middlewares/Third_Party/EasyLogger/port;../Middlewares/Third_Party/CmBacktrace;../Middlewares/Third_Party/micro-ecc;../Shared</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\led;..\App;..\Module\ota;..\bsp\key;..\bsp\uart;..\bsp\rtt;..\bsp\flash;../Middlewares/Third_Party/SEGGER_RTT;../Middlewares/Third_Party/SHA256;../Middlewares/Third_Party/YMODEM;../Middlewares/Third_Party/EasyLogger/inc;../Middlewares/Third_Party/EasyLogger/port;../Middlewares/Third_Party/CmBacktrace;../Middlewares/Third_Party/micro-ecc;../Shared;..\utils</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -358,7 +358,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\rtt;../Middlewares/Third_Party/SEGGER_RTT;../Shared</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\rtt;../Middlewares/Third_Party/SEGGER_RTT;../Shared;..\utils</IncludePath>
             </VariousControls>
           </Aads>
           <LDads>
@@ -669,6 +669,11 @@
               <FileType>1</FileType>
               <FilePath>..\Module\ota\ota_ecdsa.c</FilePath>
             </File>
+            <File>
+              <FileName>ota_led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Module\ota\ota_led.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -728,6 +733,16 @@
               <FileName>cm_backtrace.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Middlewares/Third_Party/CmBacktrace/cm_backtrace.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Utils</GroupName>
+          <Files>
+            <File>
+              <FileName>ring_buffer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\utils\ring_buffer.c</FilePath>
             </File>
           </Files>
         </Group>
