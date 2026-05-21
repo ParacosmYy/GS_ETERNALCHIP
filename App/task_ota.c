@@ -24,6 +24,7 @@
 #include "elog.h"
 #include "task_ota.h"
 #include "bsp_flash.h"
+#include "bsp_uart.h"
 #include "bsp_key.h"
 #include "ymodem.h"
 #include "usart.h"
@@ -39,9 +40,16 @@
 
 static ota_task_state_t s_state;
 static uint32_t         s_fw_size;
+static ota_slot_t       s_target_bank;
 static volatile uint8_t s_trigger_flag;
 static volatile uint8_t s_force_rollback;
 static bsp_key_driver_t s_key;
+
+/* Ring buffer for UART DMA — must hold one full YMODEM STX packet (1029 bytes) */
+#define UART_RX_RING_SIZE 2048
+static uint8_t            s_ring_storage[UART_RX_RING_SIZE];
+static circular_buffer_t s_ring_buf;
+static bsp_uart_driver_t s_uart_drv;
 
 //*** Self Check ***//
 
@@ -126,7 +134,11 @@ static int WaitForTrigger(void)
     s_force_rollback = 0;
     OtaLed_SetMode(OTA_LED_IDLE);
 
-    log_i("Firmware %s", OTA_FW_VERSION);
+    log_i("========================================");
+    log_i("  GS_ETERNALCHIP OTA Application");
+    log_i("  STM32F411CEUx @ 96MHz (Dual Bank)");
+    log_i("  App   : %s", OTA_FW_VERSION);
+    log_i("========================================");
     log_i("Waiting for trigger... (short press = OTA, long press = rollback)");
 
     while (!s_trigger_flag)
@@ -157,21 +169,21 @@ static int WaitForTrigger(void)
  * @return   0 : erase success.
  * @return  -1 : erase failed.
  * */
-static int EraseSlotB(void)
+static int EraseTargetBank(void)
 {
     s_state = OTA_TASK_PREPARING;
     OtaLed_SetMode(OTA_LED_WORKING);
-    log_i("Erasing Slot B...");
+    log_i("Erasing target Bank...");
 
     HAL_IWDG_Refresh(&hiwdg);
 
-    if (BspFlash_EraseSlot(OTA_SLOT_B) != 0)
+    if (BspFlash_EraseSlot(s_target_bank) != 0)
     {
         log_e("Erase failed!");
         return -1;
     }
 
-    log_i("Slot B erased.");
+    log_i("Target Bank erased.");
     return 0;
 }
 
@@ -194,8 +206,14 @@ static int ReceiveFirmware(void)
     OtaLed_SetMode(OTA_LED_RECEIVING);
     log_i("Waiting for YMODEM transfer...");
 
+    /*
+     * 等待 UART TX 发送完毕，防止 log 中的 'C'(0x43) 字符
+     * 被 PC 端误判为 YMODEM CRC 请求。先等 TX drain，再清 RX。
+     */
+    osDelay(100);
     __HAL_UART_FLUSH_DRREGISTER(&huart1);
-    OtaTransport_Init(&s_fw_size);
+
+    OtaTransport_Init(&s_fw_size, OtaConfig_BankAddr(s_target_bank), &s_uart_drv);
 
     ret = Ymodem_Receive(OtaTransport_SendByte,
                           OtaTransport_RecvByte,
@@ -245,12 +263,12 @@ static int VerifyEcdsaSignature(uint32_t *p_real_fw_size)
         return -1;
     }
 
-    memcpy(sig, (const void *)(FLASH_ADDR_SLOT_B + real_size), OTA_ECDSA_SIG_SIZE);
+    memcpy(sig, (const void *)(OtaConfig_BankAddr(s_target_bank) + real_size), OTA_ECDSA_SIG_SIZE);
     log_i("Verifying ECDSA signature (%lu bytes firmware)...", real_size);
 
     HAL_IWDG_Refresh(&hiwdg);
 
-    if (OtaEcdsa_Verify(FLASH_ADDR_SLOT_B, real_size, sig) != 0)
+    if (OtaEcdsa_Verify(OtaConfig_BankAddr(s_target_bank), real_size, sig) != 0)
     {
         return -1;
     }
@@ -276,7 +294,7 @@ static int VerifyFirmware(uint8_t hash[32])
     s_state = OTA_TASK_VERIFYING;
     log_i("Verifying SHA-256...");
 
-    OtaVerify_SHA256Flash(FLASH_ADDR_SLOT_B, s_fw_size, hash);
+    OtaVerify_SHA256Flash(OtaConfig_BankAddr(s_target_bank), s_fw_size, hash);
 
     // clang-format off
     log_i("SHA-256: %02X%02X%02X%02X%02X%02X%02X%02X"
@@ -324,6 +342,7 @@ static int UpdateConfig(const uint8_t hash[32])
     }
 
     cfg.state   = OTA_STATE_UPGRADE_PENDING;
+    cfg.active_slot = s_target_bank;
     cfg.fw_size = s_fw_size;
     memcpy(cfg.fw_sha256, hash, 32);
     cfg.boot_count = 0;
@@ -413,40 +432,21 @@ static void RebootDevice(void)
  * */
 static void HandleError(int result)
 {
-    int i;
+    int      i;
+    uint8_t  code;
+
+    (void)result;
 
     s_state = OTA_TASK_ERROR;
 
-    /* Map phase result to LED error code */
-    if (result == -2)
-    {
-        /* Should not reach here (rollback handled separately) */
-        OtaLed_SetErrorCode(OTA_ERR_CONFIG_FAILED);
-    }
-    else
-    {
-        /* Determine error code from last completed phase */
-        if (s_state == OTA_TASK_PREPARING)
-        {
-            OtaLed_SetErrorCode(OTA_ERR_ERASE_FAILED);
-        }
-        else if (s_state == OTA_TASK_RECEIVING)
-        {
-            OtaLed_SetErrorCode(OTA_ERR_YMODEM_FAILED);
-        }
-        else
-        {
-            /* Default: check what failed based on context */
-            OtaLed_SetErrorCode(OTA_ERR_ECDSA_FAILED);
-        }
-    }
+    code = OtaLed_GetErrorCode();
 
     log_e("ERROR! Code=%u, %s. Rebooting in 3s...",
-          OtaLed_GetErrorCode(),
-          OtaLed_GetErrorCode() == OTA_ERR_ERASE_FAILED  ? "Erase failed" :
-          OtaLed_GetErrorCode() == OTA_ERR_YMODEM_FAILED ? "YMODEM failed" :
-          OtaLed_GetErrorCode() == OTA_ERR_ECDSA_FAILED  ? "ECDSA failed" :
-          OtaLed_GetErrorCode() == OTA_ERR_SHA256_FAILED ? "SHA-256 failed" :
+          code,
+          code == OTA_ERR_ERASE_FAILED  ? "Erase failed" :
+          code == OTA_ERR_YMODEM_FAILED ? "YMODEM failed" :
+          code == OTA_ERR_ECDSA_FAILED  ? "ECDSA failed" :
+          code == OTA_ERR_SHA256_FAILED ? "SHA-256 failed" :
           "Config failed");
 
     /* Drive LED error pattern for 3 seconds */
@@ -471,11 +471,22 @@ static void HandleError(int result)
  * */
 void TaskOta_Init(void)
 {
+    static uint8_t s_uart_rx_buf[2048];
+    static const bsp_uart_config_t uart_cfg = {
+        &huart1, s_uart_rx_buf, sizeof(s_uart_rx_buf), NULL, NULL
+    };
+
     s_state        = OTA_TASK_NORMAL;
     s_fw_size      = 0;
     s_trigger_flag = 0;
     s_force_rollback = 0;
     BspFlash_Init();
+
+    /* 初始化 UART 驱动 + ring buffer */
+    BspUart_Init(&s_uart_drv, &uart_cfg);
+    ring_buffer_init(&s_ring_buf, s_ring_storage, UART_RX_RING_SIZE);
+    BspUart_BindRingBuffer(&s_uart_drv, &s_ring_buf);
+    BspUart_StartReceive(&s_uart_drv);
 
     elog_init();
     elog_set_fmt(ELOG_LVL_ASSERT, ELOG_FMT_ALL);
@@ -542,8 +553,28 @@ void TaskOta_Run(void *p_argument)
         ForceRollback();
     }
 
+    /* 确定目标 Bank：下载到非活跃 Bank */
+    {
+        ota_config_t cfg;
+        ota_slot_t   active;
+
+        if (BspFlash_ReadConfig(&cfg) == 0)
+        {
+            active = cfg.active_slot;
+        }
+        else
+        {
+            active = OTA_SLOT_A;
+        }
+
+        s_target_bank = OtaConfig_Other(active);
+        log_i("Active=%c, Target=%c",
+              active == OTA_SLOT_A ? 'A' : 'B',
+              s_target_bank == OTA_SLOT_A ? 'A' : 'B');
+    }
+
     /* Chain phase calls — map each failure to specific error code */
-    result = EraseSlotB();
+    result = EraseTargetBank();
     if (result != 0)
     {
         OtaLed_SetErrorCode(OTA_ERR_ERASE_FAILED);

@@ -11,6 +11,9 @@
 
 //*** Firmware Version ***//
 
+#define OTA_FW_MAJOR  1
+#define OTA_FW_MINOR  0
+#define OTA_FW_PATCH  0
 #define OTA_FW_VERSION  "V1.0.0"
 
 //*** OTA Task States ***//
