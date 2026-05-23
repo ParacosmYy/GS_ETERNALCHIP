@@ -254,13 +254,17 @@ static int ReceiveFirmware(void)
 }
 
 /**
- * @brief  Phase 3.5: Extract and verify ECDSA-P256 signature.
+ * @brief  Phase 3.5: Verify ECDSA-P256 signature of decrypted firmware.
+ *
+ * Package format: [nonce 12B][encrypted_fw][ECDSA sig 64B]
+ * After transport processing, Flash contains decrypted firmware only.
+ * Signature was extracted by transport and retrieved via OtaTransport_GetSignature.
  *
  * Steps:
- *  1. Calculate real firmware size (total - 64 bytes signature).
- *  2. Read signature from Slot B tail.
- *  3. Call OtaEcdsa_Verify with embedded public key.
- *  4. Fix s_fw_size to actual firmware size (strip signature).
+ *  1. Get signature from transport (extracted during YMODEM receive).
+ *  2. Calculate real firmware size (total - 12 nonce - 64 signature).
+ *  3. Verify ECDSA-P256 signature against decrypted firmware in Flash.
+ *  4. Fix s_fw_size to actual firmware size (strip overhead).
  *
  * @param[out] p_real_fw_size : Output actual firmware length.
  * @param[out] hash           : Output SHA-256 hash (32 bytes).
@@ -272,25 +276,31 @@ static int VerifyEcdsaSignature(uint32_t *p_real_fw_size, uint8_t hash[32])
 {
     uint8_t  sig[OTA_ECDSA_SIG_SIZE];
     uint32_t real_size;
+    uint32_t pkg_overhead;
 
     s_state = OTA_TASK_VERIFYING_SIG;
     OtaLed_SetMode(OTA_LED_WORKING);
 
-    real_size = s_fw_size - OTA_ECDSA_SIG_SIZE;
+    /* Package overhead: nonce(12B) + signature(64B) = 76 bytes */
+    pkg_overhead = 12u + OTA_ECDSA_SIG_SIZE;
+    real_size = s_fw_size - pkg_overhead;
 
-    if (s_fw_size < OTA_ECDSA_SIG_SIZE || real_size == 0)
+    if (s_fw_size < pkg_overhead || real_size == 0)
     {
-        log_e("Invalid firmware size: %lu", s_fw_size);
+        log_e("Invalid firmware size: %lu (need > %lu overhead)",
+              s_fw_size, pkg_overhead);
         return -1;
     }
 
-    memcpy(sig, (const void *)(OtaConfig_BankAddr(s_target_bank) + real_size), OTA_ECDSA_SIG_SIZE);
-    log_i("Verifying ECDSA signature (%lu bytes firmware)...", real_size);
+    /* Get signature extracted by transport layer during YMODEM receive */
+    OtaTransport_GetSignature(sig);
+    log_i("Verifying ECDSA signature (%lu bytes decrypted firmware)...", real_size);
 
     OtaTrace_Record(OTA_TRACE_ECDSA_START, 0, real_size);
 
     HAL_IWDG_Refresh(&hiwdg);
 
+    /* Verify against decrypted firmware now in Flash */
     if (OtaEcdsa_Verify(OtaConfig_BankAddr(s_target_bank), real_size, sig, hash) != 0)
     {
         return -1;
