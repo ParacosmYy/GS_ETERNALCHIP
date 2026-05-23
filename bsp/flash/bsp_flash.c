@@ -160,8 +160,9 @@ int BspFlash_EraseSector(uint32_t sector_num)
 }
 
 /**
- * @brief  擦除 OTA 分区对应的所有扇区
+ * @brief  擦除 OTA 分区对应的所有扇区（逐扇区擦除）
  *         Slot A 擦除 Sector 2-5，Slot B 擦除 Sector 6-7。
+ *         每个扇区独立临界区，避免长时间屏蔽中断。
  * @param  slot  OTA_SLOT_A 或 OTA_SLOT_B
  * @retval 0   成功
  * @retval -1  分区无效或 HAL 擦除错误
@@ -171,39 +172,52 @@ int BspFlash_EraseSlot(ota_slot_t slot)
     FLASH_EraseInitTypeDef erase;
     uint32_t               sector_error = 0;
     HAL_StatusTypeDef      status;
+    uint32_t               start_sector;
+    uint32_t               nb_sectors;
+    uint32_t               i;
 
     if (slot != OTA_SLOT_A && slot != OTA_SLOT_B)
     {
         return -1;
     }
 
+    /* Slot A 占 Sector 2-5 (224KB), Slot B 占 Sector 6-7 (256KB) */
+    if (slot == OTA_SLOT_A)
+    {
+        start_sector = FLASH_SECTOR_2;
+        nb_sectors   = 4;
+    }
+    else
+    {
+        start_sector = FLASH_SECTOR_6;
+        nb_sectors   = 2;
+    }
+
     HAL_FLASH_Unlock();
 
     erase.TypeErase    = FLASH_TYPEERASE_SECTORS;
     erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+    erase.NbSectors    = 1;
 
-    if (slot == OTA_SLOT_A)
+    /* 逐扇区擦除：每个扇区独立临界区，避免长时间屏蔽中断 */
+    for (i = 0; i < nb_sectors; i++)
     {
-        erase.Sector    = FLASH_SECTOR_2;
-        erase.NbSectors = 4;
-    }
-    else
-    {
-        erase.Sector    = FLASH_SECTOR_6;
-        erase.NbSectors = 2;
-    }
+        erase.Sector    = start_sector + i;
+        sector_error    = 0;
 
-    __disable_irq();
-    status = HAL_FLASHEx_Erase(&erase, &sector_error);
-    __enable_irq();
+        __disable_irq();
+        status = HAL_FLASHEx_Erase(&erase, &sector_error);
+        __enable_irq();
+
+        if (status != HAL_OK || sector_error != 0xFFFFFFFFu)
+        {
+            HAL_FLASH_Lock();
+            return -1;
+        }
+    }
 
     HAL_FLASH_Lock();
-
-    if (status == HAL_OK && sector_error == 0xFFFFFFFFu)
-    {
-        return 0;
-    }
-    return -1;
+    return 0;
 }
 
 //*** Write ***//
