@@ -128,6 +128,63 @@ static ota_slot_t OtherBank(ota_slot_t slot)
     return OTA_SLOT_A;
 }
 
+//*** Trace Reader ***//
+
+static const char *EventName(uint32_t event)
+{
+    switch (event)
+    {
+        case 0x01: return "APP_START";
+        case 0x02: return "TRIGGER";
+        case 0x03: return "ERASE_START";
+        case 0x04: return "ERASE_DONE";
+        case 0x05: return "YMODEM_START";
+        case 0x06: return "YMODEM_DONE";
+        case 0x07: return "ECDSA_START";
+        case 0x08: return "ECDSA_DONE";
+        case 0x09: return "SHA256_START";
+        case 0x0A: return "SHA256_DONE";
+        case 0x0B: return "CFG_WRITE";
+        case 0x0C: return "REBOOT";
+        case 0xFF: return "ERROR";
+        default:   return "???";
+    }
+}
+
+static void PrintTrace(void)
+{
+    const ota_trace_entry_t *entries = (const ota_trace_entry_t *)OTA_TRACE_ADDR;
+    int count = 0;
+    int i;
+
+    for (i = 0; i < (int)OTA_TRACE_MAX_ENTRIES; i++)
+    {
+        if (entries[i].event == 0xFFFFFFFF)
+        {
+            break;
+        }
+        count++;
+    }
+
+    if (count == 0)
+    {
+        BspUart_Printf("[BOOT] Trace: (empty)\r\n");
+        return;
+    }
+
+    BspUart_Printf("[BOOT] Trace: %d entries\r\n", count);
+
+    for (i = 0; i < count; i++)
+    {
+        BspUart_Printf("[BOOT] #%02d %-14s t=%-5lu %s data=%lu\r\n",
+                       i + 1,
+                       EventName(entries[i].event),
+                       entries[i].timestamp,
+                       entries[i].result == 0 ? "OK " : "ERR",
+                       entries[i].data);
+    }
+}
+
 //*** Public API ***//
 
 /**
@@ -179,6 +236,8 @@ void Boot_Run(void)
                    StateStr(cfg.state),
                    cfg.active_slot == OTA_SLOT_A ? 'A' : 'B',
                    cfg.boot_count, cfg.fw_size);
+
+    PrintTrace();
 
     switch (cfg.state)
     {
