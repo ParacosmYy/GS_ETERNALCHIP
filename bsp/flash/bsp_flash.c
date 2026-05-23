@@ -216,13 +216,13 @@ int BspFlash_EraseSector(uint32_t sector_num)
 }
 
 /**
- * @brief  擦除指定 OTA Slot 的所有扇区。
+ * @brief  擦除指定 OTA Slot 的所有扇区（逐扇区擦除）。
  *
  * Steps:
  *  1. 解锁 Flash，清除残留错误标志。
- *  2. 根据 Slot 选择扇区范围（Slot A: 2-5, Slot B: 6-7）。
- *  3. 临界区内执行擦除。
- *  4. 锁定 Flash，返回结果。
+ *  2. 逐扇区擦除：每个扇区独立临界区，扇区间中断恢复。
+ *     （避免多扇区一次性擦除导致中断屏蔽 3~8 秒，LED / UART 冻结）
+ *  3. 锁定 Flash，返回结果。
  *
  * @param[in] slot : OTA 槽位（OTA_SLOT_A 或 OTA_SLOT_B）。
  *
@@ -234,10 +234,25 @@ int BspFlash_EraseSlot(ota_slot_t slot)
     FLASH_EraseInitTypeDef erase;
     uint32_t               sector_error = 0;
     HAL_StatusTypeDef      status;
+    uint32_t               start_sector;
+    uint32_t               nb_sectors;
+    uint32_t               i;
 
     if (slot != OTA_SLOT_A && slot != OTA_SLOT_B)
     {
         return -1;
+    }
+
+    /* Slot A 占 Sector 2-5 (224KB), Slot B 占 Sector 6-7 (256KB) */
+    if (slot == OTA_SLOT_A)
+    {
+        start_sector = FLASH_SECTOR_2;
+        nb_sectors   = 4;
+    }
+    else
+    {
+        start_sector = FLASH_SECTOR_6;
+        nb_sectors   = 2;
     }
 
     HAL_FLASH_Unlock();
@@ -250,30 +265,27 @@ int BspFlash_EraseSlot(ota_slot_t slot)
 
     erase.TypeErase    = FLASH_TYPEERASE_SECTORS;
     erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+    erase.NbSectors    = 1;
 
-    /* Slot A 占 Sector 2-5 (224KB), Slot B 占 Sector 6-7 (256KB) */
-    if (slot == OTA_SLOT_A)
+    /* 逐扇区擦除：每个扇区独立临界区，避免长时间屏蔽中断 */
+    for (i = 0; i < nb_sectors; i++)
     {
-        erase.Sector    = FLASH_SECTOR_2;
-        erase.NbSectors = 4;
-    }
-    else
-    {
-        erase.Sector    = FLASH_SECTOR_6;
-        erase.NbSectors = 2;
-    }
+        erase.Sector    = start_sector + i;
+        sector_error    = 0;
 
-    taskENTER_CRITICAL();
-    status = HAL_FLASHEx_Erase(&erase, &sector_error);
-    taskEXIT_CRITICAL();
+        taskENTER_CRITICAL();
+        status = HAL_FLASHEx_Erase(&erase, &sector_error);
+        taskEXIT_CRITICAL();
+
+        if (status != HAL_OK || sector_error != 0xFFFFFFFFu)
+        {
+            HAL_FLASH_Lock();
+            return -1;
+        }
+    }
 
     HAL_FLASH_Lock();
-
-    if (status == HAL_OK && sector_error == 0xFFFFFFFFu)
-    {
-        return 0;
-    }
-    return -1;
+    return 0;
 }
 
 //*** Write ***//
@@ -379,6 +391,9 @@ void BspFlash_Read(uint32_t addr, uint8_t *p_data, uint32_t len)
 
 //*** Config R/W ***//
 
+/** @brief  Sector 1 有效数据区大小：Config + Trace + Crash Dump */
+#define SECTOR1_USED_SIZE  ((CRASH_DUMP_ADDR - FLASH_ADDR_CONFIG) + CRASH_DUMP_SIZE)
+
 /**
  * @brief  从 Flash Config 区读取 OTA 配置，并校验 CRC-32。
  *
@@ -422,21 +437,27 @@ int BspFlash_ReadConfig(ota_config_t *p_cfg)
 }
 
 /**
- * @brief  将 OTA 配置写入 Flash Config 区（计算 CRC 后擦写）。
+ * @brief  将 OTA 配置写入 Flash Config 区，保留 Trace 和 Crash Dump。
  *
  * Steps:
- *  1. 计算配置结构的 CRC-32。
- *  2. 擦除 Sector 1（Config 专用扇区）。
- *  3. 写入完整的 ota_config_t 结构。
+ *  1. 读取 Sector 1 全部有效数据（Config + Trace + Crash Dump）到栈缓冲区。
+ *  2. 计算新 Config 的 CRC-32，更新缓冲区中的 Config 部分。
+ *  3. 擦除 Sector 1。
+ *  4. 将缓冲区整体写回 Flash。
+ *  5. 读回 Config 验证 CRC。
  *
  * @param[in] p_cfg : OTA 配置结构指针。
  *
- * @return   0 : 写入成功。
+ * @return   0 : 写入成功且读回验证通过。
  * @return  -1 : 参数无效、擦除或写入失败。
+ * @return  -2 : 读回验证失败。
  * */
 int BspFlash_WriteConfig(const ota_config_t *p_cfg)
 {
+    uint8_t      buf[SECTOR1_USED_SIZE];
     ota_config_t tmp;
+    ota_config_t verify;
+    int          ret;
 
     if (p_cfg == NULL)
     {
@@ -447,13 +468,31 @@ int BspFlash_WriteConfig(const ota_config_t *p_cfg)
     tmp       = *p_cfg;
     tmp.crc32 = calc_crc32((const uint8_t *)&tmp, offsetof(ota_config_t, crc32));
 
-    /* Sector 1 专用存放 Config，擦除后写入 */
+    /* 读取 Sector 1 全部有效数据（Config + Trace + Crash Dump） */
+    memcpy(buf, (const void *)FLASH_ADDR_CONFIG, SECTOR1_USED_SIZE);
+
+    /* 只更新 Config 部分，Trace 和 Crash Dump 保持原样 */
+    memcpy(buf, &tmp, sizeof(ota_config_t));
+
+    /* 擦除 Sector 1，写回全部数据 */
     if (BspFlash_EraseSector(FLASH_SECTOR_1) != 0)
     {
         return -1;
     }
 
-    return BspFlash_Write(FLASH_ADDR_CONFIG, (const uint8_t *)&tmp, sizeof(ota_config_t));
+    ret = BspFlash_Write(FLASH_ADDR_CONFIG, buf, SECTOR1_USED_SIZE);
+    if (ret != 0)
+    {
+        return -1;
+    }
+
+    /* 读回验证 Config 部分 */
+    if (BspFlash_ReadConfig(&verify) != 0)
+    {
+        return -2;
+    }
+
+    return 0;
 }
 
 //*** Utility ***//
