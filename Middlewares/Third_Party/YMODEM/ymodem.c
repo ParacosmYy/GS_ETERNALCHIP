@@ -170,6 +170,9 @@ int Ymodem_Receive(ymodem_send_byte_t  send_byte,
             send_byte_wrapper(send_byte, YMODEM_ACK, p_user);
             send_byte_wrapper(send_byte, YMODEM_CRC16_REQ, p_user);
 
+            /* Packet 0 解析完成后立即写入文件大小，供 DataCallback 在传输过程中使用 */
+            if (p_filesize) *p_filesize = file_size;
+
             seq_expected = 1;
             phase = 1;
             break;
