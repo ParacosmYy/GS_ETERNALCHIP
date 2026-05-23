@@ -81,9 +81,9 @@
           </BeforeMake>
           <AfterMake>
             <RunUserProg1>1</RunUserProg1>
-            <RunUserProg2>0</RunUserProg2>
+            <RunUserProg2>1</RunUserProg2>
             <UserProg1Name>fromelf --bin --output ".\OTA\OTA.bin" ".\OTA\OTA.axf"</UserProg1Name>
-            <UserProg2Name></UserProg2Name>
+            <UserProg2Name>python ..\..\tools\firmware_sign.py --sign ".\OTA\OTA.bin" --keydir ..\..\tools\keys\ -o ..\..\tools\upload.bin</UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
             <nStopA1X>0</nStopA1X>
@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\led;..\App;..\Module\ota;..\Module\diag;..\bsp\key;..\bsp\uart;..\bsp\rtt;..\bsp\flash;../Middlewares/Third_Party/SEGGER_RTT;../Middlewares/Third_Party/SHA256;../Middlewares/Third_Party/YMODEM;../Middlewares/Third_Party/EasyLogger/inc;../Middlewares/Third_Party/EasyLogger/port;../Middlewares/Third_Party/CmBacktrace;../Middlewares/Third_Party/micro-ecc;../Shared;..\utils</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\led;..\App;..\Module\ota;..\Module\crypto;..\Module\diag;..\bsp\key;..\bsp\uart;..\bsp\rtt;..\bsp\flash;..\Vendor\tiny-AES-c;../Middlewares/Third_Party/SEGGER_RTT;../Middlewares/Third_Party/SHA256;../Middlewares/Third_Party/YMODEM;../Middlewares/Third_Party/EasyLogger/inc;../Middlewares/Third_Party/EasyLogger/port;../Middlewares/Third_Party/CmBacktrace;../Middlewares/Third_Party/micro-ecc;../Shared;..\utils</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -358,7 +358,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\rtt;../Middlewares/Third_Party/SEGGER_RTT;../Shared;..\utils</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\rtt;..\Vendor\tiny-AES-c;../Middlewares/Third_Party/SEGGER_RTT;../Shared;..\utils</IncludePath>
             </VariousControls>
           </Aads>
           <LDads>
@@ -667,7 +667,7 @@
             <File>
               <FileName>ota_ecdsa.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Module\ota\ota_ecdsa.c</FilePath>
+              <FilePath>..\Module\crypto\ota_ecdsa.c</FilePath>
             </File>
             <File>
               <FileName>ota_led.c</FileName>
@@ -683,6 +683,31 @@
               <FileName>crash_dump.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Module\diag\crash_dump.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>crypto</GroupName>
+          <Files>
+            <File>
+              <FileName>ota_aes.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Module\crypto\ota_aes.c</FilePath>
+            </File>
+            <File>
+              <FileName>ota_aes_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Module\crypto\ota_aes_key.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Vendor/tiny-AES-c</GroupName>
+          <Files>
+            <File>
+              <FileName>aes.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Vendor\tiny-AES-c\aes.c</FilePath>
             </File>
           </Files>
         </Group>
