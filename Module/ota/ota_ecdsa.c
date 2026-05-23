@@ -50,6 +50,7 @@ static const uint8_t s_ecdsa_pubkey[64] = {
  * @param[in]  fw_addr   : 固件 Flash 起始地址。
  * @param[in]  fw_len    : 固件长度（字节，不含签名尾部）。
  * @param[in]  signature : 64 字节 ECDSA-P256 签名 (r‖s)。
+ * @param[out] out_hash  : 输出 SHA-256（可为 NULL）。
  *
  * @return   0 : 验签通过。
  * @return  -1 : 验签失败。
@@ -58,7 +59,8 @@ static const uint8_t s_ecdsa_pubkey[64] = {
  *        对于一次性 OTA 操作完全可接受。
  * */
 int OtaEcdsa_Verify(uint32_t fw_addr, uint32_t fw_len,
-                     const uint8_t signature[OTA_ECDSA_SIG_SIZE])
+                     const uint8_t signature[OTA_ECDSA_SIG_SIZE],
+                     uint8_t out_hash[32])
 {
     SHA256_CTX                  ctx;
     uint8_t                     hash[32];
@@ -84,6 +86,12 @@ int OtaEcdsa_Verify(uint32_t fw_addr, uint32_t fw_len,
     }
 
     sha256_final(&ctx, hash);
+
+    /* 输出 SHA-256 供调用者复用，避免重复计算 */
+    if (out_hash != NULL)
+    {
+        memcpy(out_hash, hash, 32);
+    }
 
     /* 2. ECDSA-P256 验签（secp256r1 = NIST P-256） */
     curve = uECC_secp256r1();

@@ -263,11 +263,12 @@ static int ReceiveFirmware(void)
  *  4. Fix s_fw_size to actual firmware size (strip signature).
  *
  * @param[out] p_real_fw_size : Output actual firmware length.
+ * @param[out] hash           : Output SHA-256 hash (32 bytes).
  *
  * @return   0 : signature verified.
  * @return  -1 : verification failed.
  * */
-static int VerifyEcdsaSignature(uint32_t *p_real_fw_size)
+static int VerifyEcdsaSignature(uint32_t *p_real_fw_size, uint8_t hash[32])
 {
     uint8_t  sig[OTA_ECDSA_SIG_SIZE];
     uint32_t real_size;
@@ -290,7 +291,7 @@ static int VerifyEcdsaSignature(uint32_t *p_real_fw_size)
 
     HAL_IWDG_Refresh(&hiwdg);
 
-    if (OtaEcdsa_Verify(OtaConfig_BankAddr(s_target_bank), real_size, sig) != 0)
+    if (OtaEcdsa_Verify(OtaConfig_BankAddr(s_target_bank), real_size, sig, hash) != 0)
     {
         return -1;
     }
@@ -534,7 +535,25 @@ void TaskOta_Init(void)
     OtaTrace_PrintAll();
 
     /* 检查上次是否有 crash 记录 */
-    CrashDump_CheckAndPrint();
+    if (CrashDump_CheckAndPrint())
+    {
+        ota_config_t cfg;
+
+        /*
+         * 如果上次 crash 发生在 CONFIRMED 状态（正常运行中 crash），
+         * 将状态重置为 CONFIRMING，让 Boot 的 boot_count 回滚机制接管。
+         * 连续 crash 达到阈值后 Boot 会自动切换到旧 Bank。
+         */
+        if (BspFlash_ReadConfig(&cfg) == 0 && cfg.state == OTA_STATE_CONFIRMED)
+        {
+            cfg.state      = OTA_STATE_CONFIRMING;
+            cfg.boot_count = 0;
+            if (BspFlash_WriteConfig(&cfg) == 0)
+            {
+                log_w("Crash detected in CONFIRMED state -> CONFIRMING (rollback armed)");
+            }
+        }
+    }
 
     OtaTrace_Record(OTA_TRACE_APP_START, 0, 0);
 }
@@ -629,19 +648,25 @@ void TaskOta_Run(void *p_argument)
         HandleError(result);
     }
 
-    result = VerifyEcdsaSignature(&s_fw_size);
+    result = VerifyEcdsaSignature(&s_fw_size, hash);
     if (result != 0)
     {
         OtaLed_SetErrorCode(OTA_ERR_ECDSA_FAILED);
         HandleError(result);
     }
 
-    result = VerifyFirmware(hash);
-    if (result != 0)
-    {
-        OtaLed_SetErrorCode(OTA_ERR_SHA256_FAILED);
-        HandleError(result);
-    }
+    /* SHA-256 已在 ECDSA 验签中计算，直接打印结果 */
+    OtaTrace_Record(OTA_TRACE_SHA256_DONE, 0, s_fw_size);
+    // clang-format off
+    log_i("SHA-256: %02X%02X%02X%02X%02X%02X%02X%02X"
+          "%02X%02X%02X%02X%02X%02X%02X%02X"
+          "%02X%02X%02X%02X%02X%02X%02X%02X"
+          "%02X%02X%02X%02X%02X%02X%02X%02X",
+          hash[0],hash[1],hash[2],hash[3],hash[4],hash[5],hash[6],hash[7],
+          hash[8],hash[9],hash[10],hash[11],hash[12],hash[13],hash[14],hash[15],
+          hash[16],hash[17],hash[18],hash[19],hash[20],hash[21],hash[22],hash[23],
+          hash[24],hash[25],hash[26],hash[27],hash[28],hash[29],hash[30],hash[31]);
+    // clang-format on
 
     result = UpdateConfig(hash);
     if (result != 0)
