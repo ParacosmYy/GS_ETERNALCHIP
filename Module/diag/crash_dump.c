@@ -180,9 +180,18 @@ void CrashDump_SaveFromFault(uint32_t p_sp, uint32_t exc_lr)
  * Steps:
  *  1. 读取 magic 字段，检查是否为 CRASH_DUMP_MAGIC。
  *  2. 打印所有保存的寄存器值。
+/**
+ * @brief  App 启动时检查并打印上次的 crash 记录。
+ *
+ * Steps:
+ *  1. 读取 magic 字段，检查是否为 CRASH_DUMP_MAGIC。
+ *  2. 打印所有保存的寄存器值。
  *  3. 清除 magic 防止下次重复打印。
+ *
+ * @return  1 : 检测到 crash 记录（已打印并清除）。
+ * @return  0 : 无 crash 记录。
  * */
-void CrashDump_CheckAndPrint(void)
+int CrashDump_CheckAndPrint(void)
 {
     crash_dump_t dump;
 
@@ -190,7 +199,7 @@ void CrashDump_CheckAndPrint(void)
 
     if (dump.magic != CRASH_DUMP_MAGIC)
     {
-        return;
+        return 0;
     }
 
     log_w("=== Crash Dump Detected ===");
@@ -213,4 +222,6 @@ void CrashDump_CheckAndPrint(void)
     flash_clear_errors_raw();
     flash_write_word_raw(CRASH_DUMP_ADDR, 0x00000000u);
     flash_lock_raw();
+
+    return 1;
 }

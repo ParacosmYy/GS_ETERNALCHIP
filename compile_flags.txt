@@ -19,7 +19,9 @@
 -Ibsp/uart
 -Ibsp/rtt
 -Ibsp/flash
--Itasks
+-IModule/ota
+-IModule/diag
+-IApp
 -IShared
 -DUSE_HAL_DRIVER
 -DSTM32F411xE

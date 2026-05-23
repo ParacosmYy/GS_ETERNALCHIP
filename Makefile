@@ -54,7 +54,8 @@ INCDIRS = Core/Inc \
           bsp/flash \
           utils \
           App \
-          Module/ota \
+           Module/ota \
+           Module/diag \
           Middlewares/Third_Party/SEGGER_RTT \
           Middlewares/Third_Party/SHA256 \
           Middlewares/Third_Party/YMODEM \
@@ -150,11 +151,11 @@ C_SRCS += App/task_ota.c \
 
 # Module
 C_SRCS += Module/ota/ota_transport.c \
-          Module/ota/ota_verify.c \
-          Module/ota/ota_ecdsa.c \
-          Module/ota/ota_led.c \
-          Module/ota/ota_trace.c \
-          Module/ota/crash_dump.c
+Module/ota/ota_verify.c \
+Module/ota/ota_ecdsa.c \
+Module/ota/ota_led.c \
+Module/ota/ota_trace.c \
+Module/diag/crash_dump.c
 
 # Third-party Middlewares
 C_SRCS += Middlewares/Third_Party/micro-ecc/uECC.c \

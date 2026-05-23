@@ -46,8 +46,11 @@ void CrashDump_SaveFromFault(uint32_t p_sp, uint32_t exc_lr);
  *
  * 如果 Flash 中存在有效 crash 记录，打印寄存器信息，
  * 然后清除 magic 防止下次重复打印。
+ *
+ * @return  1 : 检测到 crash 记录（已打印并清除）。
+ * @return  0 : 无 crash 记录。
  * */
-void CrashDump_CheckAndPrint(void);
+int CrashDump_CheckAndPrint(void);
 
 #ifdef __cplusplus
 }
