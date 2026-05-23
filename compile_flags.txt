@@ -7,6 +7,7 @@
 -Ibsp/uart
 -Ibsp/flash
 -Ibootloader
+-IMiddlewares/SHA256
 -I../APP/Shared
 -DUSE_HAL_DRIVER
 -DSTM32F411xE

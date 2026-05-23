@@ -30,6 +30,7 @@
 #include "usart.h"
 #include "gpio.h"
 #include "stm32f4xx_hal.h"
+#include "sha256.h"
 #include <string.h>
 
 //*** Utility ***//
@@ -92,6 +93,74 @@ static void JumpToApp(uint32_t app_addr)
 
     JumpToApplication = (pFunction)app_entry;
     JumpToApplication();
+}
+
+//*** Firmware Integrity Check ***//
+
+/**
+ * @brief  计算指定 Flash 区域的 SHA-256 并与期望值比对。
+ *
+ * @param[in]  bank_addr     : Flash 起始地址。
+ * @param[in]  fw_size       : 固件大小（字节）。
+ * @param[in]  expected_hash : 期望的 32 字节 SHA-256。
+ *
+ * @return   0 : 校验通过。
+ * @return  -1 : 校验失败。
+ * */
+static int VerifyBankIntegrity(uint32_t bank_addr, uint32_t fw_size,
+                                const uint8_t expected_hash[32])
+{
+    SHA256_CTX ctx;
+    uint8_t    hash[32];
+    uint8_t    buf[256];
+    uint32_t   i;
+    uint32_t   chunk;
+
+    sha256_init(&ctx);
+
+    for (i = 0; i < fw_size; i += sizeof(buf))
+    {
+        chunk = fw_size - i;
+        if (chunk > sizeof(buf))
+        {
+            chunk = sizeof(buf);
+        }
+        memcpy(buf, (const void *)(bank_addr + i), chunk);
+        sha256_update(&ctx, buf, chunk);
+    }
+
+    sha256_final(&ctx, hash);
+
+    if (memcmp(hash, expected_hash, 32) != 0)
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+/**
+ * @brief  校验固件 SHA-256 并跳转；校验失败则不跳转（进入 Recovery）。
+ *
+ * @param[in]  bank_addr     : 目标 Bank Flash 地址。
+ * @param[in]  fw_size       : 固件大小（字节）。
+ * @param[in]  expected_hash : 期望的 32 字节 SHA-256。
+ * */
+static void VerifyAndJump(uint32_t bank_addr, uint32_t fw_size,
+                           const uint8_t expected_hash[32])
+{
+    if (fw_size > 0 && expected_hash != NULL)
+    {
+        BspUart_Printf("[BOOT] Verifying SHA-256...\r\n");
+        if (VerifyBankIntegrity(bank_addr, fw_size, expected_hash) != 0)
+        {
+            BspUart_Printf("[BOOT] SHA-256 FAILED! Firmware corrupted.\r\n");
+            return;
+        }
+        BspUart_Printf("[BOOT] SHA-256 OK.\r\n");
+    }
+
+    JumpToApp(bank_addr);
 }
 
 //*** Bank Address Helper ***//
@@ -250,7 +319,7 @@ void Boot_Run(void)
             }
             BspUart_Printf("[BOOT] Upgrade! Jumping to Bank %c.\r\n",
                            cfg.active_slot == OTA_SLOT_A ? 'A' : 'B');
-            JumpToApp(BankAddr(cfg.active_slot));
+            VerifyAndJump(BankAddr(cfg.active_slot), cfg.fw_size, cfg.fw_sha256);
             break;
 
         case OTA_STATE_CONFIRMING:
@@ -279,7 +348,7 @@ void Boot_Run(void)
                 BspUart_Printf("[BOOT] Confirming (%lu/%u). Jumping to Bank %c.\r\n",
                                cfg.boot_count, OTA_BOOT_COUNT_THRESHOLD,
                                cfg.active_slot == OTA_SLOT_A ? 'A' : 'B');
-                JumpToApp(BankAddr(cfg.active_slot));
+                VerifyAndJump(BankAddr(cfg.active_slot), cfg.fw_size, cfg.fw_sha256);
             }
             break;
 
@@ -287,7 +356,7 @@ void Boot_Run(void)
         case OTA_STATE_IDLE:
             BspUart_Printf("[BOOT] Jumping to Bank %c.\r\n",
                            cfg.active_slot == OTA_SLOT_A ? 'A' : 'B');
-            JumpToApp(BankAddr(cfg.active_slot));
+            VerifyAndJump(BankAddr(cfg.active_slot), cfg.fw_size, cfg.fw_sha256);
             break;
 
         case OTA_STATE_ROLLBACK:
