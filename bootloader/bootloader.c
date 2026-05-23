@@ -140,7 +140,10 @@ static int VerifyBankIntegrity(uint32_t bank_addr, uint32_t fw_size,
 }
 
 /**
- * @brief  校验固件 SHA-256 并跳转；校验失败则不跳转（进入 Recovery）。
+ * @brief  校验固件 SHA-256 并跳转（严格模式）。
+ *
+ *         校验失败则不跳转（进入 Recovery）。用于 UPGRADE_PENDING / CONFIRMING
+ *         等刚通过 OTA 下载的固件，必须严格验证完整性。
  *
  * @param[in]  bank_addr     : 目标 Bank Flash 地址。
  * @param[in]  fw_size       : 固件大小（字节）。
@@ -161,6 +164,52 @@ static void VerifyAndJump(uint32_t bank_addr, uint32_t fw_size,
     }
 
     JumpToApp(bank_addr);
+}
+
+/**
+ * @brief  校验并跳转（宽松模式，用于 CONFIRMED / IDLE 状态）。
+ *
+ *         先尝试严格 SHA-256 校验；若不匹配（直接烧录场景），退而检查
+ *         向量表合法性（SP 在 SRAM、Reset Vector 在 Flash 范围内），
+ *         有效则允许跳转。避免每次 ST-Link 直接烧录后必须 Erase All。
+ *
+ * @param[in]  bank_addr     : 目标 Bank Flash 地址。
+ * @param[in]  fw_size       : 固件大小（字节）。
+ * @param[in]  expected_hash : 期望的 32 字节 SHA-256。
+ * */
+static void VerifyAndJumpRelaxed(uint32_t bank_addr, uint32_t fw_size,
+                                  const uint8_t expected_hash[32])
+{
+    uint32_t sp;
+    uint32_t entry;
+
+    /* 先尝试严格校验 */
+    if (fw_size > 0 && expected_hash != NULL)
+    {
+        BspUart_Printf("[BOOT] Verifying SHA-256...\r\n");
+        if (VerifyBankIntegrity(bank_addr, fw_size, expected_hash) == 0)
+        {
+            BspUart_Printf("[BOOT] SHA-256 OK.\r\n");
+            JumpToApp(bank_addr);
+            return;
+        }
+
+        BspUart_Printf("[BOOT] SHA-256 mismatch (direct flash?). Checking vector table...\r\n");
+    }
+
+    /* SHA-256 不匹配或无 hash：检查向量表合法性 */
+    sp    = *(volatile uint32_t *)bank_addr;
+    entry = *(volatile uint32_t *)(bank_addr + 4);
+
+    if (sp >= SRAM_BASE && sp <= SRAM_END &&
+        entry >= bank_addr && entry < bank_addr + BANK_APP_SIZE)
+    {
+        BspUart_Printf("[BOOT] Vector table valid. Jumping.\r\n");
+        JumpToApp(bank_addr);
+        return;
+    }
+
+    BspUart_Printf("[BOOT] Firmware invalid! SP=0x%08X Entry=0x%08X\r\n", sp, entry);
 }
 
 //*** Bank Address Helper ***//
@@ -356,7 +405,7 @@ void Boot_Run(void)
         case OTA_STATE_IDLE:
             BspUart_Printf("[BOOT] Jumping to Bank %c.\r\n",
                            cfg.active_slot == OTA_SLOT_A ? 'A' : 'B');
-            VerifyAndJump(BankAddr(cfg.active_slot), cfg.fw_size, cfg.fw_sha256);
+            VerifyAndJumpRelaxed(BankAddr(cfg.active_slot), cfg.fw_size, cfg.fw_sha256);
             break;
 
         case OTA_STATE_ROLLBACK:
