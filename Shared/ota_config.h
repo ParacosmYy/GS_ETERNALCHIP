@@ -86,6 +86,25 @@ extern "C" {
 /** @brief 未确认启动次数阈值，超过则回退 */
 #define OTA_BOOT_COUNT_THRESHOLD 3u
 
+/** @brief OTA 故障追踪区（Sector 1 内，ota_config_t 之后） */
+#define OTA_TRACE_ADDR        (FLASH_ADDR_CONFIG + 0x100u)
+#define OTA_TRACE_MAX_ENTRIES 32u
+#define OTA_TRACE_ENTRY_SIZE  16u
+
+/** @brief 追踪记录结构（16 字节，Flash 存储） */
+typedef struct
+{
+    uint32_t event;      /**< 事件类型 */
+    uint32_t timestamp;  /**< 时间戳（ms） */
+    uint32_t result;     /**< 结果（0 = 成功） */
+    uint32_t data;       /**< 附加数据 */
+} ota_trace_entry_t;
+
+/** @brief Crash dump 区（Sector 1 内，OTA Trace 之后） */
+#define CRASH_DUMP_ADDR       (OTA_TRACE_ADDR + OTA_TRACE_MAX_ENTRIES * OTA_TRACE_ENTRY_SIZE)
+#define CRASH_DUMP_MAGIC      0x43524153u  /* "CRAS" */
+#define CRASH_DUMP_SIZE       64u          /* crash_dump_t 结构大小 */
+
 //******************************* Types *************************************//
 
 /** @brief OTA Bank 标识 */
@@ -119,6 +138,27 @@ typedef struct
     char        prev_fw_version[16]; /**< 升级前固件版本 */
     uint32_t    crc32;          /**< 以上所有字段的 CRC-32 */
 } ota_config_t;
+
+/** @brief Crash 寄存器转储结构（64 字节，写入 Flash） */
+typedef struct
+{
+    uint32_t magic;    /**< CRASH_DUMP_MAGIC, 标记有效记录 */
+    uint32_t cfsr;     /**< Configurable Fault Status */
+    uint32_t hfsr;     /**< HardFault Status */
+    uint32_t mmfar;    /**< MemManage Fault Address */
+    uint32_t bfar;     /**< BusFault Address */
+    uint32_t psp;      /**< Process Stack Pointer (fault context) */
+    uint32_t msp;      /**< Main Stack Pointer */
+    uint32_t pc;       /**< Program Counter (fault instruction) */
+    uint32_t lr;       /**< Link Register (return address) */
+    uint32_t xpsr;     /**< Program Status Register */
+    uint32_t r0;       /**< General purpose register R0 */
+    uint32_t r1;       /**< General purpose register R1 */
+    uint32_t r2;       /**< General purpose register R2 */
+    uint32_t r3;       /**< General purpose register R3 */
+    uint32_t r12;      /**< General purpose register R12 */
+    uint32_t exc_lr;   /**< EXC_RETURN value */
+} crash_dump_t;
 
 //******************************* Declaring *********************************//
 

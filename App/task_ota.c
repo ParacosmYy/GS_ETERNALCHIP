@@ -34,6 +34,8 @@
 #include "ota_verify.h"
 #include "ota_ecdsa.h"
 #include "ota_led.h"
+#include "ota_trace.h"
+#include "crash_dump.h"
 #include <string.h>
 
 //*** Private Variables ***//
@@ -143,8 +145,18 @@ static int WaitForTrigger(void)
 
     while (!s_trigger_flag)
     {
+        uint8_t byte;
+
         BspKey_Scan(&s_key);
         OtaLed_TimebaseHook();
+
+        /* 远程触发：检查 ring buffer 中的 0xF5 */
+        if (BspUart_ReadByte(&s_uart_drv, &byte, 0) == 0 && byte == 0xF5)
+        {
+            log_i("Remote trigger received (0xF5)");
+            s_trigger_flag = 1;
+        }
+
         osDelay(10);
     }
 
@@ -154,6 +166,7 @@ static int WaitForTrigger(void)
         return -2;
     }
 
+    OtaTrace_Record(OTA_TRACE_TRIGGER, 0, 0);
     log_i("Starting upgrade...");
     return 0;
 }
@@ -175,6 +188,8 @@ static int EraseTargetBank(void)
     OtaLed_SetMode(OTA_LED_WORKING);
     log_i("Erasing target Bank...");
 
+    OtaTrace_Record(OTA_TRACE_ERASE_START, 0, 0);
+
     HAL_IWDG_Refresh(&hiwdg);
 
     if (BspFlash_EraseSlot(s_target_bank) != 0)
@@ -183,6 +198,7 @@ static int EraseTargetBank(void)
         return -1;
     }
 
+    OtaTrace_Record(OTA_TRACE_ERASE_DONE, 0, 0);
     log_i("Target Bank erased.");
     return 0;
 }
@@ -206,12 +222,15 @@ static int ReceiveFirmware(void)
     OtaLed_SetMode(OTA_LED_RECEIVING);
     log_i("Waiting for YMODEM transfer...");
 
+    OtaTrace_Record(OTA_TRACE_YMODEM_START, 0, 0);
+
     /*
      * 等待 UART TX 发送完毕，防止 log 中的 'C'(0x43) 字符
      * 被 PC 端误判为 YMODEM CRC 请求。先等 TX drain，再清 RX。
      */
     osDelay(100);
     __HAL_UART_FLUSH_DRREGISTER(&huart1);
+    ring_buffer_init(&s_ring_buf, s_ring_storage, UART_RX_RING_SIZE);
 
     OtaTransport_Init(&s_fw_size, OtaConfig_BankAddr(s_target_bank), &s_uart_drv);
 
@@ -229,6 +248,7 @@ static int ReceiveFirmware(void)
         return -1;
     }
 
+    OtaTrace_Record(OTA_TRACE_YMODEM_DONE, 0, s_fw_size);
     log_i("Received %lu bytes.", s_fw_size);
     return 0;
 }
@@ -266,6 +286,8 @@ static int VerifyEcdsaSignature(uint32_t *p_real_fw_size)
     memcpy(sig, (const void *)(OtaConfig_BankAddr(s_target_bank) + real_size), OTA_ECDSA_SIG_SIZE);
     log_i("Verifying ECDSA signature (%lu bytes firmware)...", real_size);
 
+    OtaTrace_Record(OTA_TRACE_ECDSA_START, 0, real_size);
+
     HAL_IWDG_Refresh(&hiwdg);
 
     if (OtaEcdsa_Verify(OtaConfig_BankAddr(s_target_bank), real_size, sig) != 0)
@@ -273,6 +295,7 @@ static int VerifyEcdsaSignature(uint32_t *p_real_fw_size)
         return -1;
     }
 
+    OtaTrace_Record(OTA_TRACE_ECDSA_DONE, 0, real_size);
     *p_real_fw_size = real_size;
     return 0;
 }
@@ -294,7 +317,11 @@ static int VerifyFirmware(uint8_t hash[32])
     s_state = OTA_TASK_VERIFYING;
     log_i("Verifying SHA-256...");
 
+    OtaTrace_Record(OTA_TRACE_SHA256_START, 0, s_fw_size);
+
     OtaVerify_SHA256Flash(OtaConfig_BankAddr(s_target_bank), s_fw_size, hash);
+
+    OtaTrace_Record(OTA_TRACE_SHA256_DONE, 0, s_fw_size);
 
     // clang-format off
     log_i("SHA-256: %02X%02X%02X%02X%02X%02X%02X%02X"
@@ -356,6 +383,7 @@ static int UpdateConfig(const uint8_t hash[32])
         return -1;
     }
 
+    OtaTrace_Record(OTA_TRACE_CFG_WRITE, 0, cfg.upgrade_count);
     log_i("Config updated.");
     return 0;
 }
@@ -413,6 +441,8 @@ static void RebootDevice(void)
 {
     s_state = OTA_TASK_REBOOT_PENDING;
     OtaLed_SetMode(OTA_LED_REBOOTING);
+
+    OtaTrace_Record(OTA_TRACE_REBOOT, 0, s_fw_size);
     log_i("Upgrade ready. Rebooting in 1s...");
 
     osDelay(1000);
@@ -440,6 +470,8 @@ static void HandleError(int result)
     s_state = OTA_TASK_ERROR;
 
     code = OtaLed_GetErrorCode();
+
+    OtaTrace_Record(OTA_TRACE_ERROR, code, 0);
 
     log_e("ERROR! Code=%u, %s. Rebooting in 3s...",
           code,
@@ -496,6 +528,15 @@ void TaskOta_Init(void)
     elog_set_fmt(ELOG_LVL_DEBUG, ELOG_FMT_LVL | ELOG_FMT_TAG);
     elog_set_fmt(ELOG_LVL_VERBOSE, ELOG_FMT_TAG);
     elog_start();
+
+    /* 初始化 OTA 追踪模块，打印上次追踪日志 */
+    OtaTrace_Init();
+    OtaTrace_PrintAll();
+
+    /* 检查上次是否有 crash 记录 */
+    CrashDump_CheckAndPrint();
+
+    OtaTrace_Record(OTA_TRACE_APP_START, 0, 0);
 }
 
 /**

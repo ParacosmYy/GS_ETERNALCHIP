@@ -314,7 +314,7 @@ int BspUart_ReadByte(bsp_uart_driver_t *p_drv, uint8_t *p_byte, uint32_t timeout
 {
     uint32_t start = HAL_GetTick();
 
-    while ((HAL_GetTick() - start) < timeout_ms)
+    do
     {
         int16_t val;
 
@@ -330,8 +330,13 @@ int BspUart_ReadByte(bsp_uart_driver_t *p_drv, uint8_t *p_byte, uint32_t timeout
             return 0;
         }
 
+        if (timeout_ms == 0)
+        {
+            return -1;
+        }
+
         osDelay(1);
-    }
+    } while ((HAL_GetTick() - start) < timeout_ms);
 
     return -1;
 }

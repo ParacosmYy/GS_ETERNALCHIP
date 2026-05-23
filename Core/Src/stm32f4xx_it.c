@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "cm_backtrace.h"
 #include "iwdg.h"
+#include "crash_dump.h"
 
 /* ARM Compiler V5 inline assembly for LR/SP access */
 #if defined(__CC_ARM)
@@ -115,8 +116,27 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
+  uint32_t fault_sp;
+  uint32_t exc_lr;
   HAL_IWDG_Refresh(&hiwdg);
-  cm_backtrace_fault(__get_LR(), __get_SP());
+
+  /* 保存 EXC_RETURN（LR），在后续操作中可能被覆盖 */
+#if defined(__GNUC__)
+  __asm__ volatile("mov %0, lr" : "=r"(exc_lr));
+  __asm__ volatile(
+    "tst %1, #4      \n"  /* EXC_RETURN bit[2]: 0=MSP, 1=PSP */
+    "ite eq           \n"
+    "mrseq %0, msp    \n"
+    "mrsne %0, psp    \n"
+    : "=r"(fault_sp) : "r"(exc_lr)
+  );
+#else
+  exc_lr  = __get_LR();
+  fault_sp = __get_SP();
+#endif
+
+  CrashDump_SaveFromFault(fault_sp, exc_lr);
+  cm_backtrace_fault(exc_lr, fault_sp);
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -131,7 +151,23 @@ void HardFault_Handler(void)
 void MemManage_Handler(void)
 {
   /* USER CODE BEGIN MemoryManagement_IRQn 0 */
-  cm_backtrace_fault(__get_LR(), __get_SP());
+  uint32_t fault_sp;
+  uint32_t exc_lr;
+#if defined(__GNUC__)
+  __asm__ volatile("mov %0, lr" : "=r"(exc_lr));
+  __asm__ volatile(
+    "tst %1, #4      \n"
+    "ite eq           \n"
+    "mrseq %0, msp    \n"
+    "mrsne %0, psp    \n"
+    : "=r"(fault_sp) : "r"(exc_lr)
+  );
+#else
+  exc_lr  = __get_LR();
+  fault_sp = __get_SP();
+#endif
+  CrashDump_SaveFromFault(fault_sp, exc_lr);
+  cm_backtrace_fault(exc_lr, fault_sp);
   /* USER CODE END MemoryManagement_IRQn 0 */
   while (1)
   {
@@ -146,7 +182,23 @@ void MemManage_Handler(void)
 void BusFault_Handler(void)
 {
   /* USER CODE BEGIN BusFault_IRQn 0 */
-  cm_backtrace_fault(__get_LR(), __get_SP());
+  uint32_t fault_sp;
+  uint32_t exc_lr;
+#if defined(__GNUC__)
+  __asm__ volatile("mov %0, lr" : "=r"(exc_lr));
+  __asm__ volatile(
+    "tst %1, #4      \n"
+    "ite eq           \n"
+    "mrseq %0, msp    \n"
+    "mrsne %0, psp    \n"
+    : "=r"(fault_sp) : "r"(exc_lr)
+  );
+#else
+  exc_lr  = __get_LR();
+  fault_sp = __get_SP();
+#endif
+  CrashDump_SaveFromFault(fault_sp, exc_lr);
+  cm_backtrace_fault(exc_lr, fault_sp);
   /* USER CODE END BusFault_IRQn 0 */
   while (1)
   {
@@ -161,7 +213,23 @@ void BusFault_Handler(void)
 void UsageFault_Handler(void)
 {
   /* USER CODE BEGIN UsageFault_IRQn 0 */
-  cm_backtrace_fault(__get_LR(), __get_SP());
+  uint32_t fault_sp;
+  uint32_t exc_lr;
+#if defined(__GNUC__)
+  __asm__ volatile("mov %0, lr" : "=r"(exc_lr));
+  __asm__ volatile(
+    "tst %1, #4      \n"
+    "ite eq           \n"
+    "mrseq %0, msp    \n"
+    "mrsne %0, psp    \n"
+    : "=r"(fault_sp) : "r"(exc_lr)
+  );
+#else
+  exc_lr  = __get_LR();
+  fault_sp = __get_SP();
+#endif
+  CrashDump_SaveFromFault(fault_sp, exc_lr);
+  cm_backtrace_fault(exc_lr, fault_sp);
   /* USER CODE END UsageFault_IRQn 0 */
   while (1)
   {
