@@ -293,6 +293,9 @@ void BspFlash_Read(uint32_t addr, uint8_t *p_data, uint32_t len)
 
 //*** Config R/W ***//
 
+/** @brief  Sector 1 有效数据区大小：Config + Trace + Crash Dump */
+#define SECTOR1_USED_SIZE  ((CRASH_DUMP_ADDR - FLASH_ADDR_CONFIG) + CRASH_DUMP_SIZE)
+
 /**
  * @brief  从 Sector 1 读取 OTA 配置，校验 magic + CRC-32
  * @param  p_cfg  输出配置结构体（调用者分配）
@@ -327,15 +330,23 @@ int BspFlash_ReadConfig(ota_config_t *p_cfg)
 }
 
 /**
- * @brief  写入 OTA 配置到 Sector 1
- *         自动计算 CRC-32，擦除后重写，写入后读回验证。
+ * @brief  将 OTA 配置写入 Sector 1，保留 Trace 和 Crash Dump。
+ *
+ * Steps:
+ *  1. 读取 Sector 1 全部有效数据（Config + Trace + Crash Dump）到栈缓冲区。
+ *  2. 计算新 Config 的 CRC-32，更新缓冲区中的 Config 部分。
+ *  3. 擦除 Sector 1。
+ *  4. 将缓冲区整体写回 Flash。
+ *  5. 读回验证 CRC。
+ *
  * @param  p_cfg  待写入的配置结构体
  * @retval 0   成功
  * @retval -1  参数无效、擦除失败或写入失败
- * @retval -2  写入后读回验证失败（CRC 不匹配）
+ * @retval -2  写入后读回验证失败
  */
 int BspFlash_WriteConfig(const ota_config_t *p_cfg)
 {
+    uint8_t      buf[SECTOR1_USED_SIZE];
     ota_config_t tmp;
     ota_config_t verify;
     int          ret;
@@ -348,12 +359,19 @@ int BspFlash_WriteConfig(const ota_config_t *p_cfg)
     tmp       = *p_cfg;
     tmp.crc32 = calc_crc32((const uint8_t *)&tmp, offsetof(ota_config_t, crc32));
 
+    /* 读取 Sector 1 全部有效数据（Config + Trace + Crash Dump） */
+    memcpy(buf, (const void *)FLASH_ADDR_CONFIG, SECTOR1_USED_SIZE);
+
+    /* 只更新 Config 部分，Trace 和 Crash Dump 保持原样 */
+    memcpy(buf, &tmp, sizeof(ota_config_t));
+
+    /* 擦除 Sector 1，写回全部数据 */
     if (BspFlash_EraseSector(FLASH_SECTOR_1) != 0)
     {
         return -1;
     }
 
-    ret = BspFlash_Write(FLASH_ADDR_CONFIG, (const uint8_t *)&tmp, sizeof(ota_config_t));
+    ret = BspFlash_Write(FLASH_ADDR_CONFIG, buf, SECTOR1_USED_SIZE);
     if (ret != 0)
     {
         return -1;
