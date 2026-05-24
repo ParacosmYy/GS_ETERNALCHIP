@@ -30,6 +30,7 @@ extern "C" {
 
 /* LED — 命名保持 bsp_led_hal_ops 以匹配 plat_led.h 的 extern 声明 */
 extern const led_operations_t bsp_led_hal_ops;
+extern const led_os_operations_t g_led_os_ops;
 
 // 按键
 extern const key_hw_operations_t g_key_hal_ops;

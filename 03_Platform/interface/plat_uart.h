@@ -62,6 +62,7 @@ typedef struct
     int  (*pf_send_dma)(void *p_huart, const uint8_t *data, uint16_t len);
     int  (*pf_send_blocking)(void *p_huart, const uint8_t *data, uint16_t len, uint32_t timeout);
     void (*pf_flush_dr)(void *p_huart);
+    void (*pf_disable_ht_irq)(void *p_huart); /**< 关闭 DMA 半传输中断 */
 } uart_hw_operations_t;
 
 /** @brief  OS 操作 — 抽象 OS/tick 调用 */

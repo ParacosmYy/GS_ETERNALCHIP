@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
  * Copyright (C) 2025 GS_Mark. All rights reserved.
  *
  * @file    ota_led.c
@@ -26,6 +26,7 @@
 #include "elog.h"
 #include "ota_led.h"
 #include "bsp_led_driver.h"
+#include "system_adaption.h"
 #include <string.h>
 //******************************** 头文件 ***********************************//
 
@@ -75,7 +76,7 @@ void OtaLed_Init(void)
 {
     static const bsp_led_config_t led_cfg = { { (void *)GPIOC, 13, 0 } };
 
-    BspLed_Init(&s_led, &led_cfg);
+    BspLed_Init(&s_led, &led_cfg, &g_led_os_ops);
     s_mode        = OTA_LED_OFF;
     s_error_code  = 0;
     s_err_blink_count = 0;

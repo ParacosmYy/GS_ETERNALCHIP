@@ -40,34 +40,38 @@ DEFS = -DUSE_HAL_DRIVER \
 
 # ----------------------------- Include Paths ------------------------------- #
 INCDIRS = Core/Inc \
-          Drivers/STM32F4xx_HAL_Driver/Inc \
-          Drivers/STM32F4xx_HAL_Driver/Inc/Legacy \
-          Middlewares/Third_Party/FreeRTOS/Source/include \
-          Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 \
-          Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F \
-          Drivers/CMSIS/Device/ST/STM32F4xx/Include \
-          Drivers/CMSIS/Include \
-           04_Impl/led \
-           04_Impl/key \
-           04_Impl/uart \
-           04_Impl/rtt \
-           04_Impl/flash \
-           04_Impl/wdg \
-           04_Impl/sys \
-           04_Impl/adaptation \
-          03_Platform/common \
-          03_Platform/interface \
-          01_App \
-          02_Service \
-          Vendor/tiny-AES-c \
-          Middlewares/Third_Party/SEGGER_RTT \
-          Middlewares/Third_Party/SHA256 \
-          Middlewares/Third_Party/YMODEM \
-          Middlewares/Third_Party/EasyLogger/inc \
-          Middlewares/Third_Party/EasyLogger/port \
-          Middlewares/Third_Party/CmBacktrace \
-          Middlewares/Third_Party/micro-ecc \
-          Shared
+           Drivers/STM32F4xx_HAL_Driver/Inc \
+           Drivers/STM32F4xx_HAL_Driver/Inc/Legacy \
+           Middlewares/Third_Party/FreeRTOS/Source/include \
+           Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 \
+           Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F \
+           Drivers/CMSIS/Device/ST/STM32F4xx/Include \
+           Drivers/CMSIS/Include \
+            04_Impl/led/driver \
+            04_Impl/led/handler \
+            04_Impl/key/driver \
+            04_Impl/key/handler \
+            04_Impl/uart/driver \
+            04_Impl/uart/handler \
+            04_Impl/rtt/driver \
+            04_Impl/flash/driver \
+            04_Impl/flash/handler \
+            04_Impl/wdg/driver \
+            04_Impl/sys/driver \
+            04_Impl/adaptation \
+           03_Platform/common \
+           03_Platform/interface \
+           01_App \
+           02_Service \
+           Vendor/tiny-AES-c \
+           Middlewares/Third_Party/SEGGER_RTT \
+           Middlewares/Third_Party/SHA256 \
+           Middlewares/Third_Party/YMODEM \
+           Middlewares/Third_Party/EasyLogger/inc \
+           Middlewares/Third_Party/EasyLogger/port \
+           Middlewares/Third_Party/CmBacktrace \
+           Middlewares/Third_Party/micro-ecc \
+           Shared
 
 INCS = $(addprefix -I,$(INCDIRS))
 
@@ -137,15 +141,17 @@ C_SRCS += Middlewares/Third_Party/FreeRTOS/Source/croutine.c \
 
 # 04_Impl (BSP implementations)
 C_SRCS += 04_Impl/adaptation/system_adaption.c \
-          04_Impl/key/bsp_key_driver.c \
-          04_Impl/led/bsp_led_driver.c \
-          04_Impl/uart/bsp_uart_driver.c \
-          04_Impl/uart/bsp_uart_handler.c \
-          04_Impl/rtt/bsp_rtt_driver.c \
-           04_Impl/flash/bsp_flash_driver.c \
-           04_Impl/flash/bsp_flash_handler.c \
-          04_Impl/wdg/bsp_wdg_driver.c \
-          04_Impl/sys/bsp_sys_driver.c
+           04_Impl/key/driver/bsp_key_driver.c \
+           04_Impl/key/handler/bsp_key_handler.c \
+           04_Impl/led/driver/bsp_led_driver.c \
+           04_Impl/led/handler/bsp_led_handler.c \
+           04_Impl/uart/driver/bsp_uart_driver.c \
+           04_Impl/uart/handler/bsp_uart_handler.c \
+           04_Impl/rtt/driver/bsp_rtt_driver.c \
+           04_Impl/flash/driver/bsp_flash_driver.c \
+           04_Impl/flash/handler/bsp_flash_handler.c \
+           04_Impl/wdg/driver/bsp_wdg_driver.c \
+           04_Impl/sys/driver/bsp_sys_driver.c
 
 # 03_Platform/common
 C_SRCS += 03_Platform/common/ring_buffer.c

@@ -41,6 +41,12 @@ typedef struct
     void (*p_Toggle)(bsp_led_driver_t *p_drv); /**< 翻转 */
 } led_operations_t;
 
+/** @brief  LED OS 操作抽象层（时基服务） */
+typedef struct
+{
+    uint32_t (*pf_get_tick)(void); /**< 获取系统 tick（毫秒） */
+} led_os_operations_t;
+
 /** @brief  LED 硬件配置（平台无关） */
 typedef struct
 {
@@ -50,17 +56,19 @@ typedef struct
 /** @brief  LED 驱动实例 */
 struct bsp_led_driver
 {
-    const bsp_led_config_t *p_config;          /**< 硬件配置 */
-    const led_operations_t *p_ops;             /**< 操作函数指针 */
-    uint32_t                blink_interval_ms; /**< 闪烁周期（0 = 停止） */
-    uint32_t                blink_last_tick;   /**< 上次翻转时间戳 */
-    uint8_t                 is_blinking;       /**< 1 = 闪烁中 */
+    const bsp_led_config_t    *p_config;          /**< 硬件配置 */
+    const led_operations_t    *p_ops;             /**< 操作函数指针 */
+    const led_os_operations_t *p_os_ops;          /**< OS 操作函数指针 */
+    uint32_t                   blink_interval_ms; /**< 闪烁周期（0 = 停止） */
+    uint32_t                   blink_last_tick;   /**< 上次翻转时间戳 */
+    uint8_t                    is_blinking;       /**< 1 = 闪烁中 */
 };
 
 //******************************* Declaring ********************************//
 
-/** @brief  初始化 LED 驱动（使用默认 HAL GPIO 操作） */
-void BspLed_Init(bsp_led_driver_t *p_drv, const bsp_led_config_t *p_config);
+/** @brief  初始化 LED 驱动（使用默认 HAL GPIO 操作 + OS 时基操作） */
+void BspLed_Init(bsp_led_driver_t *p_drv, const bsp_led_config_t *p_config,
+                 const led_os_operations_t *p_os_ops);
 
 /** @brief  点亮 LED */
 void BspLed_On(bsp_led_driver_t *p_drv);
@@ -84,6 +92,9 @@ void BspLed_TimebaseHook(bsp_led_driver_t *p_drv);
 
 /** @brief  预定义的 HAL GPIO 操作实例 */
 extern const led_operations_t bsp_led_hal_ops;
+
+/** @brief  预定义的 HAL OS 操作实例（时基） */
+extern const led_os_operations_t g_led_os_ops;
 
 #ifdef __cplusplus
 }

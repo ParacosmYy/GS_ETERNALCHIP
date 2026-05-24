@@ -23,6 +23,12 @@ extern "C"
 #include "stm32f4xx_hal.h"
 #include "plat_led.h"
 
+//*** 可配置宏 ***//
+
+#ifndef BSP_LED_MAX_INSTANCES
+#    define BSP_LED_MAX_INSTANCES 4
+#endif
+
 #ifdef __cplusplus
 }
 #endif

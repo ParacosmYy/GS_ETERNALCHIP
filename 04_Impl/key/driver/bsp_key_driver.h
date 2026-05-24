@@ -19,6 +19,12 @@ extern "C"
 #include "stm32f4xx_hal.h"
 #include "plat_key.h"
 
+    //*** 可配置宏 ***//
+
+#ifndef BSP_KEY_MAX_INSTANCES
+#    define BSP_KEY_MAX_INSTANCES 4
+#endif
+
     //*** FSM 状态（仅 Impl 层） ***//
 
     enum

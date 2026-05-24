@@ -102,6 +102,21 @@ const led_operations_t bsp_led_hal_ops = {
     .p_Toggle = HalLed_Toggle,
 };
 
+/**
+ * @brief  LED OS 时基操作 — 获取系统 tick。
+ *
+ * @return  当前 tick 计数（毫秒）。
+ * */
+static uint32_t HalLed_GetTick(void)
+{
+    return HAL_GetTick();
+}
+
+/** @brief  LED OS 操作接口实例 */
+const led_os_operations_t g_led_os_ops = {
+    .pf_get_tick = HalLed_GetTick,
+};
+
 //*** 按键 HAL 操作接口 ***//
 
 /**
@@ -491,6 +506,16 @@ static void HalUart_FlushDr(void *p_huart)
     __HAL_UART_FLUSH_DRREGISTER((UART_HandleTypeDef *)p_huart);
 }
 
+/**
+ * @brief  关闭 DMA 半传输中断。
+ *
+ * @param[in] p_huart : HAL UART 句柄（void*）。
+ * */
+static void HalUart_DisableHtIrq(void *p_huart)
+{
+    __HAL_DMA_DISABLE_IT(((UART_HandleTypeDef *)p_huart)->hdmarx, DMA_IT_HT);
+}
+
 /** @brief  UART 硬件操作接口实例 */
 const uart_hw_operations_t g_uart_hal_ops = {
     .pf_start_dma_rx  = HalUart_StartDmaRx,
@@ -498,6 +523,7 @@ const uart_hw_operations_t g_uart_hal_ops = {
     .pf_send_dma      = HalUart_SendDma,
     .pf_send_blocking = HalUart_SendBlocking,
     .pf_flush_dr      = HalUart_FlushDr,
+    .pf_disable_ht_irq = HalUart_DisableHtIrq,
 };
 
 /**

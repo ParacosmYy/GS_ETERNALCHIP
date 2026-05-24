@@ -65,7 +65,7 @@ static int start_dma_rx(bsp_uart_driver_t *p_drv)
     }
 
     /* 关闭半传输中断，仅在 IDLE 或缓冲区满时回调 */
-    __HAL_DMA_DISABLE_IT(HAL_UART(cfg->p_huart)->hdmarx, DMA_IT_HT);
+    p_drv->p_hw_ops->pf_disable_ht_irq(cfg->p_huart);
 
     p_drv->rx_busy = 1;
     return 0;

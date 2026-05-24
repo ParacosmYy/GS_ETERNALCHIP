@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file    ota_ecdsa.c
  * @brief   OTA 固件 ECDSA-P256 签名验证实现
  * @author  GS_Mark

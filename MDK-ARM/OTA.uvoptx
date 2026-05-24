@@ -925,8 +925,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\04_Impl\key\bsp_key_driver.c</PathWithFileName>
-      <FilenameWithoutPath>bsp_key_driver.c</FilenameWithoutPath>
+      <PathWithFileName>..\04_Impl\flash\driver\bsp_flash_driver.c</PathWithFileName>
+      <FilenameWithoutPath>bsp_flash_driver.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -937,8 +937,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\04_Impl\led\bsp_led_driver.c</PathWithFileName>
-      <FilenameWithoutPath>bsp_led_driver.c</FilenameWithoutPath>
+      <PathWithFileName>..\04_Impl\flash\handler\bsp_flash_handler.c</PathWithFileName>
+      <FilenameWithoutPath>bsp_flash_handler.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -949,7 +949,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\04_Impl\uart\bsp_uart_driver.c</PathWithFileName>
+      <PathWithFileName>..\04_Impl\uart\driver\bsp_uart_driver.c</PathWithFileName>
       <FilenameWithoutPath>bsp_uart_driver.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -961,7 +961,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\04_Impl\uart\bsp_uart_handler.c</PathWithFileName>
+      <PathWithFileName>..\04_Impl\uart\handler\bsp_uart_handler.c</PathWithFileName>
       <FilenameWithoutPath>bsp_uart_handler.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -973,8 +973,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\04_Impl\rtt\bsp_rtt_driver.c</PathWithFileName>
-      <FilenameWithoutPath>bsp_rtt_driver.c</FilenameWithoutPath>
+      <PathWithFileName>..\04_Impl\led\driver\bsp_led_driver.c</PathWithFileName>
+      <FilenameWithoutPath>bsp_led_driver.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -985,8 +985,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\04_Impl\flash\bsp_flash_driver.c</PathWithFileName>
-      <FilenameWithoutPath>bsp_flash_driver.c</FilenameWithoutPath>
+      <PathWithFileName>..\04_Impl\led\handler\bsp_led_handler.c</PathWithFileName>
+      <FilenameWithoutPath>bsp_led_handler.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -997,8 +997,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\04_Impl\flash\bsp_flash_handler.c</PathWithFileName>
-      <FilenameWithoutPath>bsp_flash_handler.c</FilenameWithoutPath>
+      <PathWithFileName>..\04_Impl\key\driver\bsp_key_driver.c</PathWithFileName>
+      <FilenameWithoutPath>bsp_key_driver.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -1009,8 +1009,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\04_Impl\wdg\bsp_wdg_driver.c</PathWithFileName>
-      <FilenameWithoutPath>bsp_wdg_driver.c</FilenameWithoutPath>
+      <PathWithFileName>..\04_Impl\key\handler\bsp_key_handler.c</PathWithFileName>
+      <FilenameWithoutPath>bsp_key_handler.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -1021,8 +1021,32 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\04_Impl\sys\bsp_sys_driver.c</PathWithFileName>
+      <PathWithFileName>..\04_Impl\wdg\driver\bsp_wdg_driver.c</PathWithFileName>
+      <FilenameWithoutPath>bsp_wdg_driver.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>10</GroupNumber>
+      <FileNumber>60</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\04_Impl\sys\driver\bsp_sys_driver.c</PathWithFileName>
       <FilenameWithoutPath>bsp_sys_driver.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>10</GroupNumber>
+      <FileNumber>61</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\04_Impl\rtt\driver\bsp_rtt_driver.c</PathWithFileName>
+      <FilenameWithoutPath>bsp_rtt_driver.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -1036,7 +1060,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>11</GroupNumber>
-      <FileNumber>60</FileNumber>
+      <FileNumber>62</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1056,7 +1080,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>12</GroupNumber>
-      <FileNumber>61</FileNumber>
+      <FileNumber>63</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1076,7 +1100,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>13</GroupNumber>
-      <FileNumber>62</FileNumber>
+      <FileNumber>64</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1096,7 +1120,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>14</GroupNumber>
-      <FileNumber>63</FileNumber>
+      <FileNumber>65</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1116,7 +1140,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>15</GroupNumber>
-      <FileNumber>64</FileNumber>
+      <FileNumber>66</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1128,7 +1152,7 @@
     </File>
     <File>
       <GroupNumber>15</GroupNumber>
-      <FileNumber>65</FileNumber>
+      <FileNumber>67</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1140,7 +1164,7 @@
     </File>
     <File>
       <GroupNumber>15</GroupNumber>
-      <FileNumber>66</FileNumber>
+      <FileNumber>68</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1160,7 +1184,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>16</GroupNumber>
-      <FileNumber>67</FileNumber>
+      <FileNumber>69</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1180,7 +1204,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>17</GroupNumber>
-      <FileNumber>68</FileNumber>
+      <FileNumber>70</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -1192,7 +1216,7 @@
     </File>
     <File>
       <GroupNumber>17</GroupNumber>
-      <FileNumber>69</FileNumber>
+      <FileNumber>71</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>

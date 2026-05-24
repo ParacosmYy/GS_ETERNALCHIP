@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file    ota_aes.c
  * @brief   AES-256-CTR 解密封装实现
  * @author  GS_Mark

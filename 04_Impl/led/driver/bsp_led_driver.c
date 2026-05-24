@@ -28,12 +28,15 @@
  *
  * @param[out] p_drv    : LED 驱动实例指针。
  * @param[in]  p_config : LED 硬件配置（plat_gpio_t 格式）。
+ * @param[in]  p_os_ops : OS 操作函数指针（时基服务）。
  * */
-void BspLed_Init(bsp_led_driver_t *p_drv, const bsp_led_config_t *p_config)
+void BspLed_Init(bsp_led_driver_t *p_drv, const bsp_led_config_t *p_config,
+                 const led_os_operations_t *p_os_ops)
 {
     memset(p_drv, 0, sizeof(*p_drv));
     p_drv->p_config = p_config;
     p_drv->p_ops    = &bsp_led_hal_ops;
+    p_drv->p_os_ops = p_os_ops;
 }
 
 /**
@@ -78,7 +81,7 @@ void BspLed_Toggle(bsp_led_driver_t *p_drv)
 void BspLed_BlinkStart(bsp_led_driver_t *p_drv, uint32_t interval_ms)
 {
     p_drv->blink_interval_ms = interval_ms;
-    p_drv->blink_last_tick   = HAL_GetTick();
+    p_drv->blink_last_tick   = p_drv->p_os_ops->pf_get_tick();
     p_drv->is_blinking       = 1;
 }
 
@@ -103,7 +106,7 @@ void BspLed_BlinkStop(bsp_led_driver_t *p_drv)
  *
  * @param[in] p_drv : LED 驱动实例指针。
  *
- * @note 这是本驱动中唯一剩余的直接 HAL 调用（系统时间服务）。
+ * @note  通过 p_os_ops->pf_get_tick 获取系统时间，无直接 HAL 调用。
  * */
 void BspLed_TimebaseHook(bsp_led_driver_t *p_drv)
 {
@@ -114,8 +117,7 @@ void BspLed_TimebaseHook(bsp_led_driver_t *p_drv)
         return;
     }
 
-    /* 唯一剩余的直接 HAL 调用 — 系统时间服务 */
-    now = HAL_GetTick();
+    now = p_drv->p_os_ops->pf_get_tick();
     if ((now - p_drv->blink_last_tick) >= p_drv->blink_interval_ms)
     {
         p_drv->blink_last_tick = now;
