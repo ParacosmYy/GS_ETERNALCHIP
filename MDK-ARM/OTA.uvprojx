@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\led;..\App;..\Module\ota;..\Module\crypto;..\Module\diag;..\bsp\key;..\bsp\uart;..\bsp\rtt;..\bsp\flash;..\Vendor\tiny-AES-c;../Middlewares/Third_Party/SEGGER_RTT;../Middlewares/Third_Party/SHA256;../Middlewares/Third_Party/YMODEM;../Middlewares/Third_Party/EasyLogger/inc;../Middlewares/Third_Party/EasyLogger/port;../Middlewares/Third_Party/CmBacktrace;../Middlewares/Third_Party/micro-ecc;../Shared;..\utils</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\led;..\App;..\Module\ota;..\Module\crypto;..\Module\diag;..\bsp\key;..\bsp\uart;..\bsp\rtt;..\bsp\flash;..\bsp\wdg;..\bsp\sys;..\Vendor\tiny-AES-c;../Middlewares/Third_Party/SEGGER_RTT;../Middlewares/Third_Party/SHA256;../Middlewares/Third_Party/YMODEM;../Middlewares/Third_Party/EasyLogger/inc;../Middlewares/Third_Party/EasyLogger/port;../Middlewares/Third_Party/CmBacktrace;../Middlewares/Third_Party/micro-ecc;../Shared;..\utils</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -623,6 +623,16 @@
               <FileName>bsp_flash.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\bsp\flash\bsp_flash.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_wdg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\wdg\bsp_wdg.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_sys.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\sys\bsp_sys.c</FilePath>
             </File>
             <File>
               <FileName>SEGGER_RTT.c</FileName>

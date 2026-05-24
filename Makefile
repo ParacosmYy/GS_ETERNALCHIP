@@ -52,10 +52,14 @@ INCDIRS = Core/Inc \
           bsp/uart \
           bsp/rtt \
           bsp/flash \
+          bsp/wdg \
+          bsp/sys \
           utils \
           App \
            Module/ota \
+           Module/crypto \
            Module/diag \
+           Vendor/tiny-AES-c \
           Middlewares/Third_Party/SEGGER_RTT \
           Middlewares/Third_Party/SHA256 \
           Middlewares/Third_Party/YMODEM \
@@ -136,7 +140,9 @@ C_SRCS += bsp/key/bsp_key.c \
           bsp/led/bsp_led.c \
           bsp/uart/bsp_uart.c \
           bsp/rtt/bsp_rtt.c \
-          bsp/flash/bsp_flash.c
+          bsp/flash/bsp_flash.c \
+          bsp/wdg/bsp_wdg.c \
+          bsp/sys/bsp_sys.c
 
 # Utils
 C_SRCS += utils/ring_buffer.c
@@ -151,14 +157,17 @@ C_SRCS += App/task_ota.c \
 
 # Module
 C_SRCS += Module/ota/ota_transport.c \
-Module/ota/ota_verify.c \
-Module/ota/ota_ecdsa.c \
-Module/ota/ota_led.c \
-Module/ota/ota_trace.c \
-Module/diag/crash_dump.c
+          Module/ota/ota_verify.c \
+          Module/ota/ota_led.c \
+          Module/ota/ota_trace.c \
+          Module/crypto/ota_aes.c \
+          Module/crypto/ota_aes_key.c \
+          Module/crypto/ota_ecdsa.c \
+          Module/diag/crash_dump.c
 
 # Third-party Middlewares
 C_SRCS += Middlewares/Third_Party/micro-ecc/uECC.c \
+          Vendor/tiny-AES-c/aes.c \
           Middlewares/Third_Party/SHA256/sha256.c \
           Middlewares/Third_Party/YMODEM/ymodem.c \
           Middlewares/Third_Party/EasyLogger/src/elog.c \

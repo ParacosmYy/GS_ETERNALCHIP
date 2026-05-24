@@ -20,6 +20,8 @@
 -Ibsp/uart
 -Ibsp/rtt
 -Ibsp/flash
+-Ibsp/wdg
+-Ibsp/sys
 -IModule/ota
 -IModule/crypto
 -IModule/diag
