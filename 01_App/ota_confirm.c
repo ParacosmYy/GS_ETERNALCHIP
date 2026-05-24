@@ -6,7 +6,7 @@
  * @par dependencies
  * - elog.h
  * - ota_confirm.h
- * - bsp_flash.h
+ * - plat_flash.h
  * - task_ota.h
  */
 
@@ -14,7 +14,7 @@
 #define LOG_TAG "OTA"
 #include "elog.h"
 #include "ota_confirm.h"
-#include "bsp_flash.h"
+#include "plat_flash.h"
 #include "task_ota.h"
 #include <string.h>
 

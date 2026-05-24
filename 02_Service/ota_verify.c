@@ -6,7 +6,7 @@
  * @par dependencies
  * - elog.h
  * - ota_verify.h
- * - bsp_flash.h
+ * - plat_flash.h
  * - sha256.h
  */
 
@@ -14,7 +14,7 @@
 #define LOG_TAG "VERIFY"
 #include "elog.h"
 #include "ota_verify.h"
-#include "bsp_flash.h"
+#include "plat_flash.h"
 #include "sha256.h"
 #include <string.h>
 

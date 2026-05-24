@@ -7,7 +7,7 @@
  *
  * @par dependencies
  * - ota_led.h
- * - bsp_led.h
+ * - bsp_led.h (board-specific GPIO config for PC13 LED)
  * - elog.h
  *
  * 处理流程：

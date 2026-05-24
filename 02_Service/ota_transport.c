@@ -6,9 +6,10 @@
  * @par dependencies
  * - elog.h
  * - ota_transport.h
- * - bsp_flash.h
- * - iwdg.h
- * - usart.h
+ * - plat_flash.h
+ * - plat_uart.h
+ * - plat_wdg.h
+ * - plat_sys.h
  * - ota_aes.h
  *
  * UART byte-level adapters for YMODEM, and data callback that:
@@ -22,10 +23,10 @@
 #define LOG_TAG "TRAN"
 #include "elog.h"
 #include "ota_transport.h"
-#include "bsp_flash.h"
-#include "bsp_uart.h"
-#include "bsp_wdg.h"
-#include "bsp_sys.h"
+#include "plat_flash.h"
+#include "plat_uart.h"
+#include "plat_wdg.h"
+#include "plat_sys.h"
 #include "ota_aes.h"
 #include "ota_ecdsa.h"
 #include <string.h>

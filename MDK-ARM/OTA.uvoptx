@@ -166,7 +166,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\bsp\key\bsp_key.c</Filename>
+          <Filename>E:\Workplcace\embedded_workplace\LIXIN_Embedded\OTA\APP\bsp\key\bsp_key.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\OTA\../bsp/key/bsp_key.c\82</Expression>
         </Bp>
@@ -737,8 +737,8 @@
   </Group>
 
   <Group>
-    <GroupName>BSP</GroupName>
-    <tvExp>1</tvExp>
+    <GroupName>04_Impl</GroupName>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -749,7 +749,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\bsp\key\bsp_key.c</PathWithFileName>
+      <PathWithFileName>..\04_Impl\key\bsp_key.c</PathWithFileName>
       <FilenameWithoutPath>bsp_key.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -761,7 +761,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\bsp\led\bsp_led.c</PathWithFileName>
+      <PathWithFileName>..\04_Impl\led\bsp_led.c</PathWithFileName>
       <FilenameWithoutPath>bsp_led.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -773,7 +773,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\bsp\uart\bsp_uart.c</PathWithFileName>
+      <PathWithFileName>..\04_Impl\uart\bsp_uart.c</PathWithFileName>
       <FilenameWithoutPath>bsp_uart.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -785,7 +785,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\bsp\rtt\bsp_rtt.c</PathWithFileName>
+      <PathWithFileName>..\04_Impl\rtt\bsp_rtt.c</PathWithFileName>
       <FilenameWithoutPath>bsp_rtt.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -797,7 +797,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\bsp\flash\bsp_flash.c</PathWithFileName>
+      <PathWithFileName>..\04_Impl\flash\bsp_flash.c</PathWithFileName>
       <FilenameWithoutPath>bsp_flash.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -809,7 +809,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\bsp\wdg\bsp_wdg.c</PathWithFileName>
+      <PathWithFileName>..\04_Impl\wdg\bsp_wdg.c</PathWithFileName>
       <FilenameWithoutPath>bsp_wdg.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -821,7 +821,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\bsp\sys\bsp_sys.c</PathWithFileName>
+      <PathWithFileName>..\04_Impl\sys\bsp_sys.c</PathWithFileName>
       <FilenameWithoutPath>bsp_sys.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -853,8 +853,8 @@
   </Group>
 
   <Group>
-    <GroupName>App</GroupName>
-    <tvExp>1</tvExp>
+    <GroupName>01_App</GroupName>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -865,7 +865,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\App\task_ota.c</PathWithFileName>
+      <PathWithFileName>..\01_App\task_ota.c</PathWithFileName>
       <FilenameWithoutPath>task_ota.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -877,7 +877,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\App\ota_confirm.c</PathWithFileName>
+      <PathWithFileName>..\01_App\ota_confirm.c</PathWithFileName>
       <FilenameWithoutPath>ota_confirm.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -885,8 +885,8 @@
   </Group>
 
   <Group>
-    <GroupName>Module</GroupName>
-    <tvExp>1</tvExp>
+    <GroupName>02_Service</GroupName>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -897,7 +897,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Module\ota\ota_transport.c</PathWithFileName>
+      <PathWithFileName>..\02_Service\ota_transport.c</PathWithFileName>
       <FilenameWithoutPath>ota_transport.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -909,7 +909,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Module\ota\ota_verify.c</PathWithFileName>
+      <PathWithFileName>..\02_Service\ota_verify.c</PathWithFileName>
       <FilenameWithoutPath>ota_verify.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -921,7 +921,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Module\crypto\ota_ecdsa.c</PathWithFileName>
+      <PathWithFileName>..\02_Service\ota_ecdsa.c</PathWithFileName>
       <FilenameWithoutPath>ota_ecdsa.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -933,7 +933,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Module\ota\ota_led.c</PathWithFileName>
+      <PathWithFileName>..\02_Service\ota_led.c</PathWithFileName>
       <FilenameWithoutPath>ota_led.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -945,7 +945,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Module\ota\ota_trace.c</PathWithFileName>
+      <PathWithFileName>..\02_Service\ota_trace.c</PathWithFileName>
       <FilenameWithoutPath>ota_trace.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -957,7 +957,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Module\diag\crash_dump.c</PathWithFileName>
+      <PathWithFileName>..\02_Service\crash_dump.c</PathWithFileName>
       <FilenameWithoutPath>crash_dump.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -965,7 +965,7 @@
   </Group>
 
   <Group>
-    <GroupName>crypto</GroupName>
+    <GroupName>02_Service/crypto</GroupName>
     <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
@@ -977,7 +977,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Module\crypto\ota_aes.c</PathWithFileName>
+      <PathWithFileName>..\02_Service\ota_aes.c</PathWithFileName>
       <FilenameWithoutPath>ota_aes.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -989,7 +989,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Module\crypto\ota_aes_key.c</PathWithFileName>
+      <PathWithFileName>..\02_Service\ota_aes_key.c</PathWithFileName>
       <FilenameWithoutPath>ota_aes_key.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -1141,7 +1141,7 @@
   </Group>
 
   <Group>
-    <GroupName>Utils</GroupName>
+    <GroupName>03_Platform/common</GroupName>
     <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
@@ -1153,7 +1153,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\utils\ring_buffer.c</PathWithFileName>
+      <PathWithFileName>..\03_Platform\common\ring_buffer.c</PathWithFileName>
       <FilenameWithoutPath>ring_buffer.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>

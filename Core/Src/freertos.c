@@ -28,6 +28,8 @@
 #include "task_ota.h"
 #include "ota_confirm.h"
 #include "iwdg.h"
+#include "usart.h"
+#include "gpio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -104,6 +106,7 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
+  TaskOta_Init((void *)&huart1, (void *)&hiwdg, (void *)GPIOA, GPIO_PIN_0);
   otaTaskHandle = osThreadNew(TaskOta_Run, NULL, &otaTask_attributes);
   /* USER CODE END RTOS_THREADS */
 

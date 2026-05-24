@@ -34,8 +34,14 @@ typedef enum
 
 //*** Public API ***//
 
-/** @brief  初始化 OTA 子系统和 EasyLogger */
-void TaskOta_Init(void);
+/** @brief  初始化 OTA 子系统和 EasyLogger
+ *
+ * @param[in] p_huart : HAL UART handle (opaque, from CubeMX main.c)
+ * @param[in] p_hiwdg : HAL IWDG handle (opaque, from CubeMX main.c)
+ * @param[in] p_key_port : Key GPIO port (opaque, from CubeMX)
+ * @param[in] key_pin : Key GPIO pin number
+ */
+void TaskOta_Init(void *p_huart, void *p_hiwdg, void *p_key_port, uint16_t key_pin);
 
 /** @brief  OTA 任务入口函数（FreeRTOS 任务） */
 void TaskOta_Run(void *p_argument);

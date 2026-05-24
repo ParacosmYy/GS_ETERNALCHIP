@@ -23,14 +23,12 @@
 #define LOG_TAG "OTA"
 #include "elog.h"
 #include "task_ota.h"
-#include "bsp_flash.h"
-#include "bsp_uart.h"
-#include "bsp_key.h"
-#include "bsp_wdg.h"
-#include "bsp_sys.h"
+#include "plat_flash.h"
+#include "plat_uart.h"
+#include "plat_key.h"
+#include "plat_wdg.h"
+#include "plat_sys.h"
 #include "ymodem.h"
-#include "usart.h"       /* XXX: 仅用于 TaskOta_Init 中传递 UART 句柄，Phase 2 移除 */
-#include "iwdg.h"        /* XXX: 仅用于 TaskOta_Init 中传递 IWDG 句柄，Phase 2 移除 */
 #include "cmsis_os.h"
 #include "ota_transport.h"
 #include "ota_verify.h"
@@ -48,6 +46,7 @@ static ota_slot_t       s_target_bank;
 static volatile uint8_t s_trigger_flag;
 static volatile uint8_t s_force_rollback;
 static bsp_key_driver_t s_key;
+static plat_gpio_t      s_key_gpio;
 
 /* Ring buffer for UART DMA — must hold one full YMODEM STX packet (1029 bytes) */
 #define UART_RX_RING_SIZE 2048
@@ -56,39 +55,6 @@ static circular_buffer_t s_ring_buf;
 static bsp_uart_driver_t s_uart_drv;
 
 //*** Runtime Bank Detection ***//
-
-/**
- * @brief  Detect the bank that is currently executing by SCB->VTOR.
- *
- * @param[out] p_slot : detected running bank.
- *
- * @return   0 : detected successfully.
- * @return  -1 : VTOR does not point to a known OTA bank.
- * */
-static int GetRunningBank(ota_slot_t *p_slot)
-{
-    uint32_t vtor;
-
-    if (p_slot == NULL)
-    {
-        return -1;
-    }
-
-    vtor = SCB->VTOR;
-    if (vtor >= FLASH_ADDR_SLOT_B && vtor < (FLASH_ADDR_SLOT_B + SLOT_B_SIZE))
-    {
-        *p_slot = OTA_SLOT_B;
-        return 0;
-    }
-
-    if (vtor >= FLASH_ADDR_SLOT_A && vtor < (FLASH_ADDR_SLOT_A + SLOT_A_SIZE))
-    {
-        *p_slot = OTA_SLOT_A;
-        return 0;
-    }
-
-    return -1;
-}
 
 //*** Self Check ***//
 
@@ -543,19 +509,29 @@ static void HandleError(int result)
  *  2. Initialize Flash driver.
  *  3. Configure EasyLogger log formats and start.
  * */
-void TaskOta_Init(void)
+void TaskOta_Init(void *p_huart, void *p_hiwdg, void *p_key_port, uint16_t key_pin)
 {
     static uint8_t s_uart_rx_buf[2048];
-    static const bsp_uart_config_t uart_cfg = {
-        &huart1, s_uart_rx_buf, sizeof(s_uart_rx_buf), NULL, NULL
-    };
+    static bsp_uart_config_t uart_cfg;
+
+    uart_cfg.p_huart    = p_huart;
+    uart_cfg.p_rx_buf   = s_uart_rx_buf;
+    uart_cfg.rx_buf_size = sizeof(s_uart_rx_buf);
+    uart_cfg.callback   = NULL;
+    uart_cfg.p_user_data = NULL;
 
     s_state        = OTA_TASK_NORMAL;
     s_fw_size      = 0;
     s_trigger_flag = 0;
     s_force_rollback = 0;
+
+    /* Save key GPIO config for later use in TaskOta_Run */
+    s_key_gpio.port         = p_key_port;
+    s_key_gpio.pin          = key_pin;
+    s_key_gpio.active_level = 0;
+
     BspFlash_Init();
-    BspWdg_Init(&hiwdg);
+    BspWdg_Init(p_hiwdg);
 
     /* 初始化 UART 驱动 + ring buffer */
     BspUart_Init(&s_uart_drv, &uart_cfg);
@@ -632,7 +608,6 @@ void TaskOta_Run(void *p_argument)
     int     result;
 
     (void)p_argument;
-    TaskOta_Init();
 
     /* Self-check */
     if (SelfCheck() != 0)
@@ -644,7 +619,12 @@ void TaskOta_Run(void *p_argument)
     OtaLed_Init();
 
     {
-        static const bsp_key_config_t key_cfg = { GPIOA, GPIO_PIN_0, 0, 20, 3000, OnKey, NULL };
+        static bsp_key_config_t key_cfg;
+        key_cfg.gpio          = s_key_gpio;
+        key_cfg.debounce_ms   = 20;
+        key_cfg.long_press_ms = 3000;
+        key_cfg.callback      = OnKey;
+        key_cfg.p_user_data   = NULL;
         BspKey_Init(&s_key, &key_cfg);
     }
 
@@ -669,7 +649,7 @@ void TaskOta_Run(void *p_argument)
             active     = cfg.active_slot;
         }
 
-        if (GetRunningBank(&active) == 0)
+        if (BspSys_GetRunningBank(&active) == 0)
         {
             if (cfg_ok == 0 && active != cfg_active)
             {

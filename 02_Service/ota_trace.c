@@ -5,7 +5,8 @@
  *
  * @par dependencies
  * - ota_trace.h
- * - bsp_flash.h
+ * - plat_flash.h
+ * - plat_sys.h
  * - elog.h
  */
 
@@ -13,8 +14,8 @@
 #define LOG_TAG "TRACE"
 #include "elog.h"
 #include "ota_trace.h"
-#include "bsp_flash.h"
-#include "bsp_sys.h"
+#include "plat_flash.h"
+#include "plat_sys.h"
 #include <string.h>
 
 //*** Private Variables ***//
