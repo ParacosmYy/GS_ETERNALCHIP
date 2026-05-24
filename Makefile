@@ -108,7 +108,7 @@ OBJS     = $(C_OBJS) $(ASM_OBJS)
 all: $(BUILDDIR)/$(TARGET).elf $(BUILDDIR)/$(TARGET).hex $(BUILDDIR)/$(TARGET).bin size
 
 $(BUILDDIR)/$(TARGET).elf: $(OBJS) $(LDSCRIPT)
-	@mkdir -p $(dir $@)
+	@$(MKDIR_P) $(subst /,\,$(dir $@)) 2>nul || exit 0
 	$(CC) $(LDFLAGS) -o $@ $(OBJS)
 
 $(BUILDDIR)/$(TARGET).hex: $(BUILDDIR)/$(TARGET).elf
@@ -121,17 +121,19 @@ size: $(BUILDDIR)/$(TARGET).elf
 	$(SIZE) --format=berkeley $<
 
 # ----------------------------- Compile Rules ------------------------------- #
+MKDIR_P = mkdir
+
 $(OBJDIR)/%.o: %.c
-	@mkdir -p $(dir $@)
+	@$(MKDIR_P) $(subst /,\,$(dir $@)) 2>nul || exit 0
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJDIR)/%.o: %.s
-	@mkdir -p $(dir $@)
+	@$(MKDIR_P) $(subst /,\,$(dir $@)) 2>nul || exit 0
 	$(CC) $(MCU) -c -o $@ $<
 
 # ----------------------------- Clean --------------------------------------- #
 clean:
-	rm -rf $(BUILDDIR)
+	@if exist $(BUILDDIR) rmdir /s /q $(BUILDDIR)
 
 # ----------------------------- Dependencies -------------------------------- #
 -include $(C_OBJS:.o=.d)
