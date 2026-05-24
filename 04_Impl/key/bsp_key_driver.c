@@ -1,20 +1,20 @@
 /**
- * @file    bsp_key.c
+ * @file    bsp_key_driver.c
  * @brief   Key BSP driver implementation — debounce FSM + long/short press
  * @author  GS_Mark
  *
  * @par dependencies
- * - bsp_key.h
+ * - bsp_key_driver.h
  */
 
 //*** Includes ***//
-#include "bsp_key.h"
+#include "bsp_key_driver.h"
 #include <string.h>
 
 //*** HAL Cast Helper ***//
 #define HAL_GPIO_PORT(gpio)  ((GPIO_TypeDef *)((gpio).port))
 
-//*** Private Helpers ***//
+//*** Default HAL OPS Implementation ***//
 
 /**
  * @brief  读取引脚原始电平并转换为逻辑电平（0/1）。
@@ -26,7 +26,7 @@
  * @return  1 : 按下。
  * @return  0 : 释放。
  * */
-static uint8_t Key_ReadRaw(const bsp_key_config_t *p_cfg)
+uint8_t Key_Hal_ReadPin(const bsp_key_config_t *p_cfg)
 {
     GPIO_PinState pin;
 
@@ -49,6 +49,30 @@ static uint8_t Key_ReadRaw(const bsp_key_config_t *p_cfg)
 }
 
 /**
+ * @brief  Default HAL tick implementation.
+ *
+ * @return  Current tick count in ms.
+ * */
+uint32_t Key_Hal_GetTick(void)
+{
+    return HAL_GetTick();
+}
+
+/** @brief  Default hardware ops instance */
+const key_hw_operations_t g_key_hal_ops =
+{
+    .pf_read_pin = Key_Hal_ReadPin,
+};
+
+/** @brief  Default OS ops instance */
+const key_os_operations_t g_key_os_ops =
+{
+    .pf_get_tick = Key_Hal_GetTick,
+};
+
+//*** Private Helpers ***//
+
+/**
  * @brief  调用用户注册的回调函数。
  *
  * @param[in] p_drv : 按键驱动实例指针。
@@ -69,16 +93,21 @@ static void Key_Notify(const bsp_key_driver_t *p_drv, bsp_key_event_t evt)
  *
  * Steps:
  *  1. 将驱动结构体清零。
- *  2. 绑定硬件配置。
+ *  2. 绑定硬件配置和 OPS 接口。
  *  3. 初始 stable_level 设为 0（未按下）。
  *
  * @param[out] p_drv    : 按键驱动实例指针。
  * @param[in]  p_config : 按键硬件配置（GPIO 端口、引脚、有效电平、消抖时间、长按时间、回调）。
+ * @param[in]  p_hw_ops : 硬件 OPS（pin 读取）。
+ * @param[in]  p_os_ops : OS OPS（tick 获取）。
  * */
-void BspKey_Init(bsp_key_driver_t *p_drv, const bsp_key_config_t *p_config)
+void BspKey_Init(bsp_key_driver_t *p_drv, const bsp_key_config_t *p_config,
+                 const key_hw_operations_t *p_hw_ops, const key_os_operations_t *p_os_ops)
 {
     memset(p_drv, 0, sizeof(*p_drv));
     p_drv->p_config = p_config;
+    p_drv->p_hw_ops = p_hw_ops;
+    p_drv->p_os_ops = p_os_ops;
 
     /* 初始化为当前未按下状态，首次扫描时正常检测 */
     p_drv->stable_level = 0;
@@ -103,8 +132,8 @@ void BspKey_Scan(bsp_key_driver_t *p_drv)
     uint32_t                now;
 
     p_cfg = p_drv->p_config;
-    raw   = Key_ReadRaw(p_cfg);
-    now   = HAL_GetTick();
+    raw   = p_drv->p_hw_ops->pf_read_pin(p_cfg);
+    now   = p_drv->p_os_ops->pf_get_tick();
 
     switch (p_drv->state)
     {

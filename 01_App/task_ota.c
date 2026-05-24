@@ -7,7 +7,7 @@
  * - elog.h
  * - task_ota.h
  * - bsp_flash.h
- * - bsp_key.h
+ * - bsp_key_driver.h
  * - ymodem.h
  * - ota_transport.h
  * - ota_verify.h
@@ -26,8 +26,11 @@
 #include "plat_flash.h"
 #include "plat_uart.h"
 #include "plat_key.h"
+#include "bsp_key_driver.h"
 #include "plat_wdg.h"
 #include "plat_sys.h"
+#include "bsp_wdg_driver.h"
+#include "bsp_sys_driver.h"
 #include "ymodem.h"
 #include "cmsis_os.h"
 #include "ota_transport.h"
@@ -47,6 +50,68 @@ static volatile uint8_t s_trigger_flag;
 static volatile uint8_t s_force_rollback;
 static bsp_key_driver_t s_key;
 static plat_gpio_t      s_key_gpio;
+
+/* WDG driver instance + HAL ops */
+static bsp_wdg_driver_t s_wdg_drv;
+
+static void wdg_hal_refresh(void *p_handle)
+{
+    IWDG_HandleTypeDef *p_hiwdg = (IWDG_HandleTypeDef *)p_handle;
+    if (p_hiwdg != NULL && p_hiwdg->Instance != NULL)
+    {
+        HAL_IWDG_Refresh(p_hiwdg);
+    }
+}
+
+static const wdg_hw_operations_t s_wdg_ops =
+{
+    .pf_refresh = wdg_hal_refresh,
+};
+
+/* SYS driver instance + HAL ops */
+static bsp_sys_driver_t s_sys_drv;
+
+static uint32_t sys_hal_get_tick(void)
+{
+    return HAL_GetTick();
+}
+
+static void sys_hal_reboot(void)
+{
+    NVIC_SystemReset();
+}
+
+static int sys_hal_get_running_bank(ota_slot_t *p_slot)
+{
+    uint32_t vtor;
+
+    if (p_slot == NULL)
+    {
+        return -1;
+    }
+
+    vtor = SCB->VTOR;
+    if (vtor >= FLASH_ADDR_SLOT_B && vtor < (FLASH_ADDR_SLOT_B + SLOT_B_SIZE))
+    {
+        *p_slot = OTA_SLOT_B;
+        return 0;
+    }
+
+    if (vtor >= FLASH_ADDR_SLOT_A && vtor < (FLASH_ADDR_SLOT_A + SLOT_A_SIZE))
+    {
+        *p_slot = OTA_SLOT_A;
+        return 0;
+    }
+
+    return -1;
+}
+
+static const sys_operations_t s_sys_ops =
+{
+    .pf_get_tick          = sys_hal_get_tick,
+    .pf_reboot            = sys_hal_reboot,
+    .pf_get_running_bank  = sys_hal_get_running_bank,
+};
 
 /* Ring buffer for UART DMA — must hold one full YMODEM STX packet (1029 bytes) */
 #define UART_RX_RING_SIZE 2048
@@ -187,7 +252,7 @@ static int EraseTargetBank(void)
 
     OtaTrace_Record(OTA_TRACE_ERASE_START, 0, 0);
 
-    BspWdg_Feed();
+    BspWdg_Feed(&s_wdg_drv);
 
     if (BspFlash_EraseSlot(s_target_bank) != 0)
     {
@@ -229,7 +294,7 @@ static int ReceiveFirmware(void)
     BspUart_FlushRx(&s_uart_drv);
     ring_buffer_init(&s_ring_buf, s_ring_storage, UART_RX_RING_SIZE);
 
-    OtaTransport_Init(&s_fw_size, OtaConfig_BankAddr(s_target_bank), &s_uart_drv);
+    OtaTransport_Init(&s_fw_size, OtaConfig_BankAddr(s_target_bank), &s_uart_drv, &s_wdg_drv);
 
     ret = Ymodem_Receive(OtaTransport_SendByte,
                           OtaTransport_RecvByte,
@@ -295,7 +360,7 @@ static int VerifyEcdsaSignature(uint32_t *p_real_fw_size, uint8_t hash[32])
 
     OtaTrace_Record(OTA_TRACE_ECDSA_START, 0, real_size);
 
-    BspWdg_Feed();
+    BspWdg_Feed(&s_wdg_drv);
 
     /* Verify against decrypted firmware now in Flash */
     if (OtaEcdsa_Verify(OtaConfig_BankAddr(s_target_bank), real_size, sig, hash) != 0)
@@ -434,7 +499,7 @@ static void ForceRollback(void)
     }
 
     osDelay(1000);
-    BspSys_Reboot();
+    BspSys_Reboot(&s_sys_drv);
 }
 
 /**
@@ -454,7 +519,7 @@ static void RebootDevice(void)
     log_i("Upgrade ready. Rebooting in 1s...");
 
     osDelay(1000);
-    BspSys_Reboot();
+    BspSys_Reboot(&s_sys_drv);
 }
 
 /**
@@ -496,7 +561,7 @@ static void HandleError(int result)
         osDelay(50);
     }
 
-    BspSys_Reboot();
+    BspSys_Reboot(&s_sys_drv);
 }
 
 //*** Public API ***//
@@ -531,7 +596,8 @@ void TaskOta_Init(void *p_huart, void *p_hiwdg, void *p_key_port, uint16_t key_p
     s_key_gpio.active_level = 0;
 
     BspFlash_Init();
-    BspWdg_Init(p_hiwdg);
+    BspWdg_Init(&s_wdg_drv, p_hiwdg, &s_wdg_ops);
+    BspSys_Init(&s_sys_drv, &s_sys_ops);
 
     /* 初始化 UART 驱动 + ring buffer */
     BspUart_Init(&s_uart_drv, &uart_cfg);
@@ -549,7 +615,7 @@ void TaskOta_Init(void *p_huart, void *p_hiwdg, void *p_key_port, uint16_t key_p
     elog_start();
 
     /* 初始化 OTA 追踪模块，打印上次追踪日志 */
-    OtaTrace_Init();
+    OtaTrace_Init(&s_sys_drv);
     OtaTrace_PrintAll();
 
     /* 检查上次是否有 crash 记录 */
@@ -625,7 +691,7 @@ void TaskOta_Run(void *p_argument)
         key_cfg.long_press_ms = 3000;
         key_cfg.callback      = OnKey;
         key_cfg.p_user_data   = NULL;
-        BspKey_Init(&s_key, &key_cfg);
+        BspKey_Init(&s_key, &key_cfg, &g_key_hal_ops, &g_key_os_ops);
     }
 
     /* Wait for trigger (short press = OTA, long press = rollback) */
@@ -649,7 +715,7 @@ void TaskOta_Run(void *p_argument)
             active     = cfg.active_slot;
         }
 
-        if (BspSys_GetRunningBank(&active) == 0)
+        if (BspSys_GetRunningBank(&s_sys_drv, &active) == 0)
         {
             if (cfg_ok == 0 && active != cfg_active)
             {

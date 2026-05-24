@@ -262,7 +262,7 @@
 
   <Group>
     <GroupName>Application/User/Core</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -738,7 +738,7 @@
 
   <Group>
     <GroupName>04_Impl</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -785,8 +785,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\04_Impl\rtt\bsp_rtt.c</PathWithFileName>
-      <FilenameWithoutPath>bsp_rtt.c</FilenameWithoutPath>
+      <PathWithFileName>..\04_Impl\rtt\bsp_rtt_driver.c</PathWithFileName>
+      <FilenameWithoutPath>bsp_rtt_driver.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -809,8 +809,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\04_Impl\wdg\bsp_wdg.c</PathWithFileName>
-      <FilenameWithoutPath>bsp_wdg.c</FilenameWithoutPath>
+      <PathWithFileName>..\04_Impl\wdg\bsp_wdg_driver.c</PathWithFileName>
+      <FilenameWithoutPath>bsp_wdg_driver.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -821,8 +821,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\04_Impl\sys\bsp_sys.c</PathWithFileName>
-      <FilenameWithoutPath>bsp_sys.c</FilenameWithoutPath>
+      <PathWithFileName>..\04_Impl\sys\bsp_sys_driver.c</PathWithFileName>
+      <FilenameWithoutPath>bsp_sys_driver.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -854,7 +854,7 @@
 
   <Group>
     <GroupName>01_App</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -886,7 +886,7 @@
 
   <Group>
     <GroupName>02_Service</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -966,7 +966,7 @@
 
   <Group>
     <GroupName>02_Service/crypto</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -998,7 +998,7 @@
 
   <Group>
     <GroupName>Vendor/tiny-AES-c</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -1142,7 +1142,7 @@
 
   <Group>
     <GroupName>03_Platform/common</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>

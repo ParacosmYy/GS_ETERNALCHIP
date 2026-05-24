@@ -26,6 +26,7 @@
 #include "plat_flash.h"
 #include "plat_uart.h"
 #include "plat_wdg.h"
+#include "bsp_wdg_driver.h"
 #include "plat_sys.h"
 #include "ota_aes.h"
 #include "ota_ecdsa.h"
@@ -52,6 +53,7 @@ typedef enum
 static uint32_t            *s_p_fw_size;
 static uint32_t             s_target_base;
 static bsp_uart_driver_t  *s_p_uart_drv;
+static bsp_wdg_driver_t   *s_p_wdg_drv;
 
 /* State machine for encrypted package parsing */
 static recv_state_t         s_recv_state;
@@ -81,11 +83,13 @@ static uint8_t              s_extracted_sig[OTA_ECDSA_SIG_SIZE];
  * @param[in] target_base : 目标 Bank 的 Flash 基地址。
  * @param[in] p_uart_drv  : UART 驱动指针。
  * */
-void OtaTransport_Init(uint32_t *p_fw_size, uint32_t target_base, void *p_uart_drv)
+void OtaTransport_Init(uint32_t *p_fw_size, uint32_t target_base, void *p_uart_drv,
+                       bsp_wdg_driver_t *p_wdg_drv)
 {
     s_p_fw_size     = p_fw_size;
     s_target_base   = target_base;
     s_p_uart_drv    = (bsp_uart_driver_t *)p_uart_drv;
+    s_p_wdg_drv     = p_wdg_drv;
 
     /* Reset state machine */
     s_recv_state      = RECV_STATE_NONCE;
@@ -309,6 +313,9 @@ int OtaTransport_DataCallback(uint32_t offset, const uint8_t *p_data,
     }
 
     /* Feed watchdog */
-    BspWdg_Feed();
+    if (s_p_wdg_drv != NULL)
+    {
+        BspWdg_Feed(s_p_wdg_drv);
+    }
     return 0;
 }

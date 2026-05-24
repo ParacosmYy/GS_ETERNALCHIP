@@ -28,6 +28,11 @@ extern "C" {
 #include <stdint.h>
 //******************************* Includes **********************************//
 
+//******************************* Types *************************************//
+
+/** @brief Forward declaration for SYS driver */
+typedef struct bsp_sys_driver bsp_sys_driver_t;
+
 //******************************* Defines ***********************************//
 
 /** @brief 追踪区每条记录大小（字节） */
@@ -58,14 +63,17 @@ typedef enum
 //******************************* Declaring *********************************//
 
 /**
- * @brief  初始化追踪模块，找到下一个空位。
+ * @brief  初始化追踪模块，注入 SYS 驱动用于获取时间戳。
  *
  * Steps:
- *  1. 扫描 entries 数组找到第一个 event == 0xFFFFFFFF 的位置。
- *  2. 记录到静态变量供 OtaTrace_Record 使用。
+ *  1. 保存 SYS 驱动指针。
+ *  2. 扫描 entries 数组找到第一个 event == 0xFFFFFFFF 的位置。
+ *  3. 记录到静态变量供 OtaTrace_Record 使用。
+ *
+ * @param[in] p_sys_drv : SYS 驱动实例指针。
  *
  * */
-void OtaTrace_Init(void);
+void OtaTrace_Init(bsp_sys_driver_t *p_sys_drv);
 
 /**
  * @brief  记录一条追踪事件到 Flash。

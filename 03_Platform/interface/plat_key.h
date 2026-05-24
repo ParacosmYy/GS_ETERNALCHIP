@@ -49,9 +49,27 @@ typedef struct
     void               *p_user_data;    /**< Callback user context */
 } bsp_key_config_t;
 
+//******************************* OPS Interfaces ****************************//
+
+/** @brief  Hardware operations — pin read abstraction */
 typedef struct
 {
-    const bsp_key_config_t *p_config;
+    uint8_t (*pf_read_pin)(const bsp_key_config_t *p_cfg); /**< Read raw pin → logical level (0/1) */
+} key_hw_operations_t;
+
+/** @brief  OS operations — tick source abstraction */
+typedef struct
+{
+    uint32_t (*pf_get_tick)(void); /**< Return current tick in ms */
+} key_os_operations_t;
+
+//******************************* Driver Instance ****************************//
+
+typedef struct
+{
+    const bsp_key_config_t   *p_config;
+    const key_hw_operations_t *p_hw_ops;
+    const key_os_operations_t *p_os_ops;
     uint8_t   state;
     uint8_t   stable_level;
     uint32_t  last_tick;
@@ -60,7 +78,8 @@ typedef struct
 } bsp_key_driver_t;
 
 //******************************* Declaring ********************************//
-void BspKey_Init(bsp_key_driver_t *p_drv, const bsp_key_config_t *p_config);
+void BspKey_Init(bsp_key_driver_t *p_drv, const bsp_key_config_t *p_config,
+                 const key_hw_operations_t *p_hw_ops, const key_os_operations_t *p_os_ops);
 void BspKey_Scan(bsp_key_driver_t *p_drv);
 
 #ifdef __cplusplus

@@ -13,11 +13,15 @@
 
 #include <stdint.h>
 
+/** @brief Forward declaration for WDG driver */
+typedef struct bsp_wdg_driver bsp_wdg_driver_t;
+
 /** @brief  ECDSA-P256 signature size (for OtaTransport_GetSignature param) */
 #define OTA_TRANSPORT_SIG_SIZE  64
 
-/** @brief  初始化 OTA 传输模块（p_uart_drv 为 bsp_uart_driver_t*，传 NULL 则降级为轮询） */
-void OtaTransport_Init(uint32_t *p_fw_size, uint32_t target_base, void *p_uart_drv);
+/** @brief  初始化 OTA 传输模块（p_uart_drv 为 bsp_uart_driver_t*，p_wdg_drv 为 bsp_wdg_driver_t*） */
+void OtaTransport_Init(uint32_t *p_fw_size, uint32_t target_base, void *p_uart_drv,
+                       bsp_wdg_driver_t *p_wdg_drv);
 
 /** @brief  UART 发送单字节（适配 YMODEM 接口） */
 void OtaTransport_SendByte(uint8_t byte, void *p_user);

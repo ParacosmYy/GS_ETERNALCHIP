@@ -16,12 +16,16 @@
 #include "ota_trace.h"
 #include "plat_flash.h"
 #include "plat_sys.h"
+#include "bsp_sys_driver.h"
 #include <string.h>
 
 //*** Private Variables ***//
 
 /** @brief 当前写入索引（下一个空位） */
 static uint32_t s_write_index;
+
+/** @brief SYS 驱动指针（用于获取时间戳） */
+static bsp_sys_driver_t *s_p_sys_drv;
 
 //*** Private Helpers ***//
 
@@ -101,11 +105,12 @@ static const char *event_name(uint32_t event)
  *  3. 记录索引到 s_write_index。
  *
  * */
-void OtaTrace_Init(void)
+void OtaTrace_Init(bsp_sys_driver_t *p_sys_drv)
 {
     uint32_t i;
     uint32_t addr;
 
+    s_p_sys_drv = p_sys_drv;
     s_write_index = OTA_TRACE_MAX_ENTRIES;
     addr = OTA_TRACE_ADDR;
 
@@ -150,7 +155,7 @@ void OtaTrace_Record(uint32_t event, uint32_t result, uint32_t data)
     }
 
     entry.event     = event;
-    entry.timestamp = BspSys_GetTick();
+    entry.timestamp = (s_p_sys_drv != NULL) ? BspSys_GetTick(s_p_sys_drv) : 0u;
     entry.result    = result;
     entry.data      = data;
 

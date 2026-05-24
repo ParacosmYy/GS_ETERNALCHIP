@@ -135,13 +135,13 @@ C_SRCS += Middlewares/Third_Party/FreeRTOS/Source/croutine.c \
           Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c
 
 # 04_Impl (BSP implementations)
-C_SRCS += 04_Impl/key/bsp_key.c \
-          04_Impl/led/bsp_led.c \
+C_SRCS += 04_Impl/key/bsp_key_driver.c \
+          04_Impl/led/bsp_led_driver.c \
           04_Impl/uart/bsp_uart.c \
-          04_Impl/rtt/bsp_rtt.c \
+          04_Impl/rtt/bsp_rtt_driver.c \
           04_Impl/flash/bsp_flash.c \
-          04_Impl/wdg/bsp_wdg.c \
-          04_Impl/sys/bsp_sys.c
+          04_Impl/wdg/bsp_wdg_driver.c \
+          04_Impl/sys/bsp_sys_driver.c
 
 # 03_Platform/common
 C_SRCS += 03_Platform/common/ring_buffer.c

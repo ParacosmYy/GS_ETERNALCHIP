@@ -7,7 +7,7 @@
  *
  * @par dependencies
  * - ota_led.h
- * - bsp_led.h (board-specific GPIO config for PC13 LED)
+ * - bsp_led_driver.h (LED driver + platform interface)
  * - elog.h
  *
  * 处理流程：
@@ -25,7 +25,7 @@
 #define LOG_TAG "LED"
 #include "elog.h"
 #include "ota_led.h"
-#include "bsp_led.h"
+#include "bsp_led_driver.h"
 #include <string.h>
 //******************************** Includes *********************************//
 
@@ -73,7 +73,7 @@ static const char *ErrorDesc(uint8_t code)
 
 void OtaLed_Init(void)
 {
-    static const bsp_led_config_t led_cfg = { GPIOC, GPIO_PIN_13, 0 };
+    static const bsp_led_config_t led_cfg = { { (void *)GPIOC, 13, 0 } };
 
     BspLed_Init(&s_led, &led_cfg);
     s_mode        = OTA_LED_OFF;
