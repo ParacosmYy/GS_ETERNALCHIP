@@ -11,6 +11,9 @@
 #include "bsp_key.h"
 #include <string.h>
 
+//*** HAL Cast Helper ***//
+#define HAL_GPIO_PORT(gpio)  ((GPIO_TypeDef *)((gpio).port))
+
 //*** Private Helpers ***//
 
 /**
@@ -27,9 +30,9 @@ static uint8_t Key_ReadRaw(const bsp_key_config_t *p_cfg)
 {
     GPIO_PinState pin;
 
-    pin = HAL_GPIO_ReadPin(p_cfg->p_port, p_cfg->pin);
+    pin = HAL_GPIO_ReadPin(HAL_GPIO_PORT(p_cfg->gpio), p_cfg->gpio.pin);
 
-    if (p_cfg->active_level == 0)
+    if (p_cfg->gpio.active_level == 0)
     {
         if (pin == GPIO_PIN_RESET)
         {

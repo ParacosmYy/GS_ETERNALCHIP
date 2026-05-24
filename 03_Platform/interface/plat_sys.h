@@ -24,11 +24,13 @@ extern "C" {
 
 //******************************* Includes **********************************//
 #include <stdint.h>
+#include "ota_config.h"
 //******************************* Includes **********************************//
 
 //******************************* Declaring ********************************//
 uint32_t BspSys_GetTick(void);
 void     BspSys_Reboot(void);
+int      BspSys_GetRunningBank(ota_slot_t *p_slot);
 
 #ifdef __cplusplus
 }

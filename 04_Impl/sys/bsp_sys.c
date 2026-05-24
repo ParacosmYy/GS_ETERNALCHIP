@@ -34,4 +34,29 @@ void BspSys_Reboot(void)
     NVIC_SystemReset();
 }
 
+int BspSys_GetRunningBank(ota_slot_t *p_slot)
+{
+    uint32_t vtor;
+
+    if (p_slot == NULL)
+    {
+        return -1;
+    }
+
+    vtor = SCB->VTOR;
+    if (vtor >= FLASH_ADDR_SLOT_B && vtor < (FLASH_ADDR_SLOT_B + SLOT_B_SIZE))
+    {
+        *p_slot = OTA_SLOT_B;
+        return 0;
+    }
+
+    if (vtor >= FLASH_ADDR_SLOT_A && vtor < (FLASH_ADDR_SLOT_A + SLOT_A_SIZE))
+    {
+        *p_slot = OTA_SLOT_A;
+        return 0;
+    }
+
+    return -1;
+}
+
 //******************************** Implement ********************************//

@@ -14,6 +14,9 @@
 #include <stdarg.h>
 #include "cmsis_os.h"
 
+//*** HAL Handle Cast (void* from plat_uart.h → UART_HandleTypeDef*) ***//
+#define HAL_UART(h)  ((UART_HandleTypeDef *)(h))
+
 //*** Private Variables — Instance Registry ***//
 
 static bsp_uart_driver_t *s_instances[BSP_UART_MAX_INSTANCES];
@@ -71,7 +74,7 @@ static bsp_uart_driver_t *find_instance(UART_HandleTypeDef *p_huart)
 
     for (i = 0; i < BSP_UART_MAX_INSTANCES; i++)
     {
-        if (s_instances[i] != NULL && s_instances[i]->p_config->p_huart == p_huart)
+        if (s_instances[i] != NULL && HAL_UART(s_instances[i]->p_config->p_huart) == p_huart)
         {
             return s_instances[i];
         }
@@ -113,13 +116,13 @@ static int start_dma_rx(bsp_uart_driver_t *p_drv)
 
     cfg = p_drv->p_config;
 
-    if (HAL_UARTEx_ReceiveToIdle_DMA(cfg->p_huart, cfg->p_rx_buf, cfg->rx_buf_size) != HAL_OK)
+    if (HAL_UARTEx_ReceiveToIdle_DMA(HAL_UART(cfg->p_huart), cfg->p_rx_buf, cfg->rx_buf_size) != HAL_OK)
     {
         return -1;
     }
 
     /* 关闭半传输中断，仅在 IDLE 或缓冲区满时回调 */
-    __HAL_DMA_DISABLE_IT(cfg->p_huart->hdmarx, DMA_IT_HT);
+    __HAL_DMA_DISABLE_IT(HAL_UART(cfg->p_huart)->hdmarx, DMA_IT_HT);
 
     p_drv->rx_busy = 1;
     return 0;
@@ -165,7 +168,7 @@ int BspUart_StartReceive(bsp_uart_driver_t *p_drv)
  * */
 void BspUart_StopReceive(bsp_uart_driver_t *p_drv)
 {
-    HAL_UART_AbortReceive(p_drv->p_config->p_huart);
+    HAL_UART_AbortReceive(HAL_UART(p_drv->p_config->p_huart));
     p_drv->rx_busy = 0;
 }
 
@@ -186,7 +189,7 @@ int BspUart_Send(bsp_uart_driver_t *p_drv, const uint8_t *p_data, uint16_t len)
         return -1;
     }
 
-    if (HAL_UART_Transmit_DMA(p_drv->p_config->p_huart, p_data, len) != HAL_OK)
+    if (HAL_UART_Transmit_DMA(HAL_UART(p_drv->p_config->p_huart), p_data, len) != HAL_OK)
     {
         return -1;
     }
@@ -211,7 +214,7 @@ int BspUart_SendBlocking(bsp_uart_driver_t *p_drv,
                          uint16_t           len,
                          uint32_t           timeout_ms)
 {
-    if (HAL_UART_Transmit(p_drv->p_config->p_huart, p_data, len, timeout_ms) != HAL_OK)
+    if (HAL_UART_Transmit(HAL_UART(p_drv->p_config->p_huart), p_data, len, timeout_ms) != HAL_OK)
     {
         return -1;
     }
@@ -348,7 +351,7 @@ int BspUart_ReadByte(bsp_uart_driver_t *p_drv, uint8_t *p_byte, uint32_t timeout
  * */
 void BspUart_FlushRx(bsp_uart_driver_t *p_drv)
 {
-    __HAL_UART_FLUSH_DRREGISTER(p_drv->p_config->p_huart);
+    __HAL_UART_FLUSH_DRREGISTER(HAL_UART(p_drv->p_config->p_huart));
 }
 
 //*** HAL Weak Callback Overrides ***//
@@ -398,7 +401,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
     }
 
     /* 自动重启 DMA 接收 */
-    if (p_drv->p_config->p_huart->gState != HAL_UART_STATE_RESET)
+    if (HAL_UART(p_drv->p_config->p_huart)->gState != HAL_UART_STATE_RESET)
     {
         start_dma_rx(p_drv);
     }
