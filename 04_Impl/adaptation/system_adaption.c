@@ -36,8 +36,16 @@
 /** @brief  从 plat_gpio_t 提取 HAL GPIO 引脚位掩码（1 << pin） */
 #define HAL_GPIO_PIN(p)  ((uint16_t)(1U << ((const plat_gpio_t *)(p))->pin))
 
-/** @brief  将 plat_gpio_t 的 port 字段转换为 HAL GPIO_TypeDef*（按值） */
+/** @brief  从 plat_gpio_t 的 port 字段转换为 HAL GPIO_TypeDef*（按值） */
 #define HAL_GPIO_PORT_V(gpio) ((GPIO_TypeDef *)((gpio).port))
+
+//*** 共享时基函数 ***//
+
+/** @brief  统一时基 — 所有需要 pf_get_tick 的 ops 表共享此函数 */
+static uint32_t HalGetTick(void)
+{
+    return HAL_GetTick();
+}
 
 //*** LED HAL 操作接口 ***//
 
@@ -93,28 +101,16 @@ static void HalLed_Toggle(bsp_led_driver_t *p_drv)
     HAL_GPIO_TogglePin(HAL_GPIO_PORT(p_gpio), HAL_GPIO_PIN(p_gpio));
 }
 
-/**
- * @brief  LED HAL 操作接口实例（命名匹配 plat_led.h 的 extern 声明）。
- * */
+/** @brief  LED HAL 操作接口实例（命名匹配 plat_led.h 的 extern 声明）。 */
 const led_operations_t bsp_led_hal_ops = {
     .p_On     = HalLed_On,
     .p_Off    = HalLed_Off,
     .p_Toggle = HalLed_Toggle,
 };
 
-/**
- * @brief  LED OS 时基操作 — 获取系统 tick。
- *
- * @return  当前 tick 计数（毫秒）。
- * */
-static uint32_t HalLed_GetTick(void)
-{
-    return HAL_GetTick();
-}
-
-/** @brief  LED OS 操作接口实例 */
-const led_os_operations_t g_led_os_ops = {
-    .pf_get_tick = HalLed_GetTick,
+/** @brief  LED 时基操作接口实例 */
+const tick_operations_t g_led_os_ops = {
+    .pf_get_tick = HalGetTick,
 };
 
 //*** 按键 HAL 操作接口 ***//
@@ -151,24 +147,14 @@ static uint8_t HalKey_ReadPin(const bsp_key_config_t *p_cfg)
     return 0;
 }
 
-/**
- * @brief  获取系统 tick（HAL_GetTick 封装）。
- *
- * @return  当前 tick 计数（毫秒）。
- * */
-static uint32_t HalKey_GetTick(void)
-{
-    return HAL_GetTick();
-}
-
 /** @brief  按键硬件操作接口实例 */
 const key_hw_operations_t g_key_hal_ops = {
     .pf_read_pin = HalKey_ReadPin,
 };
 
-/** @brief  按键 OS 操作接口实例 */
-const key_os_operations_t g_key_os_ops = {
-    .pf_get_tick = HalKey_GetTick,
+/** @brief  按键时基操作接口实例 */
+const tick_operations_t g_key_os_ops = {
+    .pf_get_tick = HalGetTick,
 };
 
 //*** 看门狗 HAL 操作接口 ***//
@@ -194,16 +180,6 @@ const wdg_hw_operations_t g_wdg_hal_ops = {
 };
 
 //*** 系统 HAL 操作接口 ***//
-
-/**
- * @brief  获取系统 tick。
- *
- * @return  当前 tick 计数（毫秒）。
- * */
-static uint32_t HalSys_GetTick(void)
-{
-    return HAL_GetTick();
-}
 
 /**
  * @brief  通过 NVIC 执行软件复位。
@@ -248,7 +224,7 @@ static int HalSys_GetRunningBank(ota_slot_t *p_slot)
 
 /** @brief  系统硬件操作接口实例 */
 const sys_operations_t g_sys_hal_ops = {
-    .pf_get_tick         = HalSys_GetTick,
+    .pf_get_tick         = HalGetTick,
     .pf_reboot           = HalSys_Reboot,
     .pf_get_running_bank = HalSys_GetRunningBank,
 };
@@ -411,18 +387,8 @@ const flash_os_operations_t g_flash_os_ops = {
     .pf_critical_exit  = HalCriticalExit,
 };
 
-/**
- * @brief  获取系统 tick，用于 Flash 超时跟踪。
- *
- * @return  当前 tick 计数（毫秒）。
- * */
-static uint32_t HalGetTick(void)
-{
-    return HAL_GetTick();
-}
-
-/** @brief  Flash 时间操作接口实例 */
-const flash_time_operations_t g_flash_time_ops = {
+/** @brief  Flash 时基操作接口实例 */
+const tick_operations_t g_flash_time_ops = {
     .pf_get_tick = HalGetTick,
 };
 
@@ -527,16 +493,6 @@ const uart_hw_operations_t g_uart_hal_ops = {
 };
 
 /**
- * @brief  获取系统 tick，用于 UART 超时跟踪。
- *
- * @return  当前 tick 计数（毫秒）。
- * */
-static uint32_t HalUart_GetTick(void)
-{
-    return HAL_GetTick();
-}
-
-/**
  * @brief  毫秒级延时（FreeRTOS osDelay 封装）。
  *
  * @param[in] ms : 延时时长（毫秒）。
@@ -548,6 +504,6 @@ static void HalUart_DelayMs(uint32_t ms)
 
 /** @brief  UART OS 操作接口实例 */
 const uart_os_operations_t g_uart_os_ops = {
-    .pf_get_tick = HalUart_GetTick,
+    .pf_get_tick = HalGetTick,
     .pf_delay_ms = HalUart_DelayMs,
 };

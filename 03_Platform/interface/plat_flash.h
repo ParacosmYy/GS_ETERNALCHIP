@@ -36,6 +36,7 @@ extern "C" {
 
 //******************************* Includes **********************************//
 #include "ota_config.h"
+#include "plat_tick.h"
 #include <stdint.h>
 #include <stddef.h>
 //******************************* Includes **********************************//
@@ -62,12 +63,6 @@ typedef struct
     void (*pf_critical_exit)(void);
 } flash_os_operations_t;
 
-/** @brief  Flash 时基操作 */
-typedef struct
-{
-    uint32_t (*pf_get_tick)(void);
-} flash_time_operations_t;
-
 /** @brief  Flash 驱动配置 — 芯片布局（无 HAL 类型） */
 typedef struct
 {
@@ -85,7 +80,7 @@ struct bsp_flash_driver
     const bsp_flash_config_t      *p_config;
     const flash_hw_operations_t   *p_hw_ops;
     const flash_os_operations_t   *p_os_ops;
-    const flash_time_operations_t *p_time_ops;
+    const tick_operations_t       *p_time_ops;
     uint8_t                        is_inited;
 };
 
@@ -97,7 +92,7 @@ void     BspFlash_DriverInit(bsp_flash_driver_t *p_drv,
                              const bsp_flash_config_t *p_config,
                              const flash_hw_operations_t *p_hw_ops,
                              const flash_os_operations_t *p_os_ops,
-                             const flash_time_operations_t *p_time_ops);
+                             const tick_operations_t *p_time_ops);
 
 /** @brief  擦除单个 Flash 扇区 */
 int      BspFlash_DriverEraseSector(bsp_flash_driver_t *p_drv, uint32_t sector);

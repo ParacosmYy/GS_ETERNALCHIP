@@ -30,11 +30,11 @@ extern "C" {
 
 /* LED — 命名保持 bsp_led_hal_ops 以匹配 plat_led.h 的 extern 声明 */
 extern const led_operations_t bsp_led_hal_ops;
-extern const led_os_operations_t g_led_os_ops;
+extern const tick_operations_t g_led_os_ops;
 
 // 按键
 extern const key_hw_operations_t g_key_hal_ops;
-extern const key_os_operations_t g_key_os_ops;
+extern const tick_operations_t g_key_os_ops;
 
 // 看门狗
 extern const wdg_hw_operations_t g_wdg_hal_ops;
@@ -48,7 +48,7 @@ extern const rtt_operations_t g_rtt_hal_ops;
 // Flash
 extern const flash_hw_operations_t g_flash_hal_ops;
 extern const flash_os_operations_t g_flash_os_ops;
-extern const flash_time_operations_t g_flash_time_ops;
+extern const tick_operations_t g_flash_time_ops;
 extern const bsp_flash_config_t g_flash_config;
 
 // UART

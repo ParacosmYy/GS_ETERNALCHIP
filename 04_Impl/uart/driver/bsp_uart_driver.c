@@ -20,9 +20,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-//*** HAL 句柄强转（plat_uart.h 的 void* → UART_HandleTypeDef*） ***//
-#define HAL_UART(h)  ((UART_HandleTypeDef *)(h))
-
 //*** 私有辅助函数 ***//
 
 /**

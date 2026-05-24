@@ -44,7 +44,7 @@ static void Key_Notify(const bsp_key_driver_t *p_drv, bsp_key_event_t evt)
  * @param[in]  p_os_ops : OS OPS（tick 获取）。
  * */
 void BspKey_Init(bsp_key_driver_t *p_drv, const bsp_key_config_t *p_config,
-                 const key_hw_operations_t *p_hw_ops, const key_os_operations_t *p_os_ops)
+                 const key_hw_operations_t *p_hw_ops, const tick_operations_t *p_os_ops)
 {
     memset(p_drv, 0, sizeof(*p_drv));
     p_drv->p_config = p_config;

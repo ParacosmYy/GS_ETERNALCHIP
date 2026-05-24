@@ -20,6 +20,11 @@ extern "C"
 #include "stm32f4xx_hal.h"
 #include "plat_uart.h"
 
+    //*** HAL 句柄转换宏 ***//
+
+    /** @brief  将不透明 void* 转换为 HAL UART 句柄（Handler/Driver 共享） */
+#define HAL_UART(h)  ((UART_HandleTypeDef *)(h))
+
     //*** 可配置宏 ***//
 
 #ifndef BSP_UART_MAX_INSTANCES

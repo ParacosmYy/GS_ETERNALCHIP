@@ -25,6 +25,7 @@ extern "C" {
 
 //******************************* Includes **********************************//
 #include "plat_gpio.h"
+#include "plat_tick.h"
 #include <stdint.h>
 //******************************* Includes **********************************//
 
@@ -57,19 +58,13 @@ typedef struct
     uint8_t (*pf_read_pin)(const bsp_key_config_t *p_cfg); /**< 读取原始引脚电平→逻辑电平（0/1） */
 } key_hw_operations_t;
 
-/** @brief  OS 操作 — 时基抽象 */
-typedef struct
-{
-    uint32_t (*pf_get_tick)(void); /**< 返回当前 tick（毫秒） */
-} key_os_operations_t;
-
 //******************************* Driver Instance ****************************//
 
 typedef struct
 {
     const bsp_key_config_t   *p_config;
     const key_hw_operations_t *p_hw_ops;
-    const key_os_operations_t *p_os_ops;
+    const tick_operations_t   *p_os_ops;
     uint8_t   state;
     uint8_t   stable_level;
     uint32_t  last_tick;
@@ -79,7 +74,7 @@ typedef struct
 
 //******************************* Declaring ********************************//
 void BspKey_Init(bsp_key_driver_t *p_drv, const bsp_key_config_t *p_config,
-                 const key_hw_operations_t *p_hw_ops, const key_os_operations_t *p_os_ops);
+                 const key_hw_operations_t *p_hw_ops, const tick_operations_t *p_os_ops);
 void BspKey_Scan(bsp_key_driver_t *p_drv);
 
 #ifdef __cplusplus

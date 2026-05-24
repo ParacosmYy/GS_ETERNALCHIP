@@ -31,7 +31,7 @@
  * @param[in]  p_os_ops : OS 操作函数指针（时基服务）。
  * */
 void BspLed_Init(bsp_led_driver_t *p_drv, const bsp_led_config_t *p_config,
-                 const led_os_operations_t *p_os_ops)
+                 const tick_operations_t *p_os_ops)
 {
     memset(p_drv, 0, sizeof(*p_drv));
     p_drv->p_config = p_config;

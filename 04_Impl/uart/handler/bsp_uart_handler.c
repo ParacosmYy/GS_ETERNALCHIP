@@ -13,10 +13,8 @@
 
 //*** 头文件 ***//
 #include "bsp_uart_handler.h"
+#include "bsp_uart_driver.h"
 #include <string.h>
-
-//*** HAL 句柄强转（仅在 FindByHandle 中用于比较） ***//
-#define HAL_UART(h)  ((UART_HandleTypeDef *)(h))
 
 //*** 私有变量 ***//
 

@@ -110,7 +110,7 @@ void BspFlash_DriverInit(bsp_flash_driver_t *p_drv,
                          const bsp_flash_config_t *p_config,
                          const flash_hw_operations_t *p_hw_ops,
                          const flash_os_operations_t *p_os_ops,
-                         const flash_time_operations_t *p_time_ops)
+                         const tick_operations_t *p_time_ops)
 {
     if (p_drv == NULL || p_config == NULL || p_hw_ops == NULL ||
         p_os_ops == NULL || p_time_ops == NULL)
