@@ -110,43 +110,61 @@ IDLE --(YMODEM receive)--> UPGRADE_PENDING
 
 ---
 
-## 目录结构
+## 目录结构（五层架构）
 
 ```
 APP/
-├── App/                     # FreeRTOS 任务
-│   ├── task_ota.c/h         #   OTA 升级任务入口 + 7 阶段状态机
-│   └── ota_confirm.c/h      #   启动确认（boot_count 计数）
-├── Module/                  # 业务模块层
-│   └── ota/
-│       ├── ota_transport.c/h  # UART DMA ring buffer 适配 + YMODEM 数据回调
-│       ├── ota_verify.c/h     # SHA-256 Flash 哈希校验
-│       ├── ota_ecdsa.c/h      # ECDSA-P256 签名验证（micro-ecc）
-│       └── ota_led.c/h        # OTA 状态 LED 控制
-├── bsp/                     # 板级支持包
-│   ├── led/                 #   LED 驱动（操作抽象 + 实例化）
-│   ├── key/                 #   KEY 驱动（消抖状态机 + 长短按）
-│   ├── flash/               #   Flash 双区管理 + CRC-32 Config
-│   ├── uart/                #   UART DMA + IDLE + 环形缓冲区 + Printf
-│   └── rtt/                 #   SEGGER RTT 调试输出
-├── utils/                   # 通用工具组件
-│   └── ring_buffer.c/h      #   环形缓冲区（无硬件依赖，纯数据结构）
-├── Core/                    # CubeMX 生成代码
-├── Drivers/                 # STM32 HAL + CMSIS
-├── Middlewares/             # 中间件
+├── 01_App/                   # 应用层 — FreeRTOS 任务入口
+│   ├── task_ota.c/h          #   OTA 升级任务 + 7 阶段状态机
+│   └── ota_confirm.c/h       #   启动确认（boot_count 计数）
+├── 02_Service/               # 服务层 — 业务逻辑
+│   ├── ota_transport.c/h     #   UART DMA ring buffer 适配 + YMODEM 数据回调
+│   ├── ota_verify.c/h        #   SHA-256 Flash 哈希校验
+│   ├── ota_aes.c/h           #   AES-256-CTR 加解密
+│   ├── ota_aes_key.c/h       #   AES 密钥管理
+│   ├── ota_ecdsa.c/h         #   ECDSA-P256 签名验证（micro-ecc）
+│   ├── ota_led.c/h           #   OTA 状态 LED 控制
+│   ├── ota_trace.c/h         #   调试追踪
+│   └── crash_dump.c/h        #   故障转储（CmBacktrace 集成）
+├── 03_Platform/              # 平台层 — 硬件抽象接口 + 通用组件
+│   ├── interface/            #   硬件抽象接口（.h only，无 HAL 依赖）
+│   │   ├── plat_flash.h      #     Flash 读写擦除接口
+│   │   ├── plat_uart.h       #     UART 驱动接口
+│   │   ├── plat_gpio.h       #     GPIO 不透明类型（void *port）
+│   │   ├── plat_wdg.h        #     看门狗接口
+│   │   ├── plat_sys.h        #     系统复位/中断接口
+│   │   ├── plat_led.h        #     LED 接口
+│   │   ├── plat_key.h        #     按键接口
+│   │   └── plat_rtt.h        #     RTT 调试输出接口
+│   └── common/               #   通用数据结构 + 统一类型
+│       ├── platform_error.h  #     统一错误码枚举
+│       └── ring_buffer.c/h   #     环形缓冲区（纯数据结构，无硬件依赖）
+├── 04_Impl/                  # 实现层 — 硬件驱动实现（原 bsp/）
+│   ├── led/bsp_led.c/h       #   LED GPIO 驱动
+│   ├── key/bsp_key.c/h       #   KEY 消抖状态机 + 长短按
+│   ├── flash/bsp_flash.c/h   #   Flash 双区管理 + CRC-32 Config
+│   ├── uart/bsp_uart.c/h     #   UART DMA + IDLE + ring buffer + Printf
+│   ├── wdg/bsp_wdg.c/h       #   独立看门狗（IWDG）
+│   ├── sys/bsp_sys.c/h       #   系统复位 + Bank 检测
+│   └── rtt/bsp_rtt.c/h       #   SEGGER RTT 调试输出
+├── Core/                     # [CubeMX 生成，不修改]
+├── Drivers/                  # [STM32 HAL + CMSIS，CubeMX 管理]
+├── Middlewares/              # [第三方中间件，不修改]
 │   └── Third_Party/
-│       ├── FreeRTOS/        #   FreeRTOS + GCC/ARM_CM4F port
-│       ├── micro-ecc/       #   ECDSA-P256 轻量椭圆曲线库
-│       ├── YMODEM/          #   YMODEM-CRC 协议
-│       ├── SHA256/          #   SHA-256 哈希
-│       ├── CmBacktrace/     #   Cortex-M 故障诊断
-│       └── EasyLogger/      #   日志框架
-├── Shared/                  # Bootloader + App 共享
-│   └── ota_config.h         #   分区地址 + 状态枚举（单一真相源）
-├── STM32F411CEUx_BANK_A.ld  # GCC 链接脚本 (0x08008000)
-├── STM32F411CEUx_BANK_B.ld  # GCC 链接脚本 (0x08040000)
-├── Makefile                 # GCC 构建文件
-└── MDK-ARM/                 # Keil 工程文件
+│       ├── FreeRTOS/         #   FreeRTOS + GCC/ARM_CM4F port
+│       ├── micro-ecc/        #   ECDSA-P256 轻量椭圆曲线库
+│       ├── YMODEM/           #   YMODEM-CRC 协议
+│       ├── SHA256/           #   SHA-256 哈希
+│       ├── CmBacktrace/      #   Cortex-M 故障诊断
+│       └── EasyLogger/       #   日志框架
+├── Vendor/                   # [第三方库]
+│   └── tiny-AES-c/           #   AES-256 轻量实现
+├── Shared/                   # [Boot + App 共享，不修改]
+│   └── ota_config.h          #   分区地址 + 状态枚举（单一真相源）
+├── STM32F411CEUx_BANK_A.ld   # GCC 链接脚本 (0x08008000)
+├── STM32F411CEUx_BANK_B.ld   # GCC 链接脚本 (0x08040000)
+├── Makefile                  # GCC 构建文件
+└── MDK-ARM/                  # Keil 工程文件
 ```
 
 ---
@@ -164,14 +182,18 @@ PC → UART → DMA Normal + IDLE → ISR push to ring buffer (2048B)
                CPU 不阻塞，DMA 自动接收，应用层按需取数据
 ```
 
-### 三层架构
+### 五层架构数据流
 
 ```
-Layer 1: utils/ring_buffer     纯数据结构，无硬件依赖
-   ↓
-Layer 2: bsp/uart              DMA + IDLE 写入 ring buffer (ISR push)
-   ↓
-Layer 3: Module/ota/transport  从 bsp_uart 读字节 (pop from ring buffer)
+Layer 1: 03_Platform/common  纯数据结构（ring_buffer），无硬件依赖
+    ↓
+Layer 2: 04_Impl/uart        DMA + IDLE 写入 ring buffer (ISR push)
+    ↓
+Layer 3: 02_Service          从 bsp_uart 读字节 → YMODEM 解包 → AES 解密 → ECDSA 验签
+    ↓
+Layer 4: 01_App              OTA 状态机编排（任务入口）
+    ↑
+Layer 5: 03_Platform/interface  硬件抽象接口（plat_*.h，上层通过接口调用）
 ```
 
 ---
@@ -238,20 +260,23 @@ bash scripts/linux/build_all.sh
 - [x] DJI 风格分层重构 (tasks → App + Module/ota)
 - [x] ARM GCC 双构建系统 (Makefile + 链接脚本)
 - [x] 编译脚本 (Windows PS + Linux Bash + 资源统计)
-- [x] 环形缓冲区基础组件 (utils/ring_buffer)
+- [x] 环形缓冲区基础组件 (03_Platform/common/ring_buffer)
 - [x] UART DMA + 环形缓冲区接收模式
 - [x] 双 Bank 固件构建 (Bank A + Bank B)
 - [x] 固件版本号管理 (MAJOR.MINOR.PATCH)
 - [x] LED 状态指示 + 按键强制回退
 - [x] 上位机串口连接/断开管理
+- [x] AES-256-CTR 加密传输（固件防逆向）
+- [x] 五层架构重构 (01_App / 02_Service / 03_Platform / 04_Impl / 05_Vendor)
+- [x] Platform 接口抽象层 (plat_*.h + platform_error.h)
 
 ---
 
 ## 企业级演进路线图
 
-### Phase 1 — AES-256 加密传输（固件防逆向）
+### Phase 1 — AES-256 加密传输 ✅ 已完成
 
-> 目标：固件传输全程密文，防逆向 + 防篡改
+> AES-256-CTR 加密传输已实现，固件传输全程密文。
 
 Bootloader 仅 16KB，无法容纳 AES + ECDSA。企业级做法：App 侧做解密验签，Bootloader 保持精简。
 
@@ -260,12 +285,6 @@ PC: firmware.bin → ECDSA签名 → AES-256加密 → firmware_ota.bin
 设备: YMODEM接收 → AES解密 → ECDSA验签 → SHA-256 → 写Slot B
 Boot: 复制 Slot B→A → SHA-256校验 → 跳转
 ```
-
-| 任务 | 说明 |
-|------|------|
-| AES-256-CBC 解密 | mbedTLS 裁剪版，App 侧解密后写 Slot B |
-| 固件打包工具升级 | Python 端: 签名 → 加密 → 打包 |
-| 密钥管理 | AES 密钥编译时嵌入或安全通道下发 |
 
 ### Phase 2 — 公共技术组件
 
@@ -284,13 +303,14 @@ Boot: 复制 Slot B→A → SHA-256校验 → 跳转
 | 命令集 | QUERY_VERSION / START_UPGRADE / VERIFY / GET_STATUS |
 | 断点续传 | 记录已接收偏移，支持中断后继续 |
 
-### Phase 4 — 五层架构
+### Phase 4 — 五层架构 ✅ 已完成
 
-| 任务 | 说明 |
-|------|------|
-| 平台类型/错误码 | platform_type.h + platform_error.h 统一抽象 |
-| 传感器 ops 接口 | sensor_hal_interface.h，驱动可插拔 |
-| 传输接口抽象 | ota_transport_t 接口，支持 UART/SPI/BLE 扩展 |
+| 任务 | 状态 | 说明 |
+|------|------|------|
+| 目录重构 | ✅ | App→01_App, Module→02_Service, bsp→04_Impl |
+| 平台接口 | ✅ | 03_Platform/interface/ plat_*.h（无 HAL 依赖） |
+| 统一错误码 | ✅ | platform_error.h |
+| 通用组件 | ✅ | ring_buffer → 03_Platform/common/ |
 
 ### Phase 5 — 高级特性
 
