@@ -14,7 +14,7 @@ extern "C"
 
 //*** Includes ***//
 #include "stm32f4xx_hal.h"
-#include "../../utils/ring_buffer.h"
+#include "ring_buffer.h"
 #include <stdint.h>
 
     //*** Configurable Macros ***//
