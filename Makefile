@@ -47,13 +47,14 @@ INCDIRS = Core/Inc \
           Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F \
           Drivers/CMSIS/Device/ST/STM32F4xx/Include \
           Drivers/CMSIS/Include \
-          04_Impl/led \
-          04_Impl/key \
-          04_Impl/uart \
-          04_Impl/rtt \
-          04_Impl/flash \
-          04_Impl/wdg \
-          04_Impl/sys \
+           04_Impl/led \
+           04_Impl/key \
+           04_Impl/uart \
+           04_Impl/rtt \
+           04_Impl/flash \
+           04_Impl/wdg \
+           04_Impl/sys \
+           04_Impl/adaptation \
           03_Platform/common \
           03_Platform/interface \
           01_App \
@@ -135,7 +136,8 @@ C_SRCS += Middlewares/Third_Party/FreeRTOS/Source/croutine.c \
           Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c
 
 # 04_Impl (BSP implementations)
-C_SRCS += 04_Impl/key/bsp_key_driver.c \
+C_SRCS += 04_Impl/adaptation/system_adaption.c \
+          04_Impl/key/bsp_key_driver.c \
           04_Impl/led/bsp_led_driver.c \
           04_Impl/uart/bsp_uart_driver.c \
           04_Impl/uart/bsp_uart_handler.c \

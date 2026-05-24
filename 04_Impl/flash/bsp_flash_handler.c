@@ -17,104 +17,9 @@
 
 #include "bsp_flash_handler.h"
 #include "bsp_flash_driver.h"
+#include "system_adaption.h"
 #include "stm32f4xx_hal.h"
-#include "FreeRTOS.h"
-#include "task.h"
 #include <string.h>
-
-//*** Temporary HAL glue — will move to system_adaption.c in Phase 8 ***//
-
-static int hal_flash_unlock(void)
-{
-    HAL_FLASH_Unlock();
-    return 0;
-}
-
-static int hal_flash_lock(void)
-{
-    HAL_FLASH_Lock();
-    return 0;
-}
-
-static void hal_flash_clear_errors(void)
-{
-    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR |
-                           FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR |
-                           FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR |
-                           FLASH_FLAG_RDERR);
-}
-
-static int hal_flash_erase_sector(uint32_t sector, uint32_t voltage_range)
-{
-    FLASH_EraseInitTypeDef erase;
-    uint32_t               sector_error = 0;
-    HAL_StatusTypeDef      status;
-
-    erase.TypeErase    = FLASH_TYPEERASE_SECTORS;
-    erase.Sector       = sector;
-    erase.NbSectors    = 1;
-    erase.VoltageRange = voltage_range;
-
-    status = HAL_FLASHEx_Erase(&erase, &sector_error);
-
-    if (status == HAL_OK && sector_error == 0xFFFFFFFFu)
-    {
-        return 0;
-    }
-    return -1;
-}
-
-static int hal_flash_program_word(uint32_t addr, uint32_t data)
-{
-    if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr, data) != HAL_OK)
-    {
-        return -1;
-    }
-    return 0;
-}
-
-static const flash_hw_operations_t s_flash_hal_ops = {
-    .pf_unlock       = hal_flash_unlock,
-    .pf_lock         = hal_flash_lock,
-    .pf_clear_errors = hal_flash_clear_errors,
-    .pf_erase_sector = hal_flash_erase_sector,
-    .pf_program_word = hal_flash_program_word,
-};
-
-static void hal_critical_enter(void)
-{
-    taskENTER_CRITICAL();
-}
-
-static void hal_critical_exit(void)
-{
-    taskEXIT_CRITICAL();
-}
-
-static const flash_os_operations_t s_flash_os_ops = {
-    .pf_critical_enter = hal_critical_enter,
-    .pf_critical_exit  = hal_critical_exit,
-};
-
-static uint32_t hal_get_tick(void)
-{
-    return HAL_GetTick();
-}
-
-static const flash_time_operations_t s_flash_time_ops = {
-    .pf_get_tick = hal_get_tick,
-};
-
-//*** Static Configuration (F411 layout from ota_config.h) ***//
-
-static const bsp_flash_config_t s_flash_config = {
-    .boot_addr   = FLASH_ADDR_BOOT,
-    .config_addr = FLASH_ADDR_CONFIG,
-    .slot_a_addr = FLASH_ADDR_SLOT_A,
-    .slot_b_addr = FLASH_ADDR_SLOT_B,
-    .slot_a_size = SLOT_A_SIZE,
-    .slot_b_size = SLOT_B_SIZE,
-};
 
 //*** Static Instances ***//
 
@@ -135,10 +40,10 @@ static bsp_flash_handler_t s_flash_handler;
 void BspFlash_Init(void)
 {
     BspFlash_DriverInit(&s_flash_driver,
-                        &s_flash_config,
-                        &s_flash_hal_ops,
-                        &s_flash_os_ops,
-                        &s_flash_time_ops);
+                        &g_flash_config,
+                        &g_flash_hal_ops,
+                        &g_flash_os_ops,
+                        &g_flash_time_ops);
 
     BspFlashHandler_Init(&s_flash_handler, &s_flash_driver);
 }

@@ -600,6 +600,11 @@
           <GroupName>04_Impl</GroupName>
           <Files>
             <File>
+              <FileName>system_adaption.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\04_Impl\adaptation\system_adaption.c</FilePath>
+            </File>
+            <File>
               <FileName>bsp_key_driver.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\04_Impl\key\bsp_key_driver.c</FilePath>
@@ -643,16 +648,6 @@
               <FileName>bsp_sys_driver.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\04_Impl\sys\bsp_sys_driver.c</FilePath>
-            </File>
-            <File>
-              <FileName>SEGGER_RTT.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Middlewares\Third_Party\SEGGER_RTT\SEGGER_RTT.c</FilePath>
-            </File>
-            <File>
-              <FileName>SEGGER_RTT_printf.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Middlewares\Third_Party\SEGGER_RTT\SEGGER_RTT_printf.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -722,7 +717,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Vendor/tiny-AES-c</GroupName>
+          <GroupName>ThirdParty/tiny-AES-c</GroupName>
           <Files>
             <File>
               <FileName>aes.c</FileName>
@@ -732,7 +727,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>micro-ecc</GroupName>
+          <GroupName>ThirdParty/micro-ecc</GroupName>
           <Files>
             <File>
               <FileName>uECC.c</FileName>
@@ -742,7 +737,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>SHA256</GroupName>
+          <GroupName>ThirdParty/SHA256</GroupName>
           <Files>
             <File>
               <FileName>sha256.c</FileName>
@@ -752,7 +747,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>YMODEM</GroupName>
+          <GroupName>ThirdParty/YMODEM</GroupName>
           <Files>
             <File>
               <FileName>ymodem.c</FileName>
@@ -762,7 +757,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>EasyLogger</GroupName>
+          <GroupName>ThirdParty/EasyLogger</GroupName>
           <Files>
             <File>
               <FileName>elog.c</FileName>
@@ -782,12 +777,27 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>CmBacktrace</GroupName>
+          <GroupName>ThirdParty/CmBacktrace</GroupName>
           <Files>
             <File>
               <FileName>cm_backtrace.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Middlewares/Third_Party/CmBacktrace/cm_backtrace.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>ThirdParty/SEGGER_RTT</GroupName>
+          <Files>
+            <File>
+              <FileName>SEGGER_RTT.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\Third_Party\SEGGER_RTT\SEGGER_RTT.c</FilePath>
+            </File>
+            <File>
+              <FileName>SEGGER_RTT_printf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\Third_Party\SEGGER_RTT\SEGGER_RTT_printf.c</FilePath>
             </File>
           </Files>
         </Group>

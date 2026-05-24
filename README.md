@@ -1,7 +1,7 @@
 # GS_ETERNALCHIP — OTA 加密升级系统
 
-基于 STM32F411CEUx 的嵌入式 OTA 固件升级系统，FreeRTOS 实时操作系统，
-ECDSA-P256 签名验证 + SHA-256 完整性校验 + YMODEM-CRC 传输。
+基于 STM32F411CEUx 的嵌入式 OTA 固件升级系统。FreeRTOS 实时操作系统，
+ECDSA-P256 签名验证 + AES-256-CTR 加密传输 + SHA-256 完整性校验。
 
 ---
 
@@ -12,10 +12,7 @@ ECDSA-P256 签名验证 + SHA-256 完整性校验 + YMODEM-CRC 传输。
 | MCU | STM32F411CEUx (Cortex-M4F, 96 MHz, 512KB Flash, 128KB SRAM) |
 | LED | PC13，推挽输出，低电平点亮 |
 | KEY | PA0，上拉输入，按下低电平 |
-| 调试接口 | SWD (SWDIO/SWCLK) |
-| 通信接口 | USART1 (PA9/PA10) @ 2Mbps，DMA + IDLE + 环形缓冲区 |
-
----
+| 通信 | USART1 (PA9/PA10) @ 2Mbps，DMA + IDLE + 环形缓冲区 |
 
 ## Flash 分区
 
@@ -26,306 +23,57 @@ ECDSA-P256 签名验证 + SHA-256 完整性校验 + YMODEM-CRC 传输。
 | Slot A (App) | 0x08008000 | 224 KB | Sector 2-5 |
 | Slot B (Download) | 0x08040000 | 256 KB | Sector 6-7 |
 
----
-
-## OTA 安全升级流程
+## OTA 流程
 
 ```
-PC 端签名:
-  OTA.bin → SHA-256(固件) → 32字节哈希
-  私钥 + 哈希 → ECDSA-P256 签名(64字节)
-  OTA.bin + 签名 = upload.bin (固件 + 签名包)
-
-设备端验签:
-  upload.bin → YMODEM 传输 → 写入 Slot B
-  Slot B 末尾 64 字节 = 签名，前部 = 固件
-  固件 → SHA-256 → 哈希A
-  公钥(Flash 内嵌) + 哈希A + 签名 → ECDSA 验签
-  验签通过 → SHA-256 记入 OTA Config → 重启
-
-Bootloader:
-  检测 UPGRADE_PENDING → Slot B 复制到 Slot A → SHA-256 二次校验 → 跳转
+PC:    firmware.bin → ECDSA-P256 签名 → AES-256-CTR 加密 → upload.bin
+设备:  YMODEM 接收 → AES 解密 → ECDSA 验签 → SHA-256 → 写 Slot B → 重启
+Boot:  检测 UPGRADE_PENDING → Slot B→A → SHA-256 校验 → 跳转
 ```
 
-### 双固件构建
+### 安全机制
 
-同一源码编译两次，仅链接脚本 FLASH ORIGIN 不同：
-
-| 固件 | 链接脚本 | FLASH ORIGIN | 说明 |
-|------|---------|-------------|------|
-| `OTA_A.bin` | `STM32F411CEUx_BANK_A.ld` | 0x08008000 | 运行在 Bank A |
-| `OTA_B.bin` | `STM32F411CEUx_BANK_B.ld` | 0x08040000 | 运行在 Bank B |
-
-```bash
-make build_a    # 编译 Bank A 固件
-make build_b    # 编译 Bank B 固件
-make all        # 编译两个 Bank 固件
-```
+- **ECDSA-P256**: 私钥签名（PC），公钥验签（设备），防篡改
+- **AES-256-CTR**: 固件传输全程密文，防逆向
+- **SHA-256**: 写入 Flash 前后双重校验
+- **Boot Count**: 连续 crash 达阈值自动回退旧 Bank
 
 ### 签名工具链
 
 ```bash
-# 1. 生成密钥对（仅首次）
-python tools/firmware_sign.py --genkey --keydir tools/keys/
-
-# 2. 编译固件
-#    GCC  编译 → APP/build/OTA_A.bin / OTA_B.bin
-#    Keil 编译 → APP/MDK-ARM/OTA/OTA.bin
-
-# 3. 签名
-python tools/firmware_sign.py --sign APP/build/OTA_B.bin --keydir tools/keys/ -o tools/upload_B.bin
-
-# 4. OTA 传输
-python tools/ota_upgrade.py
-#    选择 upload_B.bin（签名包），YMODEM-CRC 发送
-```
-
-### 密钥安全
-
-| 文件 | 用途 | 存放位置 | 安全级别 |
-|------|------|----------|----------|
-| `tools/keys/ec_private.pem` | 签名（PC 端） | 仅 PC，不进固件 | 机密 |
-| `tools/keys/ec_public.pem` | 验签参考 | PC 备份 | 公开 |
-| `ota_ecdsa.c: s_ecdsa_pubkey[64]` | 验签（设备端） | 编译进固件 | 公开 |
-
----
-
-## OTA 状态机
-
-```
-IDLE --(YMODEM receive)--> UPGRADE_PENDING
-                                    |
-                              reset |
-                                    v
-                          Bootloader copies B->A
-                                    |
-                                    v
-                             CONFIRMING ---- boot_count>=3 --> ROLLBACK
-                                |                              |
-                           App  |                        Recovery YMODEM
-                        confirm |
-                                v
-                            CONFIRMED
+python tools/firmware_sign.py --genkey --keydir tools/keys/           # 生成密钥对
+python tools/firmware_sign.py --sign OTA.bin --keydir tools/keys/ -o upload.bin  # 签名
+python tools/ota_upgrade.py                                            # YMODEM 传输
 ```
 
 ---
 
-## 目录结构（五层架构）
+## 目录结构
 
 ```
 APP/
 ├── 01_App/                   # 应用层 — FreeRTOS 任务入口
-│   ├── task_ota.c/h          #   OTA 升级任务 + 7 阶段状态机
-│   └── ota_confirm.c/h       #   启动确认（boot_count 计数）
-├── 02_Service/               # 服务层 — 业务逻辑
-│   ├── ota_transport.c/h     #   UART DMA ring buffer 适配 + YMODEM 数据回调
-│   ├── ota_verify.c/h        #   SHA-256 Flash 哈希校验
-│   ├── ota_aes.c/h           #   AES-256-CTR 加解密
-│   ├── ota_aes_key.c/h       #   AES 密钥管理
-│   ├── ota_ecdsa.c/h         #   ECDSA-P256 签名验证（micro-ecc）
-│   ├── ota_led.c/h           #   OTA 状态 LED 控制
-│   ├── ota_trace.c/h         #   调试追踪
-│   └── crash_dump.c/h        #   故障转储（CmBacktrace 集成）
-├── 03_Platform/              # 平台层 — 硬件抽象接口 + 通用组件
-│   ├── interface/            #   硬件抽象接口（.h only，无 HAL 依赖）
-│   │   ├── plat_flash.h      #     Flash 读写擦除接口
-│   │   ├── plat_uart.h       #     UART 驱动接口
-│   │   ├── plat_gpio.h       #     GPIO 不透明类型（void *port）
-│   │   ├── plat_wdg.h        #     看门狗接口
-│   │   ├── plat_sys.h        #     系统复位/中断接口
-│   │   ├── plat_led.h        #     LED 接口
-│   │   ├── plat_key.h        #     按键接口
-│   │   └── plat_rtt.h        #     RTT 调试输出接口
-│   └── common/               #   通用数据结构 + 统一类型
-│       ├── platform_error.h  #     统一错误码枚举
-│       └── ring_buffer.c/h   #     环形缓冲区（纯数据结构，无硬件依赖）
-├── 04_Impl/                  # 实现层 — 硬件驱动实现（原 bsp/）
-│   ├── led/bsp_led.c/h       #   LED GPIO 驱动
-│   ├── key/bsp_key.c/h       #   KEY 消抖状态机 + 长短按
-│   ├── flash/bsp_flash.c/h   #   Flash 双区管理 + CRC-32 Config
-│   ├── uart/bsp_uart.c/h     #   UART DMA + IDLE + ring buffer + Printf
-│   ├── wdg/bsp_wdg.c/h       #   独立看门狗（IWDG）
-│   ├── sys/bsp_sys.c/h       #   系统复位 + Bank 检测
-│   └── rtt/bsp_rtt.c/h       #   SEGGER RTT 调试输出
-├── Core/                     # [CubeMX 生成，不修改]
-├── Drivers/                  # [STM32 HAL + CMSIS，CubeMX 管理]
-├── Middlewares/              # [第三方中间件，不修改]
-│   └── Third_Party/
-│       ├── FreeRTOS/         #   FreeRTOS + GCC/ARM_CM4F port
-│       ├── micro-ecc/        #   ECDSA-P256 轻量椭圆曲线库
-│       ├── YMODEM/           #   YMODEM-CRC 协议
-│       ├── SHA256/           #   SHA-256 哈希
-│       ├── CmBacktrace/      #   Cortex-M 故障诊断
-│       └── EasyLogger/       #   日志框架
-├── Vendor/                   # [第三方库]
-│   └── tiny-AES-c/           #   AES-256 轻量实现
-├── Shared/                   # [Boot + App 共享，不修改]
-│   └── ota_config.h          #   分区地址 + 状态枚举（单一真相源）
-├── STM32F411CEUx_BANK_A.ld   # GCC 链接脚本 (0x08008000)
-├── STM32F411CEUx_BANK_B.ld   # GCC 链接脚本 (0x08040000)
-├── Makefile                  # GCC 构建文件
-└── MDK-ARM/                  # Keil 工程文件
+├── 02_Service/               # 服务层 — OTA 业务逻辑
+├── 03_Platform/              # 平台层 — 硬件抽象接口 (plat_*.h) + 通用组件
+│   ├── interface/            #   零 HAL 依赖的类型 + ops 接口定义
+│   └── common/               #   ring_buffer 等纯数据结构
+├── 04_Impl/                  # 实现层 — BSP Driver + Handler (OPS 函数指针)
+│   ├── adaptation/           #   system_adaption.c (HAL/RTOS 胶合层)
+│   ├── led/ key/ wdg/ sys/   #   单实例 Driver
+│   ├── flash/ uart/          #   Driver + Handler (多实例管理器)
+│   └── rtt/                  #   SEGGER RTT 调试输出
+├── Core/ Drivers/ Middlewares/ Vendor/   # [CubeMX/第三方，不修改]
+├── Shared/                   # [Boot + App 共享: ota_config.h]
+├── Makefile                  # GCC 构建 (arm-none-eabi-gcc)
+└── MDK-ARM/                  # Keil 工程
 ```
 
----
-
-## 数据流架构
-
-### UART DMA + 环形缓冲区
-
-```
-PC → UART → DMA Normal + IDLE → ISR push to ring buffer (2048B)
-                                        ↓
-                               BspUart_ReadByte(pop tail)
-                                        ↓
-                               YMODEM 解包 → Flash 写入
-               CPU 不阻塞，DMA 自动接收，应用层按需取数据
-```
-
-### 五层架构数据流
-
-```
-Layer 1: 03_Platform/common  纯数据结构（ring_buffer），无硬件依赖
-    ↓
-Layer 2: 04_Impl/uart        DMA + IDLE 写入 ring buffer (ISR push)
-    ↓
-Layer 3: 02_Service          从 bsp_uart 读字节 → YMODEM 解包 → AES 解密 → ECDSA 验签
-    ↓
-Layer 4: 01_App              OTA 状态机编排（任务入口）
-    ↑
-Layer 5: 03_Platform/interface  硬件抽象接口（plat_*.h，上层通过接口调用）
-```
-
----
-
-## 开发环境
-
-### 双构建系统
-
-| 项目 | Keil (ARMCC v5) | GCC (arm-none-eabi-gcc 13.3) |
-|------|-----------------|-------------------------------|
-| 构建工具 | Keil MDK-ARM | Makefile |
-| 编译器 | ARMCC v5 + MicroLIB | ARM GCC 13.3 + nano libc |
-| 链接脚本 | .sct (Scatter File) | .ld (Linker Script) |
-| FreeRTOS port | portable/RVDS/ARM_CM4F | portable/GCC/ARM_CM4F |
-| 烧录 | Keil 内置 | ST-Link / OpenOCD |
-
-### 编译命令
+## 编译
 
 ```bash
-# GCC 编译（APP — 双 Bank）
-cd APP && make clean && make all
-
-# GCC 编译（Boot）
-cd Boot && make clean && make
-
-# Windows 双击编译
-scripts/windows/build_all.bat
-
-# Linux / Git Bash
-bash scripts/linux/build_all.sh
+cd APP && make all        # 编译 Bank A + Bank B
+cd APP && make build_a    # 仅 Bank A
+cd APP && make build_b    # 仅 Bank B
 ```
 
-### 其他工具
-
-- **配置工具**: STM32CubeMX
-- **烧录器**: J-Link / ST-Link
-- **编辑器**: VS Code + clangd
-- **IntelliSense**: `tools/gen-clangd/run.bat` 自动从 `.uvprojx` 生成配置
-
----
-
-## 编码规范
-
-- 大括号: Allman 风格（独占一行）
-- 函数命名: `BspLed_On`, `OtaEcdsa_Verify`（大驼峰 + 模块前缀）
-- 类型后缀: `_t` | 指针前缀: `p_` | 静态变量: `s_`
-- 注释: GS_Mark 分区 (`//*** SECTION ***//`) + Doxygen
-- 禁止: 三目运算符、VLA、malloc、递归
-- 变量声明: 函数顶部，声明即初始化
-
----
-
-## 当前进度
-
-- [x] UART + DMA 通信基础
-- [x] LED/KEY BSP 驱动 + FreeRTOS 集成
-- [x] Flash 双区管理 (A/B 读写擦除 + CRC-32)
-- [x] SHA-256 完整性校验 + YMODEM-CRC 传输协议
-- [x] OTA 升级任务 (App 侧完整流程)
-- [x] App 适配 Bootloader (VTOR / 链接脚本 / 确认机制)
-- [x] CmBacktrace 故障诊断 + 代码规范统一
-- [x] Bootloader 引导程序 (独立工程)
-- [x] ECDSA-P256 固件签名验证 (micro-ecc)
-- [x] DJI 风格分层重构 (tasks → App + Module/ota)
-- [x] ARM GCC 双构建系统 (Makefile + 链接脚本)
-- [x] 编译脚本 (Windows PS + Linux Bash + 资源统计)
-- [x] 环形缓冲区基础组件 (03_Platform/common/ring_buffer)
-- [x] UART DMA + 环形缓冲区接收模式
-- [x] 双 Bank 固件构建 (Bank A + Bank B)
-- [x] 固件版本号管理 (MAJOR.MINOR.PATCH)
-- [x] LED 状态指示 + 按键强制回退
-- [x] 上位机串口连接/断开管理
-- [x] AES-256-CTR 加密传输（固件防逆向）
-- [x] 五层架构重构 (01_App / 02_Service / 03_Platform / 04_Impl / 05_Vendor)
-- [x] Platform 接口抽象层 (plat_*.h + platform_error.h)
-
----
-
-## 企业级演进路线图
-
-### Phase 1 — AES-256 加密传输 ✅ 已完成
-
-> AES-256-CTR 加密传输已实现，固件传输全程密文。
-
-Bootloader 仅 16KB，无法容纳 AES + ECDSA。企业级做法：App 侧做解密验签，Bootloader 保持精简。
-
-```
-PC: firmware.bin → ECDSA签名 → AES-256加密 → firmware_ota.bin
-设备: YMODEM接收 → AES解密 → ECDSA验签 → SHA-256 → 写Slot B
-Boot: 复制 Slot B→A → SHA-256校验 → 跳转
-```
-
-### Phase 2 — 公共技术组件
-
-| 任务 | 说明 |
-|------|------|
-| 栈水位监控 | FreeRTOS 任务栈使用率运行时检测 |
-| 多任务看门狗 | 任务健康监控 + 超时复位 |
-| 静态内存池 | 替代 malloc，固定大小块分配 |
-| OSAL 抽象层 | 隔离 FreeRTOS，统一 IPC 接口 |
-
-### Phase 3 — 应用层协议
-
-| 任务 | 说明 |
-|------|------|
-| OTA 协议帧 | magic + cmd + seq + len + payload + CRC-16 |
-| 命令集 | QUERY_VERSION / START_UPGRADE / VERIFY / GET_STATUS |
-| 断点续传 | 记录已接收偏移，支持中断后继续 |
-
-### Phase 4 — 五层架构 ✅ 已完成
-
-| 任务 | 状态 | 说明 |
-|------|------|------|
-| 目录重构 | ✅ | App→01_App, Module→02_Service, bsp→04_Impl |
-| 平台接口 | ✅ | 03_Platform/interface/ plat_*.h（无 HAL 依赖） |
-| 统一错误码 | ✅ | platform_error.h |
-| 通用组件 | ✅ | ring_buffer → 03_Platform/common/ |
-
-### Phase 5 — 高级特性
-
-| 任务 | 说明 |
-|------|------|
-| 差分升级 | bsdiff/hdiffpatch，只传 diff 节省 60-80% 传输量 |
-| 多通道传输 | BLE / Wi-Fi / SPI 扩展 |
-| 安全启动链 | Bootloader 嵌入根公钥哈希，完整 Chain of Trust |
-
----
-
-## 参考资源
-
-- [STM32F411 参考手册 (RM0383)](https://www.st.com/resource/en/reference_manual/rm0383-stm32f411xce-advanced-armbased-32bit-mcus-stmicroelectronics.pdf)
-- [micro-ecc 轻量椭圆曲线库](https://github.com/kmackay/micro-ecc)
-- [mbedTLS 嵌入式裁剪指南](https://mbed-tls.readthedocs.io/en/latest/kb/how-to/reduce-mbedtls-memory-and-code-size/)
-- [MCUboot 开源安全 Bootloader](https://docs.mcuboot.com/)
-- [SUIT Firmware Architecture (IETF)](https://datatracker.ietf.org/wg/suit/about/)
+支持 Keil (ARMCC v5) 和 GCC (arm-none-eabi-gcc 13.3) 双构建系统。

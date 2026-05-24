@@ -15,118 +15,13 @@
 //*** Includes ***//
 #include "bsp_uart_driver.h"
 #include "bsp_uart_handler.h"
+#include "system_adaption.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include "cmsis_os.h"
 
 //*** HAL Handle Cast (void* from plat_uart.h -> UART_HandleTypeDef*) ***//
 #define HAL_UART(h)  ((UART_HandleTypeDef *)(h))
-
-//*** Static HAL OPS Wrappers ***//
-
-/**
- * @brief  HAL wrapper: start DMA + IDLE reception.
- *
- * @param[in] p_huart : HAL UART handle (void*).
- * @param[in] buf     : RX buffer.
- * @param[in] size    : RX buffer size.
- *
- * @return   0 : HAL_OK.
- * @return  -1 : HAL error.
- * */
-static int hal_uart_start_dma_rx(void *p_huart, uint8_t *buf, uint16_t size)
-{
-    return (HAL_UARTEx_ReceiveToIdle_DMA((UART_HandleTypeDef *)p_huart, buf, size) == HAL_OK) ? 0 : -1;
-}
-
-/**
- * @brief  HAL wrapper: abort reception.
- *
- * @param[in] p_huart : HAL UART handle (void*).
- * */
-static void hal_uart_stop_rx(void *p_huart)
-{
-    HAL_UART_AbortReceive((UART_HandleTypeDef *)p_huart);
-}
-
-/**
- * @brief  HAL wrapper: non-blocking DMA transmit.
- *
- * @param[in] p_huart : HAL UART handle (void*).
- * @param[in] data    : TX data.
- * @param[in] len     : TX length.
- *
- * @return   0 : HAL_OK.
- * @return  -1 : HAL error.
- * */
-static int hal_uart_send_dma(void *p_huart, const uint8_t *data, uint16_t len)
-{
-    return (HAL_UART_Transmit_DMA((UART_HandleTypeDef *)p_huart, data, len) == HAL_OK) ? 0 : -1;
-}
-
-/**
- * @brief  HAL wrapper: blocking transmit.
- *
- * @param[in] p_huart  : HAL UART handle (void*).
- * @param[in] data     : TX data.
- * @param[in] len      : TX length.
- * @param[in] timeout  : Timeout in ms.
- *
- * @return   0 : HAL_OK.
- * @return  -1 : HAL error.
- * */
-static int hal_uart_send_blocking(void *p_huart, const uint8_t *data, uint16_t len, uint32_t timeout)
-{
-    return (HAL_UART_Transmit((UART_HandleTypeDef *)p_huart, data, len, timeout) == HAL_OK) ? 0 : -1;
-}
-
-/**
- * @brief  HAL wrapper: flush data register.
- *
- * @param[in] p_huart : HAL UART handle (void*).
- * */
-static void hal_uart_flush_dr(void *p_huart)
-{
-    __HAL_UART_FLUSH_DRREGISTER((UART_HandleTypeDef *)p_huart);
-}
-
-/** @brief  Default HAL hardware operations */
-static const uart_hw_operations_t s_uart_hal_ops =
-{
-    .pf_start_dma_rx  = hal_uart_start_dma_rx,
-    .pf_stop_rx       = hal_uart_stop_rx,
-    .pf_send_dma      = hal_uart_send_dma,
-    .pf_send_blocking  = hal_uart_send_blocking,
-    .pf_flush_dr      = hal_uart_flush_dr,
-};
-
-/**
- * @brief  HAL wrapper: get tick.
- *
- * @return  Current tick value.
- * */
-static uint32_t hal_get_tick(void)
-{
-    return HAL_GetTick();
-}
-
-/**
- * @brief  HAL wrapper: delay.
- *
- * @param[in] ms : Delay in ms.
- * */
-static void hal_delay_ms(uint32_t ms)
-{
-    osDelay(ms);
-}
-
-/** @brief  Default HAL OS operations */
-static const uart_os_operations_t s_uart_os_ops =
-{
-    .pf_get_tick = hal_get_tick,
-    .pf_delay_ms = hal_delay_ms,
-};
 
 //*** Private Helpers ***//
 
@@ -184,21 +79,20 @@ static int start_dma_rx(bsp_uart_driver_t *p_drv)
  * Steps:
  *  1. 将驱动结构体清零。
  *  2. 绑定配置指针和 OPS 指针。
- *  3. 若 p_hw_ops / p_os_ops 为 NULL，使用默认 HAL 实现。
- *  4. 注册到 Handler 实例表（供 HAL 回调查找）。
+ *  3. 注册到 Handler 实例表（供 HAL 回调查找）。
  *
  * @param[out] p_drv    : UART 驱动实例指针。
  * @param[in]  p_config : UART 配置（HAL 句柄、接收缓冲区、回调等）。
- * @param[in]  p_hw_ops : 硬件操作指针（NULL 则使用默认 HAL 实现）。
- * @param[in]  p_os_ops : OS 操作指针（NULL 则使用默认 HAL+FreeRTOS 实现）。
+ * @param[in]  p_hw_ops : 硬件操作指针（由 system_adaption 提供）。
+ * @param[in]  p_os_ops : OS 操作指针（由 system_adaption 提供）。
  * */
 void BspUart_Init(bsp_uart_driver_t *p_drv, const bsp_uart_config_t *p_config,
                   const uart_hw_operations_t *p_hw_ops, const uart_os_operations_t *p_os_ops)
 {
     memset(p_drv, 0, sizeof(*p_drv));
     p_drv->p_config = p_config;
-    p_drv->p_hw_ops = (p_hw_ops != NULL) ? p_hw_ops : &s_uart_hal_ops;
-    p_drv->p_os_ops = (p_os_ops != NULL) ? p_os_ops : &s_uart_os_ops;
+    p_drv->p_hw_ops = p_hw_ops;
+    p_drv->p_os_ops = p_os_ops;
     BspUartHandler_Register(p_drv);
 }
 

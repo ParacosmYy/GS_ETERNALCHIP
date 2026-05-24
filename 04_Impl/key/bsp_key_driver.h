@@ -28,18 +28,6 @@ extern "C"
         BSP_KEY_STATE_STABLE     = 2, /**< Stable state, tracking press */
     };
 
-    //*** Default HAL OPS Implementation ***//
-
-    /** @brief  Default HAL implementation of pf_read_pin */
-    uint8_t Key_Hal_ReadPin(const bsp_key_config_t *p_cfg);
-
-    /** @brief  Default HAL implementation of pf_get_tick */
-    uint32_t Key_Hal_GetTick(void);
-
-    /** @brief  Default HAL ops instances (defined in bsp_key_driver.c) */
-    extern const key_hw_operations_t g_key_hal_ops;
-    extern const key_os_operations_t g_key_os_ops;
-
 #ifdef __cplusplus
 }
 #endif

@@ -14,88 +14,8 @@
 
 //*** Includes ***//
 #include "bsp_led_driver.h"
+#include "system_adaption.h"
 #include <string.h>
-
-//*** Private Macros ***//
-
-/** @brief  将 plat_gpio_t 的 opaque port 指针转换为 HAL GPIO_TypeDef* */
-#define HAL_GPIO_PORT(p) ((GPIO_TypeDef *)(((const plat_gpio_t *)(p))->port))
-
-/** @brief  从 plat_gpio_t 获取 HAL GPIO pin（1 << pin） */
-#define HAL_GPIO_PIN(p)  ((uint16_t)(1U << ((const plat_gpio_t *)(p))->pin))
-
-//*** Private Functions — HAL Backend ***//
-
-/**
- * @brief  HAL 实现：点亮 LED。
- *         低有效 LED 写 RESET，高有效 LED 写 SET。
- *
- * Steps:
- *  1. 从 p_config->gpio 读取 active_level 判断极性。
- *  2. 调用 HAL_GPIO_WritePin 执行 GPIO 写操作。
- *
- * @param[in] p_drv : LED 驱动实例指针。
- * */
-static void HalLed_On(bsp_led_driver_t *p_drv)
-{
-    const plat_gpio_t *p_gpio = &p_drv->p_config->gpio;
-
-    if (p_gpio->active_level == 0)
-    {
-        HAL_GPIO_WritePin(HAL_GPIO_PORT(p_gpio), HAL_GPIO_PIN(p_gpio), GPIO_PIN_RESET);
-    }
-    else
-    {
-        HAL_GPIO_WritePin(HAL_GPIO_PORT(p_gpio), HAL_GPIO_PIN(p_gpio), GPIO_PIN_SET);
-    }
-}
-
-/**
- * @brief  HAL 实现：熄灭 LED。
- *         与 On 极性相反。
- *
- * Steps:
- *  1. 从 p_config->gpio 读取 active_level 判断极性。
- *  2. 调用 HAL_GPIO_WritePin 执行 GPIO 写操作（极性反转）。
- *
- * @param[in] p_drv : LED 驱动实例指针。
- * */
-static void HalLed_Off(bsp_led_driver_t *p_drv)
-{
-    const plat_gpio_t *p_gpio = &p_drv->p_config->gpio;
-
-    if (p_gpio->active_level == 0)
-    {
-        HAL_GPIO_WritePin(HAL_GPIO_PORT(p_gpio), HAL_GPIO_PIN(p_gpio), GPIO_PIN_SET);
-    }
-    else
-    {
-        HAL_GPIO_WritePin(HAL_GPIO_PORT(p_gpio), HAL_GPIO_PIN(p_gpio), GPIO_PIN_RESET);
-    }
-}
-
-/**
- * @brief  HAL 实现：翻转 LED 状态。
- *
- * Steps:
- *  1. 调用 HAL_GPIO_TogglePin 翻转 GPIO 输出。
- *
- * @param[in] p_drv : LED 驱动实例指针。
- * */
-static void HalLed_Toggle(bsp_led_driver_t *p_drv)
-{
-    const plat_gpio_t *p_gpio = &p_drv->p_config->gpio;
-
-    HAL_GPIO_TogglePin(HAL_GPIO_PORT(p_gpio), HAL_GPIO_PIN(p_gpio));
-}
-
-//*** Public Variables ***//
-
-const led_operations_t bsp_led_hal_ops = {
-    .p_On     = HalLed_On,
-    .p_Off    = HalLed_Off,
-    .p_Toggle = HalLed_Toggle,
-};
 
 //*** Public API ***//
 
@@ -183,7 +103,7 @@ void BspLed_BlinkStop(bsp_led_driver_t *p_drv)
  *
  * @param[in] p_drv : LED 驱动实例指针。
  *
- * @note TODO: HAL_GetTick() will be replaced by ops in system_adaption phase.
+ * @note This is the only remaining direct HAL call in this driver (system time service).
  * */
 void BspLed_TimebaseHook(bsp_led_driver_t *p_drv)
 {
@@ -194,7 +114,7 @@ void BspLed_TimebaseHook(bsp_led_driver_t *p_drv)
         return;
     }
 
-    /* TODO: HAL_GetTick() will be replaced by ops->GetTick() in system_adaption phase */
+    /* Only remaining direct HAL call — system time service */
     now = HAL_GetTick();
     if ((now - p_drv->blink_last_tick) >= p_drv->blink_interval_ms)
     {

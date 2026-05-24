@@ -9,66 +9,8 @@
 
 //*** Includes ***//
 #include "bsp_key_driver.h"
+#include "system_adaption.h"
 #include <string.h>
-
-//*** HAL Cast Helper ***//
-#define HAL_GPIO_PORT(gpio)  ((GPIO_TypeDef *)((gpio).port))
-
-//*** Default HAL OPS Implementation ***//
-
-/**
- * @brief  读取引脚原始电平并转换为逻辑电平（0/1）。
- *         active_level=0（低有效）: pin RESET → logical 1（按下）。
- *         active_level=1（高有效）: pin SET   → logical 1（按下）。
- *
- * @param[in] p_cfg : 按键硬件配置指针。
- *
- * @return  1 : 按下。
- * @return  0 : 释放。
- * */
-uint8_t Key_Hal_ReadPin(const bsp_key_config_t *p_cfg)
-{
-    GPIO_PinState pin;
-
-    pin = HAL_GPIO_ReadPin(HAL_GPIO_PORT(p_cfg->gpio), p_cfg->gpio.pin);
-
-    if (p_cfg->gpio.active_level == 0)
-    {
-        if (pin == GPIO_PIN_RESET)
-        {
-            return 1;
-        }
-        return 0;
-    }
-
-    if (pin == GPIO_PIN_SET)
-    {
-        return 1;
-    }
-    return 0;
-}
-
-/**
- * @brief  Default HAL tick implementation.
- *
- * @return  Current tick count in ms.
- * */
-uint32_t Key_Hal_GetTick(void)
-{
-    return HAL_GetTick();
-}
-
-/** @brief  Default hardware ops instance */
-const key_hw_operations_t g_key_hal_ops =
-{
-    .pf_read_pin = Key_Hal_ReadPin,
-};
-
-/** @brief  Default OS ops instance */
-const key_os_operations_t g_key_os_ops =
-{
-    .pf_get_tick = Key_Hal_GetTick,
-};
 
 //*** Private Helpers ***//
 

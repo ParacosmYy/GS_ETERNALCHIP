@@ -23,10 +23,10 @@
 #define LOG_TAG "OTA"
 #include "elog.h"
 #include "task_ota.h"
+#include "system_adaption.h"
 #include "plat_flash.h"
 #include "plat_uart.h"
 #include "plat_key.h"
-#include "bsp_key_driver.h"
 #include "plat_wdg.h"
 #include "plat_sys.h"
 #include "bsp_wdg_driver.h"
@@ -51,67 +51,11 @@ static volatile uint8_t s_force_rollback;
 static bsp_key_driver_t s_key;
 static plat_gpio_t      s_key_gpio;
 
-/* WDG driver instance + HAL ops */
+/* WDG driver instance */
 static bsp_wdg_driver_t s_wdg_drv;
 
-static void wdg_hal_refresh(void *p_handle)
-{
-    IWDG_HandleTypeDef *p_hiwdg = (IWDG_HandleTypeDef *)p_handle;
-    if (p_hiwdg != NULL && p_hiwdg->Instance != NULL)
-    {
-        HAL_IWDG_Refresh(p_hiwdg);
-    }
-}
-
-static const wdg_hw_operations_t s_wdg_ops =
-{
-    .pf_refresh = wdg_hal_refresh,
-};
-
-/* SYS driver instance + HAL ops */
+/* SYS driver instance */
 static bsp_sys_driver_t s_sys_drv;
-
-static uint32_t sys_hal_get_tick(void)
-{
-    return HAL_GetTick();
-}
-
-static void sys_hal_reboot(void)
-{
-    NVIC_SystemReset();
-}
-
-static int sys_hal_get_running_bank(ota_slot_t *p_slot)
-{
-    uint32_t vtor;
-
-    if (p_slot == NULL)
-    {
-        return -1;
-    }
-
-    vtor = SCB->VTOR;
-    if (vtor >= FLASH_ADDR_SLOT_B && vtor < (FLASH_ADDR_SLOT_B + SLOT_B_SIZE))
-    {
-        *p_slot = OTA_SLOT_B;
-        return 0;
-    }
-
-    if (vtor >= FLASH_ADDR_SLOT_A && vtor < (FLASH_ADDR_SLOT_A + SLOT_A_SIZE))
-    {
-        *p_slot = OTA_SLOT_A;
-        return 0;
-    }
-
-    return -1;
-}
-
-static const sys_operations_t s_sys_ops =
-{
-    .pf_get_tick          = sys_hal_get_tick,
-    .pf_reboot            = sys_hal_reboot,
-    .pf_get_running_bank  = sys_hal_get_running_bank,
-};
 
 /* Ring buffer for UART DMA — must hold one full YMODEM STX packet (1029 bytes) */
 #define UART_RX_RING_SIZE 2048
@@ -596,11 +540,11 @@ void TaskOta_Init(void *p_huart, void *p_hiwdg, void *p_key_port, uint16_t key_p
     s_key_gpio.active_level = 0;
 
     BspFlash_Init();
-    BspWdg_Init(&s_wdg_drv, p_hiwdg, &s_wdg_ops);
-    BspSys_Init(&s_sys_drv, &s_sys_ops);
+    BspWdg_Init(&s_wdg_drv, p_hiwdg, &g_wdg_hal_ops);
+    BspSys_Init(&s_sys_drv, &g_sys_hal_ops);
 
-    /* 初始化 UART 驱动 + ring buffer (NULL = 使用默认 HAL OPS) */
-    BspUart_Init(&s_uart_drv, &uart_cfg, NULL, NULL);
+    /* 初始化 UART 驱动 + ring buffer (ops from system_adaption) */
+    BspUart_Init(&s_uart_drv, &uart_cfg, &g_uart_hal_ops, &g_uart_os_ops);
     ring_buffer_init(&s_ring_buf, s_ring_storage, UART_RX_RING_SIZE);
     BspUart_BindRingBuffer(&s_uart_drv, &s_ring_buf);
     BspUart_StartReceive(&s_uart_drv);
