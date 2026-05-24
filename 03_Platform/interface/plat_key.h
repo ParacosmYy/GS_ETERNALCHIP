@@ -9,7 +9,7 @@
  *
  * @author  GS_Mark
  *
- * @brief   Platform Key scan interface — no HAL types
+ * @brief   平台按键扫描接口 — 无 HAL 类型
  *
  * @version V1.0 2025-05-24
  *
@@ -42,25 +42,25 @@ typedef void (*bsp_key_callback_t)(bsp_key_event_t event, void *p_user_data);
 
 typedef struct
 {
-    plat_gpio_t         gpio;           /**< GPIO config (port/pin/active_level) */
-    uint32_t            debounce_ms;    /**< Debounce duration (default 20ms) */
-    uint32_t            long_press_ms;  /**< Long press threshold (default 1000ms) */
-    bsp_key_callback_t  callback;       /**< Event callback */
-    void               *p_user_data;    /**< Callback user context */
+    plat_gpio_t         gpio;           /**< GPIO 配置（port/pin/active_level） */
+    uint32_t            debounce_ms;    /**< 去抖时长（默认 20ms） */
+    uint32_t            long_press_ms;  /**< 长按阈值（默认 1000ms） */
+    bsp_key_callback_t  callback;       /**< 事件回调 */
+    void               *p_user_data;    /**< 回调用户上下文 */
 } bsp_key_config_t;
 
 //******************************* OPS Interfaces ****************************//
 
-/** @brief  Hardware operations — pin read abstraction */
+/** @brief  硬件操作 — 引脚读取抽象 */
 typedef struct
 {
-    uint8_t (*pf_read_pin)(const bsp_key_config_t *p_cfg); /**< Read raw pin → logical level (0/1) */
+    uint8_t (*pf_read_pin)(const bsp_key_config_t *p_cfg); /**< 读取原始引脚电平→逻辑电平（0/1） */
 } key_hw_operations_t;
 
-/** @brief  OS operations — tick source abstraction */
+/** @brief  OS 操作 — 时基抽象 */
 typedef struct
 {
-    uint32_t (*pf_get_tick)(void); /**< Return current tick in ms */
+    uint32_t (*pf_get_tick)(void); /**< 返回当前 tick（毫秒） */
 } key_os_operations_t;
 
 //******************************* Driver Instance ****************************//

@@ -1,16 +1,16 @@
 /**
  * @file    ota_confirm.c
- * @brief   OTA boot confirmation implementation
+ * @brief   OTA 启动确认实现
  * @author  GS_Mark
  *
- * @par dependencies
+ * @par 依赖
  * - elog.h
  * - ota_confirm.h
  * - plat_flash.h
  * - task_ota.h
  */
 
-//*** Includes ***//
+//*** 头文件 ***//
 #define LOG_TAG "OTA"
 #include "elog.h"
 #include "ota_confirm.h"
@@ -18,7 +18,7 @@
 #include "task_ota.h"
 #include <string.h>
 
-//*** Public API ***//
+//*** 公开 API ***//
 
 /**
  * @brief  确认 OTA 启动成功，通知 Bootloader 无需回滚。

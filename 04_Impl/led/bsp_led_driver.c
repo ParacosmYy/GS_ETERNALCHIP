@@ -1,23 +1,23 @@
 /**
  * @file    bsp_led_driver.c
- * @brief   LED BSP driver implementation — STM32 HAL backend
+ * @brief   LED BSP 驱动实现 — STM32 HAL 后端
  * @author  GS_Mark
  *
  * @par dependencies
  * - bsp_led_driver.h
  *
  * Steps:
- *  1. HAL cast macro converts plat_gpio_t.void* port to GPIO_TypeDef*.
- *  2. Static functions implement led_operations_t via HAL GPIO API.
- *  3. Public API delegates to ops function pointers.
+ *  1. HAL 转换宏将 plat_gpio_t.void* port 转换为 GPIO_TypeDef*。
+ *  2. 静态函数通过 HAL GPIO API 实现 led_operations_t。
+ *  3. 公共 API 委托到 ops 函数指针。
  */
 
-//*** Includes ***//
+//*** 头文件 ***//
 #include "bsp_led_driver.h"
 #include "system_adaption.h"
 #include <string.h>
 
-//*** Public API ***//
+//*** 公共 API ***//
 
 /**
  * @brief  初始化 LED 驱动实例。
@@ -103,7 +103,7 @@ void BspLed_BlinkStop(bsp_led_driver_t *p_drv)
  *
  * @param[in] p_drv : LED 驱动实例指针。
  *
- * @note This is the only remaining direct HAL call in this driver (system time service).
+ * @note 这是本驱动中唯一剩余的直接 HAL 调用（系统时间服务）。
  * */
 void BspLed_TimebaseHook(bsp_led_driver_t *p_drv)
 {
@@ -114,7 +114,7 @@ void BspLed_TimebaseHook(bsp_led_driver_t *p_drv)
         return;
     }
 
-    /* Only remaining direct HAL call — system time service */
+    /* 唯一剩余的直接 HAL 调用 — 系统时间服务 */
     now = HAL_GetTick();
     if ((now - p_drv->blink_last_tick) >= p_drv->blink_interval_ms)
     {

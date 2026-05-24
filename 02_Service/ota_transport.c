@@ -1,6 +1,6 @@
 /**
  * @file    ota_transport.c
- * @brief   OTA transport layer implementation
+ * @brief   OTA 传输层实现
  * @author  GS_Mark
  *
  * @par dependencies
@@ -12,12 +12,12 @@
  * - plat_sys.h
  * - ota_aes.h
  *
- * UART byte-level adapters for YMODEM, and data callback that:
- *   1. Extracts 12-byte AES nonce from package header
- *   2. Decrypts firmware chunks via AES-256-CTR and writes to Flash
- *   3. Extracts 64-byte ECDSA signature from package tail
+ * UART 字节级适配器用于 YMODEM，数据回调功能:
+ *   1. 从包头提取 12 字节 AES nonce
+ *   2. 通过 AES-256-CTR 解密固件并写入 Flash
+ *   3. 从包尾提取 64 字节 ECDSA 签名
  *
- * Package format: [nonce 12B][encrypted_fw][ECDSA sig 64B]
+ * 包格式: [nonce 12B][encrypted_fw][ECDSA sig 64B]
  */
 
 #define LOG_TAG "TRAN"
@@ -32,49 +32,49 @@
 #include "ota_ecdsa.h"
 #include <string.h>
 
-//*** Private Constants ***//
+//*** 私有常量 ***//
 
-/** @brief Package overhead: nonce(12B) + signature(64B) */
+/** @brief 包开销: nonce(12B) + 签名(64B) */
 #define PKG_HEADER_SIZE  OTA_AES_NONCE_SIZE   /* 12 */
 #define PKG_TAIL_SIZE    OTA_ECDSA_SIG_SIZE   /* 64 */
 #define PKG_OVERHEAD     (PKG_HEADER_SIZE + PKG_TAIL_SIZE)  /* 76 */
 
-//*** Receive State Machine ***//
+//*** 接收状态机 ***//
 
 typedef enum
 {
-    RECV_STATE_NONCE,      /**< Accumulating 12-byte nonce */
-    RECV_STATE_FIRMWARE,   /**< Decrypting + writing firmware */
-    RECV_STATE_SIGNATURE,  /**< Accumulating 64-byte signature */
+    RECV_STATE_NONCE,      /**< 累积 12 字节 nonce */
+    RECV_STATE_FIRMWARE,   /**< 解密 + 写入固件 */
+    RECV_STATE_SIGNATURE,  /**< 累积 64 字节签名 */
 } recv_state_t;
 
-//*** Private Variables ***//
+//*** 私有变量 ***//
 
 static uint32_t            *s_p_fw_size;
 static uint32_t             s_target_base;
 static bsp_uart_driver_t  *s_p_uart_drv;
 static bsp_wdg_driver_t   *s_p_wdg_drv;
 
-/* State machine for encrypted package parsing */
+/* 加密包解析状态机 */
 static recv_state_t         s_recv_state;
-static uint32_t             s_total_received;  /* total bytes received from YMODEM */
-static uint32_t             s_fw_bytes_written;/* bytes written to Flash (decrypted fw) */
+static uint32_t             s_total_received;  /* 从 YMODEM 接收的总字节数 */
+static uint32_t             s_fw_bytes_written;/* 写入 Flash 的字节数（解密后固件） */
 
-/* Nonce accumulation buffer */
+/* Nonce 累积缓冲区 */
 static uint8_t              s_nonce_buf[OTA_AES_NONCE_SIZE];
 static uint8_t              s_nonce_collected;
 
-/* Signature accumulation buffer */
+/* 签名累积缓冲区 */
 static uint8_t              s_sig_buf[OTA_ECDSA_SIG_SIZE];
 static uint8_t              s_sig_collected;
 
-/* Temp buffer for chunk processing */
+/* 数据块处理临时缓冲区 */
 static uint8_t              s_chunk_buf[1024 + PKG_OVERHEAD];
 
-/* Extracted signature (readable by task_ota after transfer) */
+/* 提取的签名（传输完成后 task_ota 可读取） */
 static uint8_t              s_extracted_sig[OTA_ECDSA_SIG_SIZE];
 
-//*** Init ***//
+//*** 初始化 ***//
 
 /**
  * @brief  初始化 OTA 传输模块，保存固件大小指针和目标 Bank 基地址。
@@ -91,7 +91,7 @@ void OtaTransport_Init(uint32_t *p_fw_size, uint32_t target_base, void *p_uart_d
     s_p_uart_drv    = (bsp_uart_driver_t *)p_uart_drv;
     s_p_wdg_drv     = p_wdg_drv;
 
-    /* Reset state machine */
+    /* 重置状态机 */
     s_recv_state      = RECV_STATE_NONCE;
     s_total_received  = 0;
     s_fw_bytes_written = 0;
@@ -100,7 +100,7 @@ void OtaTransport_Init(uint32_t *p_fw_size, uint32_t target_base, void *p_uart_d
     memset(s_extracted_sig, 0, sizeof(s_extracted_sig));
 }
 
-//*** Signature Accessor ***//
+//*** 签名访问器 ***//
 
 /**
  * @brief  获取传输完成后提取的 ECDSA 签名。
@@ -112,7 +112,7 @@ void OtaTransport_GetSignature(uint8_t sig[OTA_ECDSA_SIG_SIZE])
     memcpy(sig, s_extracted_sig, OTA_ECDSA_SIG_SIZE);
 }
 
-//*** UART Adapters for YMODEM (polling mode) ***//
+//*** YMODEM UART 适配器（轮询模式） ***//
 
 /**
  * @brief  UART 发送单字节，适配 YMODEM 接口。
@@ -145,7 +145,7 @@ int OtaTransport_RecvByte(uint8_t *p_byte, uint32_t timeout_ms, void *p_user)
     return -1;
 }
 
-//*** Internal: Write decrypted firmware to Flash ***//
+//*** 内部函数: 写入解密后的固件到 Flash ***//
 
 /**
  * @brief  写入一段解密后的固件数据到 Flash，并打印进度。
@@ -164,20 +164,20 @@ static int WriteDecryptedFirmware(const uint8_t *p_data, uint16_t len)
 
     if (BspFlash_Write(addr, p_data, len) != 0)
     {
-        log_e("Flash write error at 0x%08lX",
+        log_e("Flash 写入错误，地址 0x%08lX",
               addr);
         return -1;
     }
 
     s_fw_bytes_written += len;
 
-    /* Progress logging (based on total received vs expected total) */
+    /* 进度日志（基于总接收量 vs 预期总量） */
     {
         static uint32_t s_last_print = 0;
 
         if (s_total_received - s_last_print >= 10240u)
         {
-            log_i("%lu / %lu bytes (raw)", s_total_received, *s_p_fw_size);
+            log_i("%lu / %lu 字节（原始）", s_total_received, *s_p_fw_size);
             s_last_print = s_total_received;
         }
     }
@@ -185,17 +185,17 @@ static int WriteDecryptedFirmware(const uint8_t *p_data, uint16_t len)
     return 0;
 }
 
-//*** YMODEM Data Callback ***//
+//*** YMODEM 数据回调 ***//
 
 /**
  * @brief  YMODEM 数据接收回调 — 解析加密包格式，流式解密，写入 Flash。
  *
- * Package format: [nonce 12B][encrypted_fw][ECDSA sig 64B]
+ * 包格式: [nonce 12B][encrypted_fw][ECDSA sig 64B]
  *
- * State machine:
- *   RECV_STATE_NONCE     — collect first 12 bytes, init AES-CTR
- *   RECV_STATE_FIRMWARE  — decrypt chunks, write to Flash
- *   RECV_STATE_SIGNATURE — collect last 64 bytes, store signature
+ * 状态机:
+ *   RECV_STATE_NONCE     — 收集前 12 字节，初始化 AES-CTR
+ *   RECV_STATE_FIRMWARE  — 解密数据块，写入 Flash
+ *   RECV_STATE_SIGNATURE — 收集最后 64 字节，存储签名
  *
  * @param[in] offset : 当前累计接收字节数（含本次）。
  * @param[in] p_data : 本次接收的数据缓冲区。
@@ -208,7 +208,7 @@ static int WriteDecryptedFirmware(const uint8_t *p_data, uint16_t len)
 int OtaTransport_DataCallback(uint32_t offset, const uint8_t *p_data,
                                uint16_t len, void *p_user)
 {
-    uint32_t real_fw_size;  /* expected firmware bytes (total - overhead) */
+    uint32_t real_fw_size;  /* 预期固件字节数（总大小 - 开销） */
     uint16_t consumed;
     uint16_t to_process;
 
@@ -216,7 +216,7 @@ int OtaTransport_DataCallback(uint32_t offset, const uint8_t *p_data,
 
     s_total_received = offset;
 
-    /* fw_size from YMODEM includes nonce + sig overhead */
+    /* fw_size 来自 YMODEM，包含 nonce + 签名开销 */
     real_fw_size = (*s_p_fw_size > PKG_OVERHEAD) ? (*s_p_fw_size - PKG_OVERHEAD) : 0;
 
     consumed = 0;
@@ -236,9 +236,9 @@ int OtaTransport_DataCallback(uint32_t offset, const uint8_t *p_data,
 
             if (s_nonce_collected >= OTA_AES_NONCE_SIZE)
             {
-                /* Nonce complete — initialize AES-256-CTR */
+                /* Nonce 收集完成 — 初始化 AES-256-CTR */
                 OtaAes_Init(s_nonce_buf);
-                log_i("Nonce extracted, AES initialized.");
+                log_i("Nonce 已提取，AES 已初始化。");
                 s_recv_state = RECV_STATE_FIRMWARE;
             }
             break;
@@ -252,7 +252,7 @@ int OtaTransport_DataCallback(uint32_t offset, const uint8_t *p_data,
 
             if (to_process > 0)
             {
-                /* Copy to temp buffer for in-place AES decryption */
+                /* 复制到临时缓冲区用于原地 AES 解密 */
                 if (to_process > sizeof(s_chunk_buf))
                 {
                     to_process = sizeof(s_chunk_buf);
@@ -260,10 +260,10 @@ int OtaTransport_DataCallback(uint32_t offset, const uint8_t *p_data,
 
                 memcpy(s_chunk_buf, &p_data[consumed], to_process);
 
-                /* Decrypt in-place */
+                /* 原地解密 */
                 OtaAes_DecryptChunk(s_chunk_buf, to_process);
 
-                /* Write decrypted data to Flash */
+                /* 将解密数据写入 Flash */
                 if (WriteDecryptedFirmware(s_chunk_buf, to_process) != 0)
                 {
                     return -1;
@@ -272,10 +272,10 @@ int OtaTransport_DataCallback(uint32_t offset, const uint8_t *p_data,
                 consumed += to_process;
             }
 
-            /* Check if all firmware bytes received */
+            /* 检查固件是否全部接收完成 */
             if (s_fw_bytes_written >= real_fw_size)
             {
-                log_i("Firmware complete (%lu bytes decrypted).", s_fw_bytes_written);
+                log_i("固件接收完成（%lu 字节已解密）。", s_fw_bytes_written);
                 OtaAes_Deinit();
                 s_recv_state = RECV_STATE_SIGNATURE;
             }
@@ -286,7 +286,7 @@ int OtaTransport_DataCallback(uint32_t offset, const uint8_t *p_data,
         {
             if (s_sig_collected >= OTA_ECDSA_SIG_SIZE)
             {
-                /* Signature already extracted — silently consume remaining bytes */
+                /* 签名已提取 — 静默消费剩余字节 */
                 consumed = len;
                 break;
             }
@@ -301,18 +301,18 @@ int OtaTransport_DataCallback(uint32_t offset, const uint8_t *p_data,
             if (s_sig_collected >= OTA_ECDSA_SIG_SIZE)
             {
                 memcpy(s_extracted_sig, s_sig_buf, OTA_ECDSA_SIG_SIZE);
-                log_i("Signature extracted (%u bytes).", OTA_ECDSA_SIG_SIZE);
+                log_i("签名已提取（%u 字节）。", OTA_ECDSA_SIG_SIZE);
             }
             break;
         }
 
         default:
-            log_e("Invalid receive state!");
+            log_e("无效的接收状态！");
             return -1;
         }
     }
 
-    /* Feed watchdog */
+    /* 喂狗 */
     if (s_p_wdg_drv != NULL)
     {
         BspWdg_Feed(s_p_wdg_drv);

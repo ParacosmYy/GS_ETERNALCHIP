@@ -22,6 +22,7 @@
 -I04_Impl/flash
 -I04_Impl/wdg
 -I04_Impl/sys
+-I04_Impl/adaptation
 -I03_Platform/common
 -I03_Platform/interface
 -I02_Service

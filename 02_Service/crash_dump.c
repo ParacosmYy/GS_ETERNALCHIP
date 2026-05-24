@@ -116,7 +116,7 @@ static int crash_write_raw(const crash_dump_t *p_dump)
     return 0;
 }
 
-//*** Public API ***//
+//*** 公共 API ***//
 
 /**
  * @brief  在 fault handler 中调用，将寄存器写入 Flash。
@@ -174,12 +174,6 @@ void CrashDump_SaveFromFault(uint32_t p_sp, uint32_t exc_lr)
     crash_write_raw(&dump);
 }
 
-/**
- * @brief  App 启动时检查并打印上次的 crash 记录。
- *
- * Steps:
- *  1. 读取 magic 字段，检查是否为 CRASH_DUMP_MAGIC。
- *  2. 打印所有保存的寄存器值。
 /**
  * @brief  App 启动时检查并打印上次的 crash 记录。
  *

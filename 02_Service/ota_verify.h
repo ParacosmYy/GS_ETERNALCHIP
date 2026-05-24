@@ -1,6 +1,6 @@
 /**
  * @file    ota_verify.h
- * @brief   OTA firmware verification — SHA-256 Flash hash utility
+ * @brief   OTA 固件校验 — SHA-256 Flash 哈希工具
  * @author  GS_Mark
  */
 

@@ -1,11 +1,11 @@
 /**
  * @file    ota_transport.h
- * @brief   OTA transport layer — UART adapter + YMODEM data callback
+ * @brief   OTA 传输层 — UART 适配器 + YMODEM 数据回调
  * @author  GS_Mark
  *
- * Handles encrypted OTA package format:
+ * 处理加密 OTA 包格式:
  *   [nonce 12B][encrypted_fw][ECDSA sig 64B]
- * Decrypts firmware via AES-256-CTR and extracts signature for verification.
+ * 通过 AES-256-CTR 解密固件并提取签名用于验证。
  */
 
 #ifndef OTA_TRANSPORT_H
@@ -13,10 +13,10 @@
 
 #include <stdint.h>
 
-/** @brief Forward declaration for WDG driver */
+/** @brief WDG 驱动前向声明 */
 typedef struct bsp_wdg_driver bsp_wdg_driver_t;
 
-/** @brief  ECDSA-P256 signature size (for OtaTransport_GetSignature param) */
+/** @brief  ECDSA-P256 签名长度（用于 OtaTransport_GetSignature 参数） */
 #define OTA_TRANSPORT_SIG_SIZE  64
 
 /** @brief  初始化 OTA 传输模块（p_uart_drv 为 bsp_uart_driver_t*，p_wdg_drv 为 bsp_wdg_driver_t*） */

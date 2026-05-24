@@ -1,21 +1,21 @@
 /**
  * @file    bsp_flash_driver.c
- * @brief   Internal Flash BSP driver — sector-level implementation with OPS delegation
+ * @brief   内部 Flash BSP 驱动 — 扇区级实现，基于 OPS 委托模式
  * @author  GS_Mark
  *
  * @par dependencies
  * - bsp_flash_driver.h
  * - string.h
  *
- * @note    All HAL/FreeRTOS calls are delegated through ops function pointers.
- *          The CRC-32 table and F411 sector map are chip-specific data that
- *          belongs in this Impl-layer file.
+ * @note    所有 HAL/FreeRTOS 调用均通过 ops 函数指针委托。
+ *          CRC-32 查找表和 F411 扇区映射为芯片特定数据，
+ *          属于 Impl 层文件。
  */
 
 #include "bsp_flash_driver.h"
 #include <string.h>
 
-//*** Private: CRC-32 Lookup Table (IEEE 802.3) ***//
+//*** 私有：CRC-32 查找表（IEEE 802.3） ***//
 
 static const uint32_t s_crc32_table[256] = {
     0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
@@ -52,23 +52,23 @@ static const uint32_t s_crc32_table[256] = {
     0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94, 0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D,
 };
 
-//*** Private: F411 Sector Map ***//
+//*** 私有：F411 扇区映射 ***//
 // STM32F411CEUx: Sector 0-3 = 16KB, Sector 4 = 64KB, Sector 5-7 = 128KB
-// Total: 4x16K + 64K + 3x128K = 512KB
+// 总计: 4x16K + 64K + 3x128K = 512KB
 
-/** @brief  Sector size lookup table (index = sector number) */
+/** @brief  扇区大小查找表（索引 = 扇区编号） */
 static const uint32_t s_sector_sizes[BSP_FLASH_SECTOR_COUNT] = {
-    16384u,   /* Sector 0: 16KB */
-    16384u,   /* Sector 1: 16KB */
-    16384u,   /* Sector 2: 16KB */
-    16384u,   /* Sector 3: 16KB */
-    65536u,   /* Sector 4: 64KB */
-    131072u,  /* Sector 5: 128KB */
-    131072u,  /* Sector 6: 128KB */
-    131072u,  /* Sector 7: 128KB */
+    16384u,   /* 扇区 0: 16KB */
+    16384u,   /* 扇区 1: 16KB */
+    16384u,   /* 扇区 2: 16KB */
+    16384u,   /* 扇区 3: 16KB */
+    65536u,   /* 扇区 4: 64KB */
+    131072u,  /* 扇区 5: 128KB */
+    131072u,  /* 扇区 6: 128KB */
+    131072u,  /* 扇区 7: 128KB */
 };
 
-//*** Private: CRC-32 ***//
+//*** 私有：CRC-32 ***//
 
 /**
  * @brief  计算 CRC-32（IEEE 802.3 多项式）。
@@ -90,21 +90,21 @@ uint32_t BspFlash_DriverCalcCrc32(const uint8_t *p_data, uint32_t len)
     return crc ^ 0xFFFFFFFFu;
 }
 
-//*** Driver API Implementation ***//
+//*** 驱动 API 实现 ***//
 
 /**
- * @brief  Initialize driver instance with config and ops.
+ * @brief  初始化驱动实例，挂载配置和操作接口。
  *
  * Steps:
- *  1. Store config and ops pointers.
- *  2. Clear residual Flash error flags via HW ops.
- *  3. Mark driver as initialized.
+ *  1. 存储配置和操作接口指针。
+ *  2. 通过 HW ops 清除残留的 Flash 错误标志。
+ *  3. 标记驱动已初始化。
  *
- * @param[out] p_drv     : Driver instance to initialize.
- * @param[in]  p_config  : Flash layout configuration.
- * @param[in]  p_hw_ops  : Hardware operations (unlock/lock/erase/program).
- * @param[in]  p_os_ops  : OS operations (critical enter/exit).
- * @param[in]  p_time_ops: Time operations (get_tick).
+ * @param[out] p_drv     : 待初始化的驱动实例。
+ * @param[in]  p_config  : Flash 布局配置。
+ * @param[in]  p_hw_ops  : 硬件操作接口（解锁/加锁/擦除/编程）。
+ * @param[in]  p_os_ops  : OS 操作接口（临界区进入/退出）。
+ * @param[in]  p_time_ops: 时间操作接口（get_tick）。
  * */
 void BspFlash_DriverInit(bsp_flash_driver_t *p_drv,
                          const bsp_flash_config_t *p_config,
@@ -130,12 +130,12 @@ void BspFlash_DriverInit(bsp_flash_driver_t *p_drv,
 }
 
 /**
- * @brief  Get sector size in bytes for a given sector number.
+ * @brief  获取指定扇区的大小（字节）。
  *
- * @param[in] p_drv  : Driver instance (unused, kept for API consistency).
- * @param[in] sector : Sector number (0 ~ 7).
+ * @param[in] p_drv  : 驱动实例（未使用，保持 API 一致性）。
+ * @param[in] sector : 扇区编号（0 ~ 7）。
  *
- * @return  Sector size in bytes, 0 if invalid.
+ * @return  扇区大小（字节），无效编号返回 0。
  * */
 uint32_t BspFlash_DriverGetSectorSize(const bsp_flash_driver_t *p_drv,
                                       uint32_t sector)
@@ -151,19 +151,19 @@ uint32_t BspFlash_DriverGetSectorSize(const bsp_flash_driver_t *p_drv,
 }
 
 /**
- * @brief  Erase a single Flash sector using HW ops.
+ * @brief  通过 HW ops 擦除单个 Flash 扇区。
  *
  * Steps:
- *  1. Validate sector number.
- *  2. Unlock Flash via HW ops, clear error flags.
- *  3. Execute erase within critical section (OS ops).
- *  4. Lock Flash, return result.
+ *  1. 校验扇区编号。
+ *  2. 通过 HW ops 解锁 Flash，清除错误标志。
+ *  3. 在临界区内执行擦除（OS ops）。
+ *  4. 锁定 Flash，返回结果。
  *
- * @param[in] p_drv  : Driver instance.
- * @param[in] sector : Sector number (0 ~ 7).
+ * @param[in] p_drv  : 驱动实例。
+ * @param[in] sector : 扇区编号（0 ~ 7）。
  *
- * @return   0 : Erase success.
- * @return  -1 : Invalid sector or erase failure.
+ * @return   0 : 擦除成功。
+ * @return  -1 : 无效扇区或擦除失败。
  * */
 int BspFlash_DriverEraseSector(bsp_flash_driver_t *p_drv, uint32_t sector)
 {
@@ -192,24 +192,24 @@ int BspFlash_DriverEraseSector(bsp_flash_driver_t *p_drv, uint32_t sector)
 }
 
 /**
- * @brief  Write data to Flash at byte level (4-byte aligned internally).
+ * @brief  向 Flash 写入数据（内部 4 字节对齐）。
  *
  * Steps:
- *  1. Validate parameters (non-null, non-zero length, address range).
- *  2. Unlock Flash via HW ops, clear error flags.
- *  3. Within critical section, write 4-byte words via HW ops.
- *  4. Handle tail bytes (< 4) by padding with 0xFF.
- *  5. Lock Flash, return result.
+ *  1. 校验参数（非空、非零长度、地址范围）。
+ *  2. 通过 HW ops 解锁 Flash，清除错误标志。
+ *  3. 在临界区内通过 HW ops 以 4 字节字为单位写入。
+ *  4. 末尾不足 4 字节用 0xFF 填充后写入。
+ *  5. 锁定 Flash，返回结果。
  *
- * @param[in] p_drv  : Driver instance.
- * @param[in] addr   : Target Flash address.
- * @param[in] p_data : Data buffer to write.
- * @param[in] len    : Data length in bytes.
+ * @param[in] p_drv  : 驱动实例。
+ * @param[in] addr   : 目标 Flash 地址。
+ * @param[in] p_data : 待写入数据缓冲区。
+ * @param[in] len    : 数据长度（字节）。
  *
- * @return   0 : Write success.
- * @return  -1 : Invalid params or write failure.
+ * @return   0 : 写入成功。
+ * @return  -1 : 无效参数或写入失败。
  *
- * @note  F411 must use WORD (x32) program granularity.
+ * @note  F411 必须使用 WORD（x32）编程粒度。
  * */
 int BspFlash_DriverWrite(bsp_flash_driver_t *p_drv,
                          uint32_t addr, const uint8_t *p_data, uint32_t len)
@@ -277,12 +277,12 @@ exit:
 }
 
 /**
- * @brief  Read data from Flash (memory-mapped direct read).
+ * @brief  从 Flash 读取数据（内存映射直接读取）。
  *
- * @param[in]  p_drv  : Driver instance (unused, kept for API consistency).
- * @param[in]  addr   : Flash start address.
- * @param[out] p_data : Output data buffer.
- * @param[in]  len    : Read length in bytes.
+ * @param[in]  p_drv  : 驱动实例（未使用，保持 API 一致性）。
+ * @param[in]  addr   : Flash 起始地址。
+ * @param[out] p_data : 输出数据缓冲区。
+ * @param[in]  len    : 读取长度（字节）。
  * */
 void BspFlash_DriverRead(bsp_flash_driver_t *p_drv,
                          uint32_t addr, uint8_t *p_data, uint32_t len)

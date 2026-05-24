@@ -1,6 +1,6 @@
 /**
  * @file    task_ota.h
- * @brief   OTA upgrade task — receives firmware via YMODEM, writes to Slot B
+ * @brief   OTA 升级任务 — 通过 YMODEM 接收固件并写入 Bank B
  * @author  GS_Mark
  */
 
@@ -9,14 +9,14 @@
 
 #include <stdint.h>
 
-//*** Firmware Version ***//
+//*** 固件版本 ***//
 
 #define OTA_FW_MAJOR  1
 #define OTA_FW_MINOR  0
 #define OTA_FW_PATCH  0
 #define OTA_FW_VERSION  "V1.0.0"
 
-//*** OTA Task States ***//
+//*** OTA 任务状态 ***//
 
 /** @brief  OTA 任务内部状态（供外部查询当前进度） */
 typedef enum
@@ -32,14 +32,14 @@ typedef enum
     OTA_TASK_ERROR,           /* 出错，即将重启 */
 } ota_task_state_t;
 
-//*** Public API ***//
+//*** 公开 API ***//
 
 /** @brief  初始化 OTA 子系统和 EasyLogger
  *
- * @param[in] p_huart : HAL UART handle (opaque, from CubeMX main.c)
- * @param[in] p_hiwdg : HAL IWDG handle (opaque, from CubeMX main.c)
- * @param[in] p_key_port : Key GPIO port (opaque, from CubeMX)
- * @param[in] key_pin : Key GPIO pin number
+ * @param[in] p_huart : HAL UART 句柄（来自 CubeMX main.c）
+ * @param[in] p_hiwdg : HAL IWDG 句柄（来自 CubeMX main.c）
+ * @param[in] p_key_port : 按键 GPIO 端口（来自 CubeMX）
+ * @param[in] key_pin : 按键 GPIO 引脚号
  */
 void TaskOta_Init(void *p_huart, void *p_hiwdg, void *p_key_port, uint16_t key_pin);
 

@@ -1,9 +1,9 @@
 /**
  * @file    task_ota.c
- * @brief   OTA upgrade task implementation
+ * @brief   OTA 升级任务实现
  * @author  GS_Mark
  *
- * @par dependencies
+ * @par 依赖
  * - elog.h
  * - task_ota.h
  * - bsp_flash.h
@@ -14,12 +14,11 @@
  * - ota_ecdsa.h
  * - ota_led.h
  *
- * Runs as a FreeRTOS task. Waits for key short press trigger, then receives
- * firmware via YMODEM, writes to Slot B, verifies SHA-256, and reboots.
- * Long press (>3s) triggers force rollback.
+ * 以 FreeRTOS 任务方式运行。等待按键短按触发，通过 YMODEM 接收固件，
+ * 写入 Bank B，验证 SHA-256 后重启。长按（>3s）触发强制回滚。
  */
 
-//*** Includes ***//
+//*** 头文件 ***//
 #define LOG_TAG "OTA"
 #include "elog.h"
 #include "task_ota.h"
@@ -41,7 +40,7 @@
 #include "crash_dump.h"
 #include <string.h>
 
-//*** Private Variables ***//
+//*** 私有变量 ***//
 
 static ota_task_state_t s_state;
 static uint32_t         s_fw_size;
@@ -51,31 +50,31 @@ static volatile uint8_t s_force_rollback;
 static bsp_key_driver_t s_key;
 static plat_gpio_t      s_key_gpio;
 
-/* WDG driver instance */
+/* WDG 驱动实例 */
 static bsp_wdg_driver_t s_wdg_drv;
 
-/* SYS driver instance */
+/* SYS 驱动实例 */
 static bsp_sys_driver_t s_sys_drv;
 
-/* Ring buffer for UART DMA — must hold one full YMODEM STX packet (1029 bytes) */
+/* UART DMA 环形缓冲区 — 需容纳一个完整 YMODEM STX 包（1029 字节） */
 #define UART_RX_RING_SIZE 2048
 static uint8_t            s_ring_storage[UART_RX_RING_SIZE];
 static circular_buffer_t s_ring_buf;
 static bsp_uart_driver_t s_uart_drv;
 
-//*** Runtime Bank Detection ***//
+//*** 运行 Bank 检测 ***//
 
-//*** Self Check ***//
+//*** 自检 ***//
 
 /**
- * @brief  App startup self-check.
+ * @brief  App 启动自检。
  *
  * Steps:
- *  1. Verify UART handle is valid.
- *  2. Verify Flash is readable at Slot A base address.
+ *  1. 验证 UART 句柄有效。
+ *  2. 验证 Slot A 基地址 Flash 可读。
  *
- * @return   0 : self-check passed.
- * @return  -1 : self-check failed.
+ * @return   0 : 自检通过。
+ * @return  -1 : 自检失败。
  * */
 static int SelfCheck(void)
 {
@@ -91,17 +90,17 @@ static int SelfCheck(void)
     return 0;
 }
 
-//*** Key Callback ***//
+//*** 按键回调 ***//
 
 /**
- * @brief  Key event callback — short press triggers OTA, long press triggers rollback.
+ * @brief  按键事件回调 — 短按触发 OTA，长按触发回滚。
  *
  * Steps:
- *  1. On short press: set trigger flag to start OTA.
- *  2. On long press (only in TRIGGER_WAIT state): set force rollback flag.
+ *  1. 短按：置位触发标志，启动 OTA。
+ *  2. 长按（仅在 TRIGGER_WAIT 状态）：置位强制回滚标志。
  *
- * @param[in] evt     : Key event type.
- * @param[in] p_user  : User context (unused).
+ * @param[in] evt     : 按键事件类型。
+ * @param[in] p_user  : 用户上下文（未使用）。
  * */
 static void OnKey(bsp_key_event_t evt, void *p_user)
 {
@@ -123,18 +122,18 @@ static void OnKey(bsp_key_event_t evt, void *p_user)
     }
 }
 
-//*** Phase Functions ***//
+//*** 阶段函数 ***//
 
 /**
- * @brief  Phase 1: Wait for key trigger or force rollback.
+ * @brief  阶段 1：等待按键触发或强制回滚。
  *
  * Steps:
- *  1. Set state TRIGGER_WAIT, start IDLE LED (slow blink 1Hz).
- *  2. Poll key scan + OtaLed_TimebaseHook every 10ms.
- *  3. Return 0 for normal trigger, -2 for force rollback.
+ *  1. 设置状态 TRIGGER_WAIT，启动 IDLE LED（慢闪 1Hz）。
+ *  2. 轮询按键扫描 + OtaLed_TimebaseHook，间隔 10ms。
+ *  3. 返回 0 表示正常触发，-2 表示强制回滚。
  *
- * @return   0 : short press trigger.
- * @return  -2 : long press force rollback.
+ * @return   0 : 短按触发。
+ * @return  -2 : 长按强制回滚。
  * */
 static int WaitForTrigger(void)
 {
@@ -172,21 +171,22 @@ static int WaitForTrigger(void)
         return -2;
     }
 
+    OtaTrace_Clear();
     OtaTrace_Record(OTA_TRACE_TRIGGER, 0, 0);
     log_i("Starting upgrade...");
     return 0;
 }
 
 /**
- * @brief  Phase 2: Erase Slot B.
+ * @brief  阶段 2：擦除目标 Bank。
  *
  * Steps:
- *  1. Set state PREPARING, LED fast blink 4Hz.
- *  2. Feed IWDG before erase (erase takes time).
- *  3. Erase Slot B, check result.
+ *  1. 设置状态 PREPARING，LED 快闪 4Hz。
+ *  2. 擦除前喂狗（擦除耗时较长）。
+ *  3. 擦除 Bank B，检查结果。
  *
- * @return   0 : erase success.
- * @return  -1 : erase failed.
+ * @return   0 : 擦除成功。
+ * @return  -1 : 擦除失败。
  * */
 static int EraseTargetBank(void)
 {
@@ -210,15 +210,15 @@ static int EraseTargetBank(void)
 }
 
 /**
- * @brief  Phase 3: Receive firmware via YMODEM.
+ * @brief  阶段 3：通过 YMODEM 接收固件。
  *
  * Steps:
- *  1. Set state RECEIVING, LED solid on.
- *  2. Flush UART DR register, init transport module.
- *  3. Call Ymodem_Receive with transport callbacks.
+ *  1. 设置状态 RECEIVING，LED 常亮。
+ *  2. 清空 UART DR 寄存器，初始化传输模块。
+ *  3. 调用 Ymodem_Receive 使用传输回调。
  *
- * @return   0 : receive success.
- * @return  -1 : YMODEM error.
+ * @return   0 : 接收成功。
+ * @return  -1 : YMODEM 错误。
  * */
 static int ReceiveFirmware(void)
 {
@@ -260,23 +260,23 @@ static int ReceiveFirmware(void)
 }
 
 /**
- * @brief  Phase 3.5: Verify ECDSA-P256 signature of decrypted firmware.
+ * @brief  阶段 3.5：验证解密后固件的 ECDSA-P256 签名。
  *
- * Package format: [nonce 12B][encrypted_fw][ECDSA sig 64B]
- * After transport processing, Flash contains decrypted firmware only.
- * Signature was extracted by transport and retrieved via OtaTransport_GetSignature.
+ * 数据包格式：[nonce 12B][加密固件][ECDSA 签名 64B]
+ * 传输层处理后，Flash 中仅保留解密后的固件。
+ * 签名由传输层提取，通过 OtaTransport_GetSignature 获取。
  *
  * Steps:
- *  1. Get signature from transport (extracted during YMODEM receive).
- *  2. Calculate real firmware size (total - 12 nonce - 64 signature).
- *  3. Verify ECDSA-P256 signature against decrypted firmware in Flash.
- *  4. Fix s_fw_size to actual firmware size (strip overhead).
+ *  1. 从传输层获取签名（YMODEM 接收期间提取）。
+ *  2. 计算实际固件大小（总大小 - 12 nonce - 64 签名）。
+ *  3. 对 Flash 中解密后的固件验证 ECDSA-P256 签名。
+ *  4. 修正 s_fw_size 为实际固件大小（去除开销）。
  *
- * @param[out] p_real_fw_size : Output actual firmware length.
- * @param[out] hash           : Output SHA-256 hash (32 bytes).
+ * @param[out] p_real_fw_size : 输出实际固件长度。
+ * @param[out] hash           : 输出 SHA-256 哈希（32 字节）。
  *
- * @return   0 : signature verified.
- * @return  -1 : verification failed.
+ * @return   0 : 签名验证通过。
+ * @return  -1 : 验证失败。
  * */
 static int VerifyEcdsaSignature(uint32_t *p_real_fw_size, uint8_t hash[32])
 {
@@ -287,7 +287,7 @@ static int VerifyEcdsaSignature(uint32_t *p_real_fw_size, uint8_t hash[32])
     s_state = OTA_TASK_VERIFYING_SIG;
     OtaLed_SetMode(OTA_LED_WORKING);
 
-    /* Package overhead: nonce(12B) + signature(64B) = 76 bytes */
+    /* 数据包开销：nonce(12B) + 签名(64B) = 76 字节 */
     pkg_overhead = 12u + OTA_ECDSA_SIG_SIZE;
     real_size = s_fw_size - pkg_overhead;
 
@@ -298,7 +298,7 @@ static int VerifyEcdsaSignature(uint32_t *p_real_fw_size, uint8_t hash[32])
         return -1;
     }
 
-    /* Get signature extracted by transport layer during YMODEM receive */
+    /* 获取传输层在 YMODEM 接收期间提取的签名 */
     OtaTransport_GetSignature(sig);
     log_i("Verifying ECDSA signature (%lu bytes decrypted firmware)...", real_size);
 
@@ -306,7 +306,7 @@ static int VerifyEcdsaSignature(uint32_t *p_real_fw_size, uint8_t hash[32])
 
     BspWdg_Feed(&s_wdg_drv);
 
-    /* Verify against decrypted firmware now in Flash */
+    /* 对 Flash 中已解密的固件进行验签 */
     if (OtaEcdsa_Verify(OtaConfig_BankAddr(s_target_bank), real_size, sig, hash) != 0)
     {
         return -1;
@@ -318,16 +318,16 @@ static int VerifyEcdsaSignature(uint32_t *p_real_fw_size, uint8_t hash[32])
 }
 
 /**
- * @brief  Phase 4: Compute SHA-256 hash of Slot B firmware.
+ * @brief  阶段 4：计算 Bank B 固件的 SHA-256 哈希。
  *
  * Steps:
- *  1. Set state VERIFYING.
- *  2. Call OtaVerify_SHA256Flash to hash firmware data.
- *  3. Print 32-byte hex hash.
+ *  1. 设置状态 VERIFYING。
+ *  2. 调用 OtaVerify_SHA256Flash 计算固件哈希。
+ *  3. 打印 32 字节十六进制哈希值。
  *
- * @param[out] hash : Output 32-byte SHA-256 hash.
+ * @param[out] hash : 输出 32 字节 SHA-256 哈希。
  *
- * @return  0 : success.
+ * @return  0 : 成功。
  * */
 static int VerifyFirmware(uint8_t hash[32])
 {
@@ -355,18 +355,18 @@ static int VerifyFirmware(uint8_t hash[32])
 }
 
 /**
- * @brief  Phase 5: Update OTA Config in Flash.
+ * @brief  阶段 5：更新 Flash 中的 OTA 配置。
  *
  * Steps:
- *  1. Read existing config or create default.
- *  2. Set state UPGRADE_PENDING, write fw_size and SHA-256.
- *  3. Record current version, increment upgrade_count.
- *  4. Write back to Flash.
+ *  1. 读取已有配置或创建默认配置。
+ *  2. 设置状态 UPGRADE_PENDING，写入 fw_size 和 SHA-256。
+ *  3. 记录当前版本，递增 upgrade_count。
+ *  4. 写回 Flash。
  *
- * @param[in] hash : SHA-256 hash (32 bytes).
+ * @param[in] hash : SHA-256 哈希（32 字节）。
  *
- * @return   0 : success.
- * @return  -1 : config write failed.
+ * @return   0 : 成功。
+ * @return  -1 : 配置写入失败。
  * */
 static int UpdateConfig(const uint8_t hash[32])
 {
@@ -406,12 +406,12 @@ static int UpdateConfig(const uint8_t hash[32])
 }
 
 /**
- * @brief  Force rollback: set OTA_STATE_ROLLBACK and reboot.
+ * @brief  强制回滚：设置 OTA_STATE_ROLLBACK 并重启。
  *
  * Steps:
- *  1. Read existing config or create default.
- *  2. Set state ROLLBACK, clear boot_count.
- *  3. Write config and reboot.
+ *  1. 读取已有配置或创建默认配置。
+ *  2. 设置状态 ROLLBACK，清零 boot_count。
+ *  3. 写入配置并重启。
  * */
 static void ForceRollback(void)
 {
@@ -447,12 +447,12 @@ static void ForceRollback(void)
 }
 
 /**
- * @brief  Phase 6: Reboot device.
+ * @brief  阶段 6：重启设备。
  *
  * Steps:
- *  1. Set state REBOOT_PENDING, LED very fast blink 10Hz.
- *  2. Wait 1s for UART log to flush.
- *  3. Software reset.
+ *  1. 设置状态 REBOOT_PENDING，LED 极快闪 10Hz。
+ *  2. 等待 1s 让 UART 日志发送完毕。
+ *  3. 软件复位。
  * */
 static void RebootDevice(void)
 {
@@ -467,38 +467,38 @@ static void RebootDevice(void)
 }
 
 /**
- * @brief  OTA error handler: show error code LED pattern, then reboot.
+ * @brief  OTA 错误处理：显示错误码 LED 闪烁模式后重启。
  *
  * Steps:
- *  1. Map result code to error code.
- *  2. Set LED error blink pattern (N blinks + 2s pause).
- *  3. Drive LED timebase for 3s to show error pattern.
- *  4. Software reset.
+ *  1. 将结果码映射为错误码。
+ *  2. 设置 LED 错误闪烁模式（N 次闪烁 + 2s 暂停）。
+ *  3. 驱动 LED 时基 3s 以展示错误模式。
+ *  4. 软件复位。
  *
- * @param[in] result : Negative result code from phase chain.
+ * @param[in] result : 阶段链返回的负值结果码。
  * */
 static void HandleError(int result)
 {
     int      i;
     uint8_t  code;
 
-    (void)result;
-
     s_state = OTA_TASK_ERROR;
 
     code = OtaLed_GetErrorCode();
 
-    OtaTrace_Record(OTA_TRACE_ERROR, code, 0);
+    /* result 记录阶段返回值（负数），data 记录 LED 错误码 */
+    OtaTrace_Record(OTA_TRACE_ERROR, (uint32_t)(-result), code);
 
-    log_e("ERROR! Code=%u, %s. Rebooting in 3s...",
+    log_e("ERROR! Code=%u, Phase=%d, %s. Rebooting in 3s...",
           code,
+          result,
           code == OTA_ERR_ERASE_FAILED  ? "Erase failed" :
           code == OTA_ERR_YMODEM_FAILED ? "YMODEM failed" :
           code == OTA_ERR_ECDSA_FAILED  ? "ECDSA failed" :
           code == OTA_ERR_SHA256_FAILED ? "SHA-256 failed" :
           "Config failed");
 
-    /* Drive LED error pattern for 3 seconds */
+    /* 驱动 LED 错误模式 3 秒 */
     for (i = 0; i < 60; i++)
     {
         OtaLed_TimebaseHook();
@@ -508,15 +508,15 @@ static void HandleError(int result)
     BspSys_Reboot(&s_sys_drv);
 }
 
-//*** Public API ***//
+//*** 公开 API ***//
 
 /**
- * @brief  Initialize OTA subsystem and EasyLogger.
+ * @brief  初始化 OTA 子系统和 EasyLogger。
  *
  * Steps:
- *  1. Reset OTA state, firmware size, trigger flag.
- *  2. Initialize Flash driver.
- *  3. Configure EasyLogger log formats and start.
+ *  1. 复位 OTA 状态、固件大小、触发标志。
+ *  2. 初始化 Flash 驱动。
+ *  3. 配置 EasyLogger 日志格式并启动。
  * */
 void TaskOta_Init(void *p_huart, void *p_hiwdg, void *p_key_port, uint16_t key_pin)
 {
@@ -534,7 +534,7 @@ void TaskOta_Init(void *p_huart, void *p_hiwdg, void *p_key_port, uint16_t key_p
     s_trigger_flag = 0;
     s_force_rollback = 0;
 
-    /* Save key GPIO config for later use in TaskOta_Run */
+    /* 保存按键 GPIO 配置，供后续 TaskOta_Run 使用 */
     s_key_gpio.port         = p_key_port;
     s_key_gpio.pin          = key_pin;
     s_key_gpio.active_level = 0;
@@ -587,30 +587,30 @@ void TaskOta_Init(void *p_huart, void *p_hiwdg, void *p_key_port, uint16_t key_p
 }
 
 /**
- * @brief  Get current OTA task state.
+ * @brief  获取当前 OTA 任务状态。
  *
- * @return  ota_task_state_t : Current task state.
+ * @return  ota_task_state_t : 当前任务状态。
  * */
 ota_task_state_t TaskOta_GetState(void)
 {
     return s_state;
 }
 
-//*** Task Entry ***//
+//*** 任务入口 ***//
 
 /**
- * @brief  OTA task entry function (FreeRTOS task).
+ * @brief  OTA 任务入口函数（FreeRTOS 任务）。
  *
  * Steps:
- *  1. Call TaskOta_Init to init subsystem and logger.
- *  2. Run self-check (UART + Flash).
- *  3. Init LED module and key driver.
- *  4. Wait for trigger (short press = OTA, long press = rollback).
- *  5. If rollback: set OTA_STATE_ROLLBACK and reboot.
- *  6. Otherwise: chain 6 phases (erase→receive→ECDSA→SHA256→config→reboot).
- *  7. Any phase failure: show error LED pattern and reboot.
+ *  1. 调用 TaskOta_Init 初始化子系统和日志器。
+ *  2. 执行自检（UART + Flash）。
+ *  3. 初始化 LED 模块和按键驱动。
+ *  4. 等待触发（短按 = OTA，长按 = 回滚）。
+ *  5. 若回滚：设置 OTA_STATE_ROLLBACK 并重启。
+ *  6. 否则：串联 6 个阶段（擦除→接收→ECDSA→SHA256→配置→重启）。
+ *  7. 任意阶段失败：显示错误 LED 模式并重启。
  *
- * @param[in] p_argument : Unused (pass NULL).
+ * @param[in] p_argument : 未使用（传 NULL）。
  * */
 void TaskOta_Run(void *p_argument)
 {
@@ -619,13 +619,13 @@ void TaskOta_Run(void *p_argument)
 
     (void)p_argument;
 
-    /* Self-check */
+    /* 自检 */
     if (SelfCheck() != 0)
     {
         ForceRollback();
     }
 
-    /* LED + Key init */
+    /* LED + 按键初始化 */
     OtaLed_Init();
 
     {
@@ -638,7 +638,7 @@ void TaskOta_Run(void *p_argument)
         BspKey_Init(&s_key, &key_cfg, &g_key_hal_ops, &g_key_os_ops);
     }
 
-    /* Wait for trigger (short press = OTA, long press = rollback) */
+    /* 等待触发（短按 = OTA，长按 = 回滚） */
     result = WaitForTrigger();
     if (result == -2)
     {
@@ -679,7 +679,7 @@ void TaskOta_Run(void *p_argument)
               s_target_bank == OTA_SLOT_A ? 'A' : 'B');
     }
 
-    /* Chain phase calls — map each failure to specific error code */
+    /* 串联各阶段调用 — 每个阶段失败映射为特定错误码 */
     result = EraseTargetBank();
     if (result != 0)
     {

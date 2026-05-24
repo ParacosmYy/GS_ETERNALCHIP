@@ -1,10 +1,10 @@
 /**
  * @file    bsp_key_driver.h
- * @brief   Key BSP driver — debounce state machine + long/short press detection
+ * @brief   按键 BSP 驱动 — 消抖状态机 + 长按/短按检测
  * @author  GS_Mark
  *
- * @note    Types and API declarations are in plat_key.h (03_Platform/interface).
- *          This header exposes the FSM states for Impl-layer consumers.
+ * @note    类型和 API 声明位于 plat_key.h（03_Platform/interface）。
+ *          本头文件仅供 Impl 层消费者使用，暴露 FSM 状态。
  */
 
 #ifndef BSP_KEY_DRIVER_H
@@ -15,17 +15,17 @@ extern "C"
 {
 #endif
 
-//*** Includes ***//
+//*** 头文件 ***//
 #include "stm32f4xx_hal.h"
 #include "plat_key.h"
 
-    //*** FSM States (Impl-layer only) ***//
+    //*** FSM 状态（仅 Impl 层） ***//
 
     enum
     {
-        BSP_KEY_STATE_IDLE       = 0, /**< Waiting for level change */
-        BSP_KEY_STATE_DEBOUNCING = 1, /**< Debounce timer running */
-        BSP_KEY_STATE_STABLE     = 2, /**< Stable state, tracking press */
+        BSP_KEY_STATE_IDLE       = 0, /**< 等待电平变化 */
+        BSP_KEY_STATE_DEBOUNCING = 1, /**< 消抖计时中 */
+        BSP_KEY_STATE_STABLE     = 2, /**< 稳定状态，持续检测按下 */
     };
 
 #ifdef __cplusplus

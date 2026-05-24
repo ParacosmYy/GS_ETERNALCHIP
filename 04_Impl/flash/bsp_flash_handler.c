@@ -1,18 +1,17 @@
 /**
  * @file    bsp_flash_handler.c
- * @brief   Flash Handler — backward-compatible facade over Flash Driver
+ * @brief   Flash Handler — 向后兼容的 Flash Driver 门面
  * @author  GS_Mark
  *
  * @par dependencies
  * - bsp_flash_handler.h
  * - bsp_flash_driver.h
- * - FreeRTOS.h / task.h (temporary, moves to system_adaption in Phase 8)
- * - stm32f4xx_hal.h (temporary HAL glue)
+ * - FreeRTOS.h / task.h（临时，Phase 8 迁移到 system_adaption）
+ * - stm32f4xx_hal.h（临时 HAL 胶水）
  * - string.h
  *
- * @note    This file exposes the SAME function signatures as the original
- *          bsp_flash.c procedural API. Upper layers call BspFlash_Init(),
- *          BspFlash_Write(), etc. — no changes needed in callers.
+ * @note    本文件暴露与原始 bsp_flash.c 过程式 API 相同的函数签名。
+ *          上层调用 BspFlash_Init()、BspFlash_Write() 等无需修改。
  */
 
 #include "bsp_flash_handler.h"
@@ -21,21 +20,21 @@
 #include "stm32f4xx_hal.h"
 #include <string.h>
 
-//*** Static Instances ***//
+//*** 静态实例 ***//
 
 static bsp_flash_driver_t  s_flash_driver;
 static bsp_flash_handler_t s_flash_handler;
 
-//*** Handler API Implementation (backward-compatible) ***//
+//*** Handler API 实现（向后兼容） ***//
 
 /**
- * @brief  Initialize Flash driver and handler.
+ * @brief  初始化 Flash 驱动和 Handler。
  *
  * Steps:
- *  1. Initialize driver with config + HAL ops.
- *  2. Initialize handler with driver instance.
+ *  1. 使用配置和 HAL ops 初始化驱动。
+ *  2. 使用驱动实例初始化 Handler。
  *
- * @note  Called once at startup. Clears residual Flash error flags.
+ * @note  启动时调用一次。清除残留的 Flash 错误标志。
  * */
 void BspFlash_Init(void)
 {
@@ -49,10 +48,10 @@ void BspFlash_Init(void)
 }
 
 /**
- * @brief  Initialize handler with a pre-configured driver.
+ * @brief  用已配置的驱动实例初始化 Handler。
  *
- * @param[out] p_handler : Handler instance.
- * @param[in]  p_driver  : Pre-initialized driver instance.
+ * @param[out] p_handler : Handler 实例。
+ * @param[in]  p_driver  : 已初始化的驱动实例。
  * */
 void BspFlashHandler_Init(bsp_flash_handler_t *p_handler,
                           bsp_flash_driver_t *p_driver)
@@ -67,19 +66,19 @@ void BspFlashHandler_Init(bsp_flash_handler_t *p_handler,
 }
 
 /**
- * @brief  Erase all sectors belonging to an OTA slot (one-by-one).
+ * @brief  擦除 OTA 槽位所属的所有扇区（逐扇区擦除）。
  *
  * Steps:
- *  1. Map slot to sector range.
- *  2. Unlock Flash via HW ops, clear error flags.
- *  3. Erase each sector independently with its own critical section
- *     (avoid masking interrupts for 3~8 seconds across multi-sector erase).
- *  4. Lock Flash, return result.
+ *  1. 将槽位映射到扇区范围。
+ *  2. 通过 HW ops 解锁 Flash，清除错误标志。
+ *  3. 逐扇区独立擦除，每个扇区使用独立临界区
+ *     （避免跨扇区擦除期间长时间屏蔽中断 3~8 秒）。
+ *  4. 锁定 Flash，返回结果。
  *
- * @param[in] slot : OTA slot (OTA_SLOT_A or OTA_SLOT_B).
+ * @param[in] slot : OTA 槽位（OTA_SLOT_A 或 OTA_SLOT_B）。
  *
- * @return   0 : Erase success.
- * @return  -1 : Invalid slot or erase failure.
+ * @return   0 : 擦除成功。
+ * @return  -1 : 无效槽位或擦除失败。
  * */
 int BspFlash_EraseSlot(ota_slot_t slot)
 {
@@ -94,7 +93,7 @@ int BspFlash_EraseSlot(ota_slot_t slot)
         return -1;
     }
 
-    /* Slot A: Sector 2-5 (224KB), Slot B: Sector 6-7 (256KB) */
+    /* 槽位 A: Sector 2-5 (224KB), 槽位 B: Sector 6-7 (256KB) */
     if (slot == OTA_SLOT_A)
     {
         start_sector = FLASH_SECTOR_2;
@@ -134,14 +133,14 @@ int BspFlash_EraseSlot(ota_slot_t slot)
 }
 
 /**
- * @brief  Write data to Flash (4-byte aligned, tail padded with 0xFF).
+ * @brief  向 Flash 写入数据（4 字节对齐，末尾用 0xFF 填充）。
  *
- * @param[in] addr   : Target Flash address.
- * @param[in] p_data : Data buffer to write.
- * @param[in] len    : Data length in bytes.
+ * @param[in] addr   : 目标 Flash 地址。
+ * @param[in] p_data : 待写入数据缓冲区。
+ * @param[in] len    : 数据长度（字节）。
  *
- * @return   0 : Write success.
- * @return  -1 : Invalid params or write failure.
+ * @return   0 : 写入成功。
+ * @return  -1 : 无效参数或写入失败。
  * */
 int BspFlash_Write(uint32_t addr, const uint8_t *p_data, uint32_t len)
 {
@@ -149,23 +148,23 @@ int BspFlash_Write(uint32_t addr, const uint8_t *p_data, uint32_t len)
 }
 
 /**
- * @brief  Read data from Flash (memory-mapped direct read).
+ * @brief  从 Flash 读取数据（内存映射直接读取）。
  *
- * @param[in]  addr   : Flash start address.
- * @param[out] p_data : Output data buffer.
- * @param[in]  len    : Read length in bytes.
+ * @param[in]  addr   : Flash 起始地址。
+ * @param[out] p_data : 输出数据缓冲区。
+ * @param[in]  len    : 读取长度（字节）。
  * */
 void BspFlash_Read(uint32_t addr, uint8_t *p_data, uint32_t len)
 {
     BspFlash_DriverRead(s_flash_handler.p_driver, addr, p_data, len);
 }
 
-//*** Config R/W ***//
+//*** 配置读写 ***//
 
 /** @brief  Sector 1 有效数据区大小：Config + Trace + Crash Dump */
 #define SECTOR1_USED_SIZE  ((CRASH_DUMP_ADDR - FLASH_ADDR_CONFIG) + CRASH_DUMP_SIZE)
 
-/* Forward declaration — CRC calc lives in bsp_flash_driver.c */
+/* 前向声明 — CRC 计算位于 bsp_flash_driver.c */
 extern uint32_t BspFlash_DriverCalcCrc32(const uint8_t *p_data, uint32_t len);
 
 /**
@@ -272,7 +271,46 @@ int BspFlash_WriteConfig(const ota_config_t *p_cfg)
     return 0;
 }
 
-//*** Utility ***//
+/**
+ * @brief  清除 Trace 区域为 0xFF，保留 Config 和 Crash Dump。
+ *
+ * Steps:
+ *  1. 读取 Sector 1 全部有效数据到静态缓冲区。
+ *  2. 将 trace 部分填充 0xFF。
+ *  3. 擦除 Sector 1，写回全部数据。
+ *
+ * @return   0 : 成功。
+ * @return  -1 : 擦除或写入失败。
+ *
+ * */
+int BspFlash_ClearTrace(void)
+{
+    static uint8_t s_buf[SECTOR1_USED_SIZE];
+
+    /* 读取 Sector 1 全部有效数据 */
+    memcpy(s_buf, (const void *)FLASH_ADDR_CONFIG, SECTOR1_USED_SIZE);
+
+    /* 将 trace 部分填充 0xFF（保留 Config + Crash Dump） */
+    memset(s_buf + (OTA_TRACE_ADDR - FLASH_ADDR_CONFIG),
+           0xFF,
+           OTA_TRACE_MAX_ENTRIES * OTA_TRACE_ENTRY_SIZE);
+
+    /* 擦除 Sector 1，写回全部数据 */
+    if (BspFlash_DriverEraseSector(s_flash_handler.p_driver,
+                                    FLASH_SECTOR_1) != 0)
+    {
+        return -1;
+    }
+
+    if (BspFlash_Write(FLASH_ADDR_CONFIG, s_buf, SECTOR1_USED_SIZE) != 0)
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+//*** 工具函数 ***//
 
 /**
  * @brief  获取扇区大小（字节）。

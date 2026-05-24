@@ -9,7 +9,7 @@
  *
  * @author  GS_Mark
  *
- * @brief   Platform system utilities interface (OPS pattern)
+ * @brief   平台系统工具接口（OPS 模式）
  *
  * @version V2.0 2025-05-24
  *
@@ -30,13 +30,13 @@ extern "C" {
 
 //******************************* Types *************************************//
 
-/** @brief Forward declaration of system driver */
+/** @brief 系统驱动前向声明 */
 typedef struct bsp_sys_driver bsp_sys_driver_t;
 
 /**
- * @brief  System hardware operations (injected at init).
+ * @brief  系统硬件操作（初始化时注入）。
  *
- * @note   Platform layer only — ZERO HAL dependencies.
+ * @note   仅平台层 — 零 HAL 依赖。
  * */
 typedef struct
 {
@@ -46,10 +46,10 @@ typedef struct
 } sys_operations_t;
 
 /**
- * @brief  System driver instance.
+ * @brief  系统驱动实例。
  *
- * @note   p_ops     : Hardware operations table.
- *         is_inited : 1 after BspSys_Init(), 0 otherwise.
+ * @note   p_ops     : 硬件操作表。
+ *         is_inited : BspSys_Init() 后为 1，否则为 0。
  * */
 struct bsp_sys_driver
 {

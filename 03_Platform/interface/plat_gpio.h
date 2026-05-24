@@ -8,11 +8,11 @@
  *
  * @author  GS_Mark
  *
- * @brief   Platform GPIO type abstraction — opaque port/pin
+ * @brief   平台 GPIO 类型抽象 — 不透明 port/pin
  *
- * Usage:
+ * 用法：
  *   plat_gpio_t led_gpio = { (void *)GPIOC, 13 };
- *   // Impl layer casts port to GPIO_TypeDef*
+ *   // 实现层将 port 强转为 GPIO_TypeDef*
  *
  * @version V1.0 2025-05-24
  *
@@ -33,9 +33,9 @@ extern "C" {
 //******************************* Types *************************************//
 typedef struct
 {
-    void    *port;    /**< GPIO port (opaque — Impl casts to GPIO_TypeDef*) */
-    uint16_t pin;     /**< GPIO pin number */
-    uint8_t  active_level; /**< 0 = active low, 1 = active high */
+    void    *port;    /**< GPIO 端口（不透明 — 实现层强转为 GPIO_TypeDef*） */
+    uint16_t pin;     /**< GPIO 引脚号 */
+    uint8_t  active_level; /**< 0 = 低电平有效，1 = 高电平有效 */
 } plat_gpio_t;
 
 #ifdef __cplusplus

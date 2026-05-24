@@ -8,7 +8,7 @@
  *
  * @author  GS_Mark
  *
- * @brief   Platform Watchdog driver interface (OPS pattern)
+ * @brief   平台看门狗驱动接口（OPS 模式）
  *
  * @version V2.0 2025-05-24
  *
@@ -28,13 +28,13 @@ extern "C" {
 
 //******************************* Types *************************************//
 
-/** @brief Forward declaration of watchdog driver */
+/** @brief 看门狗驱动前向声明 */
 typedef struct bsp_wdg_driver bsp_wdg_driver_t;
 
 /**
- * @brief  Watchdog hardware operations (injected at init).
+ * @brief  看门狗硬件操作（初始化时注入）。
  *
- * @note   Platform layer only — ZERO HAL dependencies.
+ * @note   仅平台层 — 零 HAL 依赖。
  * */
 typedef struct
 {
@@ -42,11 +42,11 @@ typedef struct
 } wdg_hw_operations_t;
 
 /**
- * @brief  Watchdog driver instance.
+ * @brief  看门狗驱动实例。
  *
- * @note   p_handle  : HAL IWDG handle (STM32) or equivalent.
- *         p_hw_ops  : Hardware operations table.
- *         is_inited : 1 after BspWdg_Init(), 0 otherwise.
+ * @note   p_handle  : HAL IWDG 句柄（STM32）或等效类型。
+ *         p_hw_ops  : 硬件操作表。
+ *         is_inited : BspWdg_Init() 后为 1，否则为 0。
  * */
 struct bsp_wdg_driver
 {

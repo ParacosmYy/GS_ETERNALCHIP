@@ -1,18 +1,18 @@
 /**
  * @file    bsp_uart_driver.c
- * @brief   UART BSP driver implementation — DMA + IDLE + Printf (OPS pattern)
+ * @brief   UART BSP 驱动实现 — DMA + IDLE + Printf（OPS 模式）
  * @author  GS_Mark
  *
  * @par dependencies
  * - bsp_uart_driver.h
  * - bsp_uart_handler.h
  *
- * All HAL calls are abstracted through p_hw_ops / p_os_ops function pointers
- * injected at init time. HAL callbacks (ISR context) still use HAL_UART() cast
- * because they receive raw HAL handle from the interrupt.
+ * 所有 HAL 调用通过 p_hw_ops / p_os_ops 函数指针抽象，
+ * 在初始化时注入。HAL 回调（ISR 上下文）仍使用 HAL_UART() 强转，
+ * 因为中断传入的是原始 HAL 句柄。
  */
 
-//*** Includes ***//
+//*** 头文件 ***//
 #include "bsp_uart_driver.h"
 #include "bsp_uart_handler.h"
 #include "system_adaption.h"
@@ -20,10 +20,10 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-//*** HAL Handle Cast (void* from plat_uart.h -> UART_HandleTypeDef*) ***//
+//*** HAL 句柄强转（plat_uart.h 的 void* → UART_HandleTypeDef*） ***//
 #define HAL_UART(h)  ((UART_HandleTypeDef *)(h))
 
-//*** Private Helpers ***//
+//*** 私有辅助函数 ***//
 
 /**
  * @brief  向应用层发送事件通知（若用户已注册回调则调用之）。
@@ -71,7 +71,7 @@ static int start_dma_rx(bsp_uart_driver_t *p_drv)
     return 0;
 }
 
-//*** Public API ***//
+//*** 公共 API ***//
 
 /**
  * @brief  初始化 UART 驱动实例。
@@ -233,7 +233,7 @@ uint8_t BspUart_IsRxBusy(const bsp_uart_driver_t *p_drv)
     return p_drv->rx_busy;
 }
 
-//*** Ring Buffer Mode API ***//
+//*** 环形缓冲区模式 API ***//
 
 /**
  * @brief  绑定 ring buffer 到 UART 驱动。
@@ -304,7 +304,7 @@ void BspUart_FlushRx(bsp_uart_driver_t *p_drv)
     p_drv->p_hw_ops->pf_flush_dr(p_drv->p_config->p_huart);
 }
 
-//*** HAL Weak Callback Overrides ***//
+//*** HAL 弱回调覆写 ***//
 
 /**
  * @brief  HAL UART 接收事件回调（DMA + IDLE 模式）。
@@ -329,7 +329,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
 
     p_drv->rx_busy = 0;
 
-    /* Ring buffer 模式：push 数据到 ring buffer，不调回调 */
+    /* 环形缓冲区模式：push 数据到 ring buffer，不调回调 */
     if (p_drv->ring_mode && p_drv->p_ring != NULL)
     {
         uint8_t *p_data;

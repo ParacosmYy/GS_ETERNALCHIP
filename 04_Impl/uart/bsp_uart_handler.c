@@ -1,29 +1,29 @@
 /**
  * @file    bsp_uart_handler.c
- * @brief   UART instance registry implementation
+ * @brief   UART 实例注册表实现
  * @author  GS_Mark
  *
  * @par dependencies
  * - bsp_uart_handler.h
  *
- * Static instance table that maps HAL UART handles to bsp_uart_driver_t
- * pointers. HAL callbacks (ISR context) call BspUartHandler_FindByHandle()
- * to dispatch events to the correct driver.
+ * 静态实例表，将 HAL UART 句柄映射到 bsp_uart_driver_t 指针。
+ * HAL 回调（ISR 上下文）调用 BspUartHandler_FindByHandle()
+ * 将事件分发到正确的驱动实例。
  */
 
-//*** Includes ***//
+//*** 头文件 ***//
 #include "bsp_uart_handler.h"
 #include <string.h>
 
-//*** HAL Handle Cast (only used in FindByHandle for comparison) ***//
+//*** HAL 句柄强转（仅在 FindByHandle 中用于比较） ***//
 #define HAL_UART(h)  ((UART_HandleTypeDef *)(h))
 
-//*** Private Variables ***//
+//*** 私有变量 ***//
 
-/** @brief  Static instance table */
+/** @brief  静态实例表 */
 static uart_instance_table_t s_table;
 
-//*** Public API ***//
+//*** 公共 API ***//
 
 /**
  * @brief  初始化实例注册表（清零所有槽位）。

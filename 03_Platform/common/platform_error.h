@@ -8,11 +8,11 @@
  *
  * @author  GS_Mark
  *
- * @brief   Platform layer unified error codes
+ * @brief   平台层统一错误码
  *
- * Usage:
- *   All Platform/Service/App layer functions return platform_err_t.
- *   Impl layer maps HAL errors to these codes.
+ * 用法：
+ *   所有 Platform/Service/App 层函数返回 platform_err_t。
+ *   实现层将 HAL 错误映射为这些错误码。
  *
  * @version V1.0 2025-05-24
  *

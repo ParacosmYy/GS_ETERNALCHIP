@@ -193,7 +193,7 @@ all: build_a build_b
 build_a: $(BUILDDIR)/OTA_A.elf $(BUILDDIR)/OTA_A.hex $(BUILDDIR)/OTA_A.bin
 
 $(BUILDDIR)/OTA_A.elf: $(OBJS) $(LDSCRIPT_A)
-	@mkdir -p $(dir $@)
+	@$(MKDIR_P) $(subst /,\,$(dir $@)) 2>nul || exit 0
 	$(CC) $(LDFLAGS) -T$(LDSCRIPT_A) -Wl,-Map=$(BUILDDIR)/OTA_A.map -o $@ $(OBJS)
 
 $(BUILDDIR)/OTA_A.hex: $(BUILDDIR)/OTA_A.elf
@@ -206,7 +206,7 @@ $(BUILDDIR)/OTA_A.bin: $(BUILDDIR)/OTA_A.elf
 build_b: $(BUILDDIR)/OTA_B.elf $(BUILDDIR)/OTA_B.hex $(BUILDDIR)/OTA_B.bin
 
 $(BUILDDIR)/OTA_B.elf: $(OBJS) $(LDSCRIPT_B)
-	@mkdir -p $(dir $@)
+	@$(MKDIR_P) $(subst /,\,$(dir $@)) 2>nul || exit 0
 	$(CC) $(LDFLAGS) -T$(LDSCRIPT_B) -Wl,-Map=$(BUILDDIR)/OTA_B.map -o $@ $(OBJS)
 
 $(BUILDDIR)/OTA_B.hex: $(BUILDDIR)/OTA_B.elf

@@ -1,14 +1,14 @@
 /**
  * @file    bsp_led_driver.h
- * @brief   LED BSP driver — HAL backend thin wrapper
+ * @brief   LED BSP 驱动 — HAL 后端薄封装
  * @author  GS_Mark
  *
  * @par dependencies
  * - stm32f4xx_hal.h
  * - plat_led.h
  *
- * @note    This header is for Impl-layer consumers that need HAL types.
- *          Upper layers (Service/App) should include plat_led.h directly.
+ * @note    本头文件供需要 HAL 类型的 Impl 层消费者使用。
+ *          上层（Service/App）应直接包含 plat_led.h。
  */
 
 #ifndef BSP_LED_DRIVER_H
@@ -19,7 +19,7 @@ extern "C"
 {
 #endif
 
-//*** Includes ***//
+//*** 头文件 ***//
 #include "stm32f4xx_hal.h"
 #include "plat_led.h"
 

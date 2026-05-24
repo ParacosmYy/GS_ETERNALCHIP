@@ -9,11 +9,11 @@
  *
  * @author  GS_Mark
  *
- * @brief   Watchdog BSP driver implementation — HAL IWDG via OPS table
+ * @brief   看门狗 BSP 驱动实现 — 通过 OPS 表封装 HAL IWDG
  *
- * Processing flow:
- *   BspWdg_Init() stores handle + ops table into driver instance.
- *   BspWdg_Feed() delegates to pf_refresh via ops table.
+ * 处理流程:
+ *   BspWdg_Init() 将句柄和 ops 表存入驱动实例。
+ *   BspWdg_Feed() 通过 ops 表委托到 pf_refresh。
  *
  * @version V2.0 2025-05-24
  *
@@ -21,19 +21,19 @@
  *
  *****************************************************************************/
 
-//******************************** Includes *********************************//
+//******************************** 头文件 *********************************//
 #include "bsp_wdg_driver.h"
-//******************************** Includes *********************************//
+//******************************** 头文件 *********************************//
 
-//******************************** Implement ********************************//
+//******************************** 实现 ********************************//
 
 /**
  * @brief  初始化 Watchdog BSP 驱动，注入硬件操作表。
  *
  * Steps:
- *  1. Validate parameters.
- *  2. Store handle and ops table.
- *  3. Mark as initialized.
+ *  1. 校验参数。
+ *  2. 存储句柄和 ops 表。
+ *  3. 标记为已初始化。
  *
  * @param[in] p_drv    : 驱动实例指针。
  * @param[in] p_handle : HAL IWDG 句柄指针（CubeMX 生成）。
@@ -56,8 +56,8 @@ void BspWdg_Init(bsp_wdg_driver_t *p_drv, void *p_handle,
  * @brief  喂看门狗（通过 ops 表刷新计数器）。
  *
  * Steps:
- *  1. Validate driver and ops.
- *  2. Call pf_refresh with stored handle.
+ *  1. 校验驱动和 ops。
+ *  2. 使用存储的句柄调用 pf_refresh。
  *
  * @param[in] p_drv : 驱动实例指针。
  * */
@@ -74,4 +74,4 @@ void BspWdg_Feed(bsp_wdg_driver_t *p_drv)
     }
 }
 
-//******************************** Implement ********************************//
+//******************************** 实现 ********************************//

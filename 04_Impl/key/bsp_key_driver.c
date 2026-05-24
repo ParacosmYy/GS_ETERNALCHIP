@@ -1,18 +1,18 @@
 /**
  * @file    bsp_key_driver.c
- * @brief   Key BSP driver implementation — debounce FSM + long/short press
+ * @brief   按键 BSP 驱动实现 — 消抖 FSM + 长按/短按检测
  * @author  GS_Mark
  *
  * @par dependencies
  * - bsp_key_driver.h
  */
 
-//*** Includes ***//
+//*** 头文件 ***//
 #include "bsp_key_driver.h"
 #include "system_adaption.h"
 #include <string.h>
 
-//*** Private Helpers ***//
+//*** 私有辅助函数 ***//
 
 /**
  * @brief  调用用户注册的回调函数。
@@ -28,7 +28,7 @@ static void Key_Notify(const bsp_key_driver_t *p_drv, bsp_key_event_t evt)
     }
 }
 
-//*** Public API ***//
+//*** 公共 API ***//
 
 /**
  * @brief  初始化按键驱动实例。

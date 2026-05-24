@@ -8,7 +8,7 @@
  *
  * @author  GS_Mark
  *
- * @brief   Platform RTT debug output interface (OPS pattern)
+ * @brief   平台 RTT 调试输出接口（OPS 模式）
  *
  * @version V2.0 2025-05-24
  *
@@ -29,13 +29,13 @@ extern "C" {
 
 //******************************* Types *************************************//
 
-/** @brief Forward declaration of RTT driver */
+/** @brief RTT 驱动前向声明 */
 typedef struct bsp_rtt_driver bsp_rtt_driver_t;
 
 /**
- * @brief  RTT hardware operations (injected at init).
+ * @brief  RTT 硬件操作（初始化时注入）。
  *
- * @note   Platform layer only — ZERO HAL dependencies.
+ * @note   仅平台层 — 零 HAL 依赖。
  * */
 typedef struct
 {
@@ -45,10 +45,10 @@ typedef struct
 } rtt_operations_t;
 
 /**
- * @brief  RTT driver instance.
+ * @brief  RTT 驱动实例。
  *
- * @note   p_ops     : Hardware operations table.
- *         is_inited : 1 after BspRtt_Init(), 0 otherwise.
+ * @note   p_ops     : 硬件操作表。
+ *         is_inited : BspRtt_Init() 后为 1，否则为 0。
  * */
 struct bsp_rtt_driver
 {

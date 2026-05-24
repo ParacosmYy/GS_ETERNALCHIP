@@ -1,6 +1,6 @@
 /**
  * @file    ota_ecdsa.h
- * @brief   OTA firmware ECDSA-P256 signature verification
+ * @brief   OTA 固件 ECDSA-P256 签名验证
  * @author  GS_Mark
  */
 

@@ -1,13 +1,13 @@
 /**
  * @file    system_adaption.h
- * @brief   System Adaption Layer — centralized HAL/FreeRTOS ops declarations
+ * @brief   系统适配层 — 集中声明所有 HAL/FreeRTOS 操作接口
  * @author  GS_Mark
  *
  * @par dependencies
- * - All plat_*.h headers
+ * - 所有 plat_*.h 头文件
  *
- * @note    This is the SINGLE header for all HAL ops instances.
- *          Upper layers include this instead of knowing about HAL internals.
+ * @note    所有 HAL 操作接口实例的唯一头文件。
+ *          上层只需包含此头文件，无需了解 HAL 内部细节。
  */
 
 #ifndef SYSTEM_ADAPTION_H
@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-//*** Includes ***//
+//*** 头文件 ***//
 #include "plat_led.h"
 #include "plat_key.h"
 #include "plat_wdg.h"
@@ -26,22 +26,22 @@ extern "C" {
 #include "plat_flash.h"
 #include "plat_uart.h"
 
-//*** Extern HAL Ops Instances ***//
+//*** 外部 HAL 操作接口实例 ***//
 
-/* LED — name kept as bsp_led_hal_ops to match plat_led.h extern declaration */
+/* LED — 命名保持 bsp_led_hal_ops 以匹配 plat_led.h 的 extern 声明 */
 extern const led_operations_t bsp_led_hal_ops;
 
-// Key
+// 按键
 extern const key_hw_operations_t g_key_hal_ops;
 extern const key_os_operations_t g_key_os_ops;
 
-// WDG
+// 看门狗
 extern const wdg_hw_operations_t g_wdg_hal_ops;
 
-// SYS
+// 系统服务
 extern const sys_operations_t g_sys_hal_ops;
 
-// RTT
+// RTT 调试输出
 extern const rtt_operations_t g_rtt_hal_ops;
 
 // Flash

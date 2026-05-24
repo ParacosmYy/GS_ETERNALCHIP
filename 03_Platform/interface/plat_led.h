@@ -9,7 +9,7 @@
  *
  * @author  GS_Mark
  *
- * @brief   Platform LED interface — zero HAL types
+ * @brief   平台 LED 接口 — 零 HAL 类型
  *
  * @version V2.0 2025-05-24
  *
@@ -41,7 +41,7 @@ typedef struct
     void (*p_Toggle)(bsp_led_driver_t *p_drv); /**< 翻转 */
 } led_operations_t;
 
-/** @brief  LED 硬件配置（platform-neutral） */
+/** @brief  LED 硬件配置（平台无关） */
 typedef struct
 {
     plat_gpio_t gpio; /**< GPIO 配置（port/pin/active_level） */

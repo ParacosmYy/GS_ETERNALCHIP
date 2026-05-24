@@ -9,11 +9,11 @@
  *
  * @author  GS_Mark
  *
- * @brief   System BSP driver implementation — HAL/CMSIS via OPS table
+ * @brief   系统 BSP 驱动实现 — 通过 OPS 表封装 HAL/CMSIS
  *
- * Processing flow:
- *   BspSys_Init() stores ops table into driver instance.
- *   All public functions delegate to ops table function pointers.
+ * 处理流程:
+ *   BspSys_Init() 将 ops 表存入驱动实例。
+ *   所有公共函数委托到 ops 表函数指针。
  *
  * @version V2.0 2025-05-24
  *
@@ -21,19 +21,19 @@
  *
  *****************************************************************************/
 
-//******************************** Includes *********************************//
+//******************************** 头文件 *********************************//
 #include "bsp_sys_driver.h"
-//******************************** Includes *********************************//
+//******************************** 头文件 *********************************//
 
-//******************************** Implement ********************************//
+//******************************** 实现 ********************************//
 
 /**
  * @brief  初始化 System BSP 驱动，注入硬件操作表。
  *
  * Steps:
- *  1. Validate parameters.
- *  2. Store ops table.
- *  3. Mark as initialized.
+ *  1. 校验参数。
+ *  2. 存储 ops 表。
+ *  3. 标记为已初始化。
  *
  * @param[in] p_drv : 驱动实例指针。
  * @param[in] p_ops : 硬件操作表指针。
@@ -53,8 +53,8 @@ void BspSys_Init(bsp_sys_driver_t *p_drv, const sys_operations_t *p_ops)
  * @brief  获取系统 tick 计数（毫秒）。
  *
  * Steps:
- *  1. Validate driver and ops.
- *  2. Delegate to pf_get_tick.
+ *  1. 校验驱动和 ops。
+ *  2. 委托到 pf_get_tick。
  *
  * @param[in] p_drv : 驱动实例指针。
  *
@@ -79,8 +79,8 @@ uint32_t BspSys_GetTick(const bsp_sys_driver_t *p_drv)
  * @brief  软件复位 MCU。
  *
  * Steps:
- *  1. Validate driver and ops.
- *  2. Delegate to pf_reboot.
+ *  1. 校验驱动和 ops。
+ *  2. 委托到 pf_reboot。
  *
  * @param[in] p_drv : 驱动实例指针。
  * */
@@ -101,8 +101,8 @@ void BspSys_Reboot(const bsp_sys_driver_t *p_drv)
  * @brief  检测当前运行的 OTA Bank。
  *
  * Steps:
- *  1. Validate driver and ops.
- *  2. Delegate to pf_get_running_bank.
+ *  1. 校验驱动和 ops。
+ *  2. 委托到 pf_get_running_bank。
  *
  * @param[in]  p_drv  : 驱动实例指针。
  * @param[out] p_slot : 检测到的运行 Bank。
@@ -125,4 +125,4 @@ int BspSys_GetRunningBank(const bsp_sys_driver_t *p_drv, ota_slot_t *p_slot)
     return -1;
 }
 
-//******************************** Implement ********************************//
+//******************************** 实现 ********************************//

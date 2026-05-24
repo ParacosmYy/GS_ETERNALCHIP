@@ -1,6 +1,6 @@
 /**
  * @file    ota_verify.c
- * @brief   OTA firmware verification — SHA-256 Flash hash
+ * @brief   OTA 固件校验 — SHA-256 Flash 哈希实现
  * @author  GS_Mark
  *
  * @par dependencies
@@ -10,7 +10,7 @@
  * - sha256.h
  */
 
-//*** Includes ***//
+//*** 头文件 ***//
 #define LOG_TAG "VERIFY"
 #include "elog.h"
 #include "ota_verify.h"
@@ -18,7 +18,7 @@
 #include "sha256.h"
 #include <string.h>
 
-//*** Implement ***//
+//*** 实现 ***//
 
 /**
  * @brief  计算 Flash 指定区域的 SHA-256 哈希值。

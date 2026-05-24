@@ -10,7 +10,7 @@
  * - elog.h
  */
 
-//*** Includes ***//
+//*** 头文件 ***//
 #define LOG_TAG "TRACE"
 #include "elog.h"
 #include "ota_trace.h"
@@ -19,7 +19,7 @@
 #include "bsp_sys_driver.h"
 #include <string.h>
 
-//*** Private Variables ***//
+//*** 私有变量 ***//
 
 /** @brief 当前写入索引（下一个空位） */
 static uint32_t s_write_index;
@@ -27,7 +27,7 @@ static uint32_t s_write_index;
 /** @brief SYS 驱动指针（用于获取时间戳） */
 static bsp_sys_driver_t *s_p_sys_drv;
 
-//*** Private Helpers ***//
+//*** 私有辅助函数 ***//
 
 /**
  * @brief  获取事件名称字符串。
@@ -94,7 +94,7 @@ static const char *event_name(uint32_t event)
     return "UNKNOWN     ";
 }
 
-//*** Public API ***//
+//*** 公共 API ***//
 
 /**
  * @brief  初始化追踪模块，找到下一个空位。
@@ -202,12 +202,24 @@ void OtaTrace_PrintAll(void)
 
         count++;
 
-        log_i("#%02lu %-14s t=%-6lu %s data=%lu",
-              count,
-              event_name(entry.event),
-              entry.timestamp,
-              entry.result == 0 ? "OK " : "ERR",
-              entry.data);
+        if (entry.event == OTA_TRACE_ERROR)
+        {
+            log_i("#%02lu %-14s t=%-6lu ERR code=%lu phase=%lu",
+                  count,
+                  event_name(entry.event),
+                  entry.timestamp,
+                  entry.data,
+                  entry.result);
+        }
+        else
+        {
+            log_i("#%02lu %-14s t=%-6lu %s data=%lu",
+                  count,
+                  event_name(entry.event),
+                  entry.timestamp,
+                  entry.result == 0 ? "OK " : "ERR",
+                  entry.data);
+        }
 
         addr += OTA_TRACE_ENTRY_SIZE;
     }
@@ -219,5 +231,21 @@ void OtaTrace_PrintAll(void)
     else
     {
         log_i("=== %lu entries ===", count);
+    }
+}
+
+/**
+ * @brief  清除所有追踪记录。
+ *
+ * Steps:
+ *  1. 调用 BspFlash_ClearTrace 擦除 trace 区域。
+ *  2. 重置写入索引为 0。
+ *
+ * */
+void OtaTrace_Clear(void)
+{
+    if (BspFlash_ClearTrace() == 0)
+    {
+        s_write_index = 0;
     }
 }
