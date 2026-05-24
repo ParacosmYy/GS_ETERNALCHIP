@@ -26,9 +26,11 @@
 #include "bsp_flash.h"
 #include "bsp_uart.h"
 #include "bsp_key.h"
+#include "bsp_wdg.h"
+#include "bsp_sys.h"
 #include "ymodem.h"
-#include "usart.h"
-#include "iwdg.h"
+#include "usart.h"       /* XXX: 仅用于 TaskOta_Init 中传递 UART 句柄，Phase 2 移除 */
+#include "iwdg.h"        /* XXX: 仅用于 TaskOta_Init 中传递 IWDG 句柄，Phase 2 移除 */
 #include "cmsis_os.h"
 #include "ota_transport.h"
 #include "ota_verify.h"
@@ -53,6 +55,41 @@ static uint8_t            s_ring_storage[UART_RX_RING_SIZE];
 static circular_buffer_t s_ring_buf;
 static bsp_uart_driver_t s_uart_drv;
 
+//*** Runtime Bank Detection ***//
+
+/**
+ * @brief  Detect the bank that is currently executing by SCB->VTOR.
+ *
+ * @param[out] p_slot : detected running bank.
+ *
+ * @return   0 : detected successfully.
+ * @return  -1 : VTOR does not point to a known OTA bank.
+ * */
+static int GetRunningBank(ota_slot_t *p_slot)
+{
+    uint32_t vtor;
+
+    if (p_slot == NULL)
+    {
+        return -1;
+    }
+
+    vtor = SCB->VTOR;
+    if (vtor >= FLASH_ADDR_SLOT_B && vtor < (FLASH_ADDR_SLOT_B + SLOT_B_SIZE))
+    {
+        *p_slot = OTA_SLOT_B;
+        return 0;
+    }
+
+    if (vtor >= FLASH_ADDR_SLOT_A && vtor < (FLASH_ADDR_SLOT_A + SLOT_A_SIZE))
+    {
+        *p_slot = OTA_SLOT_A;
+        return 0;
+    }
+
+    return -1;
+}
+
 //*** Self Check ***//
 
 /**
@@ -68,12 +105,6 @@ static bsp_uart_driver_t s_uart_drv;
 static int SelfCheck(void)
 {
     volatile uint32_t val;
-
-    if (&huart1 == NULL)
-    {
-        log_e("Self-check FAILED: UART handle invalid");
-        return -1;
-    }
 
     val = *(volatile uint32_t *)FLASH_ADDR_SLOT_A;
     if (val == 0xFFFFFFFF)
@@ -190,7 +221,7 @@ static int EraseTargetBank(void)
 
     OtaTrace_Record(OTA_TRACE_ERASE_START, 0, 0);
 
-    HAL_IWDG_Refresh(&hiwdg);
+    BspWdg_Feed();
 
     if (BspFlash_EraseSlot(s_target_bank) != 0)
     {
@@ -229,7 +260,7 @@ static int ReceiveFirmware(void)
      * 被 PC 端误判为 YMODEM CRC 请求。先等 TX drain，再清 RX。
      */
     osDelay(100);
-    __HAL_UART_FLUSH_DRREGISTER(&huart1);
+    BspUart_FlushRx(&s_uart_drv);
     ring_buffer_init(&s_ring_buf, s_ring_storage, UART_RX_RING_SIZE);
 
     OtaTransport_Init(&s_fw_size, OtaConfig_BankAddr(s_target_bank), &s_uart_drv);
@@ -298,7 +329,7 @@ static int VerifyEcdsaSignature(uint32_t *p_real_fw_size, uint8_t hash[32])
 
     OtaTrace_Record(OTA_TRACE_ECDSA_START, 0, real_size);
 
-    HAL_IWDG_Refresh(&hiwdg);
+    BspWdg_Feed();
 
     /* Verify against decrypted firmware now in Flash */
     if (OtaEcdsa_Verify(OtaConfig_BankAddr(s_target_bank), real_size, sig, hash) != 0)
@@ -437,7 +468,7 @@ static void ForceRollback(void)
     }
 
     osDelay(1000);
-    NVIC_SystemReset();
+    BspSys_Reboot();
 }
 
 /**
@@ -457,7 +488,7 @@ static void RebootDevice(void)
     log_i("Upgrade ready. Rebooting in 1s...");
 
     osDelay(1000);
-    NVIC_SystemReset();
+    BspSys_Reboot();
 }
 
 /**
@@ -499,7 +530,7 @@ static void HandleError(int result)
         osDelay(50);
     }
 
-    NVIC_SystemReset();
+    BspSys_Reboot();
 }
 
 //*** Public API ***//
@@ -524,6 +555,7 @@ void TaskOta_Init(void)
     s_trigger_flag = 0;
     s_force_rollback = 0;
     BspFlash_Init();
+    BspWdg_Init(&hiwdg);
 
     /* 初始化 UART 驱动 + ring buffer */
     BspUart_Init(&s_uart_drv, &uart_cfg);
@@ -623,18 +655,32 @@ void TaskOta_Run(void *p_argument)
         ForceRollback();
     }
 
-    /* 确定目标 Bank：下载到非活跃 Bank */
+    /* 确定目标 Bank：优先使用当前实际运行 Bank，避免配置异常时擦除自身 */
     {
         ota_config_t cfg;
-        ota_slot_t   active;
+        ota_slot_t   cfg_active = OTA_SLOT_A;
+        ota_slot_t   active     = OTA_SLOT_A;
+        int          cfg_ok;
 
-        if (BspFlash_ReadConfig(&cfg) == 0)
+        cfg_ok = BspFlash_ReadConfig(&cfg);
+        if (cfg_ok == 0)
         {
-            active = cfg.active_slot;
+            cfg_active = cfg.active_slot;
+            active     = cfg.active_slot;
         }
-        else
+
+        if (GetRunningBank(&active) == 0)
         {
-            active = OTA_SLOT_A;
+            if (cfg_ok == 0 && active != cfg_active)
+            {
+                log_w("Config Active=%c differs from running Bank=%c, use running Bank",
+                      cfg_active == OTA_SLOT_A ? 'A' : 'B',
+                      active == OTA_SLOT_A ? 'A' : 'B');
+            }
+        }
+        else if (cfg_ok != 0)
+        {
+            log_w("Running Bank unknown, fallback Active=A");
         }
 
         s_target_bank = OtaConfig_Other(active);
