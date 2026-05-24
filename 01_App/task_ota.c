@@ -599,8 +599,8 @@ void TaskOta_Init(void *p_huart, void *p_hiwdg, void *p_key_port, uint16_t key_p
     BspWdg_Init(&s_wdg_drv, p_hiwdg, &s_wdg_ops);
     BspSys_Init(&s_sys_drv, &s_sys_ops);
 
-    /* 初始化 UART 驱动 + ring buffer */
-    BspUart_Init(&s_uart_drv, &uart_cfg);
+    /* 初始化 UART 驱动 + ring buffer (NULL = 使用默认 HAL OPS) */
+    BspUart_Init(&s_uart_drv, &uart_cfg, NULL, NULL);
     ring_buffer_init(&s_ring_buf, s_ring_storage, UART_RX_RING_SIZE);
     BspUart_BindRingBuffer(&s_uart_drv, &s_ring_buf);
     BspUart_StartReceive(&s_uart_drv);

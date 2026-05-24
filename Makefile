@@ -137,9 +137,11 @@ C_SRCS += Middlewares/Third_Party/FreeRTOS/Source/croutine.c \
 # 04_Impl (BSP implementations)
 C_SRCS += 04_Impl/key/bsp_key_driver.c \
           04_Impl/led/bsp_led_driver.c \
-          04_Impl/uart/bsp_uart.c \
+          04_Impl/uart/bsp_uart_driver.c \
+          04_Impl/uart/bsp_uart_handler.c \
           04_Impl/rtt/bsp_rtt_driver.c \
-          04_Impl/flash/bsp_flash.c \
+           04_Impl/flash/bsp_flash_driver.c \
+           04_Impl/flash/bsp_flash_handler.c \
           04_Impl/wdg/bsp_wdg_driver.c \
           04_Impl/sys/bsp_sys_driver.c
 

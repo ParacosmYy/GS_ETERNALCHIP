@@ -1,16 +1,16 @@
 /**
- * @file    bsp_uart.h
+ * @file    bsp_uart_driver.h
  * @brief   UART BSP driver — DMA + IDLE reception, Printf support
  * @author  GS_Mark
  *
  * @note    All types (bsp_uart_driver_t, bsp_uart_config_t, etc.) and API
  *          declarations are in plat_uart.h (03_Platform/interface).
  *          This header only adds HAL includes and configurable macros
- *          needed by the implementation (bsp_uart.c).
+ *          needed by the implementation (bsp_uart_driver.c).
  */
 
-#ifndef BSP_UART_H
-#define BSP_UART_H
+#ifndef BSP_UART_DRIVER_H
+#define BSP_UART_DRIVER_H
 
 #ifdef __cplusplus
 extern "C"
@@ -35,4 +35,4 @@ extern "C"
 }
 #endif
 
-#endif /* BSP_UART_H */
+#endif /* BSP_UART_DRIVER_H */

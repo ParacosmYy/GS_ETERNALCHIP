@@ -54,20 +54,40 @@ typedef struct
     void               *p_user_data;  /**< Callback user context */
 } bsp_uart_config_t;
 
+/** @brief  Hardware operations — abstracted HAL calls */
+typedef struct
+{
+    int  (*pf_start_dma_rx)(void *p_huart, uint8_t *buf, uint16_t size);
+    void (*pf_stop_rx)(void *p_huart);
+    int  (*pf_send_dma)(void *p_huart, const uint8_t *data, uint16_t len);
+    int  (*pf_send_blocking)(void *p_huart, const uint8_t *data, uint16_t len, uint32_t timeout);
+    void (*pf_flush_dr)(void *p_huart);
+} uart_hw_operations_t;
+
+/** @brief  OS operations — abstracted OS/tick calls */
+typedef struct
+{
+    uint32_t (*pf_get_tick)(void);
+    void     (*pf_delay_ms)(uint32_t ms);
+} uart_os_operations_t;
+
 /** @brief  UART driver instance — full definition (no HAL types) */
 typedef struct bsp_uart_driver
 {
-    const bsp_uart_config_t *p_config; /**< Configuration reference */
-    volatile uint8_t         tx_busy;  /**< 1 = DMA transmitting */
-    volatile uint8_t         rx_busy;  /**< 1 = DMA receiving */
-    circular_buffer_t       *p_ring;   /**< ring buffer (optional) */
-    volatile uint8_t         ring_mode;/**< 1 = ring buffer mode */
+    const bsp_uart_config_t    *p_config;  /**< Configuration reference */
+    const uart_hw_operations_t *p_hw_ops;  /**< Hardware ops (injected) */
+    const uart_os_operations_t *p_os_ops;  /**< OS ops (injected) */
+    volatile uint8_t            tx_busy;   /**< 1 = DMA transmitting */
+    volatile uint8_t            rx_busy;   /**< 1 = DMA receiving */
+    circular_buffer_t          *p_ring;    /**< ring buffer (optional) */
+    volatile uint8_t            ring_mode; /**< 1 = ring buffer mode */
 } bsp_uart_driver_t;
 
 //******************************* Declaring ********************************//
 
 /** @brief  Initialize UART driver and register instance */
-void     BspUart_Init(bsp_uart_driver_t *p_drv, const bsp_uart_config_t *p_config);
+void     BspUart_Init(bsp_uart_driver_t *p_drv, const bsp_uart_config_t *p_config,
+                       const uart_hw_operations_t *p_hw_ops, const uart_os_operations_t *p_os_ops);
 
 /** @brief  Start DMA + IDLE reception */
 int      BspUart_StartReceive(bsp_uart_driver_t *p_drv);

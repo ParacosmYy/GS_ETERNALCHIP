@@ -1,86 +1,134 @@
 /**
- * @file    bsp_uart.c
- * @brief   UART BSP driver implementation — DMA + IDLE + Printf
+ * @file    bsp_uart_driver.c
+ * @brief   UART BSP driver implementation — DMA + IDLE + Printf (OPS pattern)
  * @author  GS_Mark
  *
  * @par dependencies
- * - bsp_uart.h
+ * - bsp_uart_driver.h
+ * - bsp_uart_handler.h
+ *
+ * All HAL calls are abstracted through p_hw_ops / p_os_ops function pointers
+ * injected at init time. HAL callbacks (ISR context) still use HAL_UART() cast
+ * because they receive raw HAL handle from the interrupt.
  */
 
 //*** Includes ***//
-#include "bsp_uart.h"
+#include "bsp_uart_driver.h"
+#include "bsp_uart_handler.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include "cmsis_os.h"
 
-//*** HAL Handle Cast (void* from plat_uart.h → UART_HandleTypeDef*) ***//
+//*** HAL Handle Cast (void* from plat_uart.h -> UART_HandleTypeDef*) ***//
 #define HAL_UART(h)  ((UART_HandleTypeDef *)(h))
 
-//*** Private Variables — Instance Registry ***//
+//*** Static HAL OPS Wrappers ***//
 
-static bsp_uart_driver_t *s_instances[BSP_UART_MAX_INSTANCES];
+/**
+ * @brief  HAL wrapper: start DMA + IDLE reception.
+ *
+ * @param[in] p_huart : HAL UART handle (void*).
+ * @param[in] buf     : RX buffer.
+ * @param[in] size    : RX buffer size.
+ *
+ * @return   0 : HAL_OK.
+ * @return  -1 : HAL error.
+ * */
+static int hal_uart_start_dma_rx(void *p_huart, uint8_t *buf, uint16_t size)
+{
+    return (HAL_UARTEx_ReceiveToIdle_DMA((UART_HandleTypeDef *)p_huart, buf, size) == HAL_OK) ? 0 : -1;
+}
+
+/**
+ * @brief  HAL wrapper: abort reception.
+ *
+ * @param[in] p_huart : HAL UART handle (void*).
+ * */
+static void hal_uart_stop_rx(void *p_huart)
+{
+    HAL_UART_AbortReceive((UART_HandleTypeDef *)p_huart);
+}
+
+/**
+ * @brief  HAL wrapper: non-blocking DMA transmit.
+ *
+ * @param[in] p_huart : HAL UART handle (void*).
+ * @param[in] data    : TX data.
+ * @param[in] len     : TX length.
+ *
+ * @return   0 : HAL_OK.
+ * @return  -1 : HAL error.
+ * */
+static int hal_uart_send_dma(void *p_huart, const uint8_t *data, uint16_t len)
+{
+    return (HAL_UART_Transmit_DMA((UART_HandleTypeDef *)p_huart, data, len) == HAL_OK) ? 0 : -1;
+}
+
+/**
+ * @brief  HAL wrapper: blocking transmit.
+ *
+ * @param[in] p_huart  : HAL UART handle (void*).
+ * @param[in] data     : TX data.
+ * @param[in] len      : TX length.
+ * @param[in] timeout  : Timeout in ms.
+ *
+ * @return   0 : HAL_OK.
+ * @return  -1 : HAL error.
+ * */
+static int hal_uart_send_blocking(void *p_huart, const uint8_t *data, uint16_t len, uint32_t timeout)
+{
+    return (HAL_UART_Transmit((UART_HandleTypeDef *)p_huart, data, len, timeout) == HAL_OK) ? 0 : -1;
+}
+
+/**
+ * @brief  HAL wrapper: flush data register.
+ *
+ * @param[in] p_huart : HAL UART handle (void*).
+ * */
+static void hal_uart_flush_dr(void *p_huart)
+{
+    __HAL_UART_FLUSH_DRREGISTER((UART_HandleTypeDef *)p_huart);
+}
+
+/** @brief  Default HAL hardware operations */
+static const uart_hw_operations_t s_uart_hal_ops =
+{
+    .pf_start_dma_rx  = hal_uart_start_dma_rx,
+    .pf_stop_rx       = hal_uart_stop_rx,
+    .pf_send_dma      = hal_uart_send_dma,
+    .pf_send_blocking  = hal_uart_send_blocking,
+    .pf_flush_dr      = hal_uart_flush_dr,
+};
+
+/**
+ * @brief  HAL wrapper: get tick.
+ *
+ * @return  Current tick value.
+ * */
+static uint32_t hal_get_tick(void)
+{
+    return HAL_GetTick();
+}
+
+/**
+ * @brief  HAL wrapper: delay.
+ *
+ * @param[in] ms : Delay in ms.
+ * */
+static void hal_delay_ms(uint32_t ms)
+{
+    osDelay(ms);
+}
+
+/** @brief  Default HAL OS operations */
+static const uart_os_operations_t s_uart_os_ops =
+{
+    .pf_get_tick = hal_get_tick,
+    .pf_delay_ms = hal_delay_ms,
+};
 
 //*** Private Helpers ***//
-
-/**
- * @brief  将 UART 驱动实例注册到全局实例表。
- *
- * @param[in] p_drv : UART 驱动实例指针。
- * */
-static void register_instance(bsp_uart_driver_t *p_drv)
-{
-    int i;
-
-    for (i = 0; i < BSP_UART_MAX_INSTANCES; i++)
-    {
-        if (s_instances[i] == NULL)
-        {
-            s_instances[i] = p_drv;
-            return;
-        }
-    }
-}
-
-/**
- * @brief  从全局实例表中注销 UART 驱动实例。
- *
- * @param[in] p_drv : 要注销的 UART 驱动实例指针。
- * */
-static void unregister_instance(bsp_uart_driver_t *p_drv)
-{
-    int i;
-
-    for (i = 0; i < BSP_UART_MAX_INSTANCES; i++)
-    {
-        if (s_instances[i] == p_drv)
-        {
-            s_instances[i] = NULL;
-            return;
-        }
-    }
-}
-
-/**
- * @brief  根据 HAL UART 句柄查找已注册的驱动实例。
- *
- * @param[in] p_huart : HAL UART 句柄指针。
- *
- * @return  找到的驱动实例指针，未找到则返回 NULL。
- * */
-static bsp_uart_driver_t *find_instance(UART_HandleTypeDef *p_huart)
-{
-    int i;
-
-    for (i = 0; i < BSP_UART_MAX_INSTANCES; i++)
-    {
-        if (s_instances[i] != NULL && HAL_UART(s_instances[i]->p_config->p_huart) == p_huart)
-        {
-            return s_instances[i];
-        }
-    }
-    return NULL;
-}
 
 /**
  * @brief  向应用层发送事件通知（若用户已注册回调则调用之）。
@@ -102,13 +150,13 @@ static void notify(bsp_uart_driver_t *p_drv, bsp_uart_event_t evt, uint8_t *p_da
  * @brief  启动 DMA + IDLE 接收。
  *
  * Steps:
- *  1. 调用 HAL_UARTEx_ReceiveToIdle_DMA 启动 DMA 接收。
+ *  1. 通过 p_hw_ops 启动 DMA 接收。
  *  2. 关闭半传输中断，仅在总线空闲或缓冲区满时触发回调。
  *
  * @param[in] p_drv : UART 驱动实例指针。
  *
  * @return   0 : 启动成功。
- * @return  -1 : HAL 启动失败。
+ * @return  -1 : 启动失败。
  * */
 static int start_dma_rx(bsp_uart_driver_t *p_drv)
 {
@@ -116,7 +164,7 @@ static int start_dma_rx(bsp_uart_driver_t *p_drv)
 
     cfg = p_drv->p_config;
 
-    if (HAL_UARTEx_ReceiveToIdle_DMA(HAL_UART(cfg->p_huart), cfg->p_rx_buf, cfg->rx_buf_size) != HAL_OK)
+    if (p_drv->p_hw_ops->pf_start_dma_rx(cfg->p_huart, cfg->p_rx_buf, cfg->rx_buf_size) != 0)
     {
         return -1;
     }
@@ -135,17 +183,23 @@ static int start_dma_rx(bsp_uart_driver_t *p_drv)
  *
  * Steps:
  *  1. 将驱动结构体清零。
- *  2. 绑定配置指针。
- *  3. 注册到全局实例表（供 HAL 回调查找）。
+ *  2. 绑定配置指针和 OPS 指针。
+ *  3. 若 p_hw_ops / p_os_ops 为 NULL，使用默认 HAL 实现。
+ *  4. 注册到 Handler 实例表（供 HAL 回调查找）。
  *
  * @param[out] p_drv    : UART 驱动实例指针。
  * @param[in]  p_config : UART 配置（HAL 句柄、接收缓冲区、回调等）。
+ * @param[in]  p_hw_ops : 硬件操作指针（NULL 则使用默认 HAL 实现）。
+ * @param[in]  p_os_ops : OS 操作指针（NULL 则使用默认 HAL+FreeRTOS 实现）。
  * */
-void BspUart_Init(bsp_uart_driver_t *p_drv, const bsp_uart_config_t *p_config)
+void BspUart_Init(bsp_uart_driver_t *p_drv, const bsp_uart_config_t *p_config,
+                  const uart_hw_operations_t *p_hw_ops, const uart_os_operations_t *p_os_ops)
 {
     memset(p_drv, 0, sizeof(*p_drv));
     p_drv->p_config = p_config;
-    register_instance(p_drv);
+    p_drv->p_hw_ops = (p_hw_ops != NULL) ? p_hw_ops : &s_uart_hal_ops;
+    p_drv->p_os_ops = (p_os_ops != NULL) ? p_os_ops : &s_uart_os_ops;
+    BspUartHandler_Register(p_drv);
 }
 
 /**
@@ -168,7 +222,7 @@ int BspUart_StartReceive(bsp_uart_driver_t *p_drv)
  * */
 void BspUart_StopReceive(bsp_uart_driver_t *p_drv)
 {
-    HAL_UART_AbortReceive(HAL_UART(p_drv->p_config->p_huart));
+    p_drv->p_hw_ops->pf_stop_rx(p_drv->p_config->p_huart);
     p_drv->rx_busy = 0;
 }
 
@@ -180,7 +234,7 @@ void BspUart_StopReceive(bsp_uart_driver_t *p_drv)
  * @param[in] len    : 数据长度（字节）。
  *
  * @return   0 : 发送已提交。
- * @return  -1 : 发送忙或 HAL 调用失败。
+ * @return  -1 : 发送忙或发送失败。
  * */
 int BspUart_Send(bsp_uart_driver_t *p_drv, const uint8_t *p_data, uint16_t len)
 {
@@ -189,7 +243,7 @@ int BspUart_Send(bsp_uart_driver_t *p_drv, const uint8_t *p_data, uint16_t len)
         return -1;
     }
 
-    if (HAL_UART_Transmit_DMA(HAL_UART(p_drv->p_config->p_huart), p_data, len) != HAL_OK)
+    if (p_drv->p_hw_ops->pf_send_dma(p_drv->p_config->p_huart, p_data, len) != 0)
     {
         return -1;
     }
@@ -207,18 +261,14 @@ int BspUart_Send(bsp_uart_driver_t *p_drv, const uint8_t *p_data, uint16_t len)
  * @param[in] timeout_ms  : 超时时间（ms）。
  *
  * @return   0 : 发送成功。
- * @return  -1 : 超时或 HAL 调用失败。
+ * @return  -1 : 超时或发送失败。
  * */
 int BspUart_SendBlocking(bsp_uart_driver_t *p_drv,
                          const uint8_t     *p_data,
                          uint16_t           len,
                          uint32_t           timeout_ms)
 {
-    if (HAL_UART_Transmit(HAL_UART(p_drv->p_config->p_huart), p_data, len, timeout_ms) != HAL_OK)
-    {
-        return -1;
-    }
-    return 0;
+    return p_drv->p_hw_ops->pf_send_blocking(p_drv->p_config->p_huart, p_data, len, timeout_ms) == 0 ? 0 : -1;
 }
 
 /**
@@ -306,6 +356,10 @@ void BspUart_BindRingBuffer(bsp_uart_driver_t *p_drv, circular_buffer_t *p_ring)
 /**
  * @brief  从 ring buffer 读取一个字节（带超时）。
  *
+ * Steps:
+ *  1. 循环查询 ring buffer，通过 p_os_ops 获取 tick 和延时。
+ *  2. 超时则返回 -1。
+ *
  * @param[in]  p_drv      : UART 驱动实例指针。
  * @param[out] p_byte     : 存放读取的字节。
  * @param[in]  timeout_ms : 超时时间（毫秒）。
@@ -315,7 +369,9 @@ void BspUart_BindRingBuffer(bsp_uart_driver_t *p_drv, circular_buffer_t *p_ring)
  * */
 int BspUart_ReadByte(bsp_uart_driver_t *p_drv, uint8_t *p_byte, uint32_t timeout_ms)
 {
-    uint32_t start = HAL_GetTick();
+    uint32_t start;
+
+    start = p_drv->p_os_ops->pf_get_tick();
 
     do
     {
@@ -338,8 +394,8 @@ int BspUart_ReadByte(bsp_uart_driver_t *p_drv, uint8_t *p_byte, uint32_t timeout
             return -1;
         }
 
-        osDelay(1);
-    } while ((HAL_GetTick() - start) < timeout_ms);
+        p_drv->p_os_ops->pf_delay_ms(1);
+    } while ((p_drv->p_os_ops->pf_get_tick() - start) < timeout_ms);
 
     return -1;
 }
@@ -351,7 +407,7 @@ int BspUart_ReadByte(bsp_uart_driver_t *p_drv, uint8_t *p_byte, uint32_t timeout
  * */
 void BspUart_FlushRx(bsp_uart_driver_t *p_drv)
 {
-    __HAL_UART_FLUSH_DRREGISTER(HAL_UART(p_drv->p_config->p_huart));
+    p_drv->p_hw_ops->pf_flush_dr(p_drv->p_config->p_huart);
 }
 
 //*** HAL Weak Callback Overrides ***//
@@ -360,7 +416,7 @@ void BspUart_FlushRx(bsp_uart_driver_t *p_drv)
  * @brief  HAL UART 接收事件回调（DMA + IDLE 模式）。
  *
  * Steps:
- *  1. 通过 huart 查找已注册的驱动实例。
+ *  1. 通过 Handler 查找已注册的驱动实例。
  *  2. 清除 rx_busy 标志，通知应用层接收完成。
  *  3. 自动重启 DMA 接收（若 UART 未被复位）。
  *
@@ -371,7 +427,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
 {
     bsp_uart_driver_t *p_drv;
 
-    p_drv = find_instance(huart);
+    p_drv = BspUartHandler_FindByHandle(huart);
     if (p_drv == NULL)
     {
         return;
@@ -420,7 +476,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     bsp_uart_driver_t *p_drv;
 
-    p_drv = find_instance(huart);
+    p_drv = BspUartHandler_FindByHandle(huart);
     if (p_drv == NULL)
     {
         return;
@@ -444,7 +500,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
     bsp_uart_driver_t *p_drv;
 
-    p_drv = find_instance(huart);
+    p_drv = BspUartHandler_FindByHandle(huart);
     if (p_drv == NULL)
     {
         return;
