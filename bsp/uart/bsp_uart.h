@@ -119,6 +119,9 @@ extern "C"
      * */
     int BspUart_ReadByte(bsp_uart_driver_t *p_drv, uint8_t *p_byte, uint32_t timeout_ms);
 
+    /** @brief  清空 UART RX 数据寄存器（丢弃接收缓冲区中的残留数据） */
+    void BspUart_FlushRx(bsp_uart_driver_t *p_drv);
+
 #ifdef __cplusplus
 }
 #endif

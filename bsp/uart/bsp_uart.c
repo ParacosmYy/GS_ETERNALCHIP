@@ -341,6 +341,16 @@ int BspUart_ReadByte(bsp_uart_driver_t *p_drv, uint8_t *p_byte, uint32_t timeout
     return -1;
 }
 
+/**
+ * @brief  清空 UART RX 数据寄存器（丢弃接收 FIFO 中的残留数据）。
+ *
+ * @param[in] p_drv : UART 驱动实例指针。
+ * */
+void BspUart_FlushRx(bsp_uart_driver_t *p_drv)
+{
+    __HAL_UART_FLUSH_DRREGISTER(p_drv->p_config->p_huart);
+}
+
 //*** HAL Weak Callback Overrides ***//
 
 /**
