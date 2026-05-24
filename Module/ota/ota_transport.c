@@ -24,8 +24,8 @@
 #include "ota_transport.h"
 #include "bsp_flash.h"
 #include "bsp_uart.h"
-#include "iwdg.h"
-#include "usart.h"
+#include "bsp_wdg.h"
+#include "bsp_sys.h"
 #include "ota_aes.h"
 #include "ota_ecdsa.h"
 #include <string.h>
@@ -115,7 +115,11 @@ void OtaTransport_GetSignature(uint8_t sig[OTA_ECDSA_SIG_SIZE])
 void OtaTransport_SendByte(uint8_t byte, void *p_user)
 {
     (void)p_user;
-    HAL_UART_Transmit(&huart1, &byte, 1, 100);
+
+    if (s_p_uart_drv != NULL)
+    {
+        BspUart_SendBlocking(s_p_uart_drv, &byte, 1, 100);
+    }
 }
 
 /**
@@ -131,11 +135,6 @@ int OtaTransport_RecvByte(uint8_t *p_byte, uint32_t timeout_ms, void *p_user)
     if (s_p_uart_drv != NULL)
     {
         return BspUart_ReadByte(s_p_uart_drv, p_byte, timeout_ms);
-    }
-
-    if (HAL_UART_Receive(&huart1, p_byte, 1, timeout_ms) == HAL_OK)
-    {
-        return 0;
     }
 
     return -1;
@@ -160,8 +159,8 @@ static int WriteDecryptedFirmware(const uint8_t *p_data, uint16_t len)
 
     if (BspFlash_Write(addr, p_data, len) != 0)
     {
-        log_e("Flash write error at 0x%08lX (HAL err=0x%08lX)",
-              addr, HAL_FLASH_GetError());
+        log_e("Flash write error at 0x%08lX",
+              addr);
         return -1;
     }
 
@@ -309,6 +308,6 @@ int OtaTransport_DataCallback(uint32_t offset, const uint8_t *p_data,
     }
 
     /* Feed watchdog */
-    HAL_IWDG_Refresh(&hiwdg);
+    BspWdg_Feed();
     return 0;
 }

@@ -14,6 +14,7 @@
 #include "elog.h"
 #include "ota_trace.h"
 #include "bsp_flash.h"
+#include "bsp_sys.h"
 #include <string.h>
 
 //*** Private Variables ***//
@@ -148,7 +149,7 @@ void OtaTrace_Record(uint32_t event, uint32_t result, uint32_t data)
     }
 
     entry.event     = event;
-    entry.timestamp = HAL_GetTick();
+    entry.timestamp = BspSys_GetTick();
     entry.result    = result;
     entry.data      = data;
 
