@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\04_Impl\led;..\04_Impl\key;..\04_Impl\uart;..\04_Impl\rtt;..\04_Impl\flash;..\04_Impl\wdg;..\04_Impl\sys;..\03_Platform\common;..\03_Platform\interface;..\01_App;..\02_Service;..\Vendor\tiny-AES-c;../Middlewares/Third_Party/SEGGER_RTT;../Middlewares/Third_Party/SHA256;../Middlewares/Third_Party/YMODEM;../Middlewares/Third_Party/EasyLogger/inc;../Middlewares/Third_Party/EasyLogger/port;../Middlewares/Third_Party/CmBacktrace;../Middlewares/Third_Party/micro-ecc;../Shared</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\04_Impl\led;..\04_Impl\key;..\04_Impl\uart;..\04_Impl\rtt;..\04_Impl\flash;..\04_Impl\wdg;..\04_Impl\sys;..\04_Impl\adaptation;..\03_Platform\common;..\03_Platform\interface;..\01_App;..\02_Service;..\Vendor\tiny-AES-c;../Middlewares/Third_Party/SEGGER_RTT;../Middlewares/Third_Party/SHA256;../Middlewares/Third_Party/YMODEM;../Middlewares/Third_Party/EasyLogger/inc;../Middlewares/Third_Party/EasyLogger/port;../Middlewares/Third_Party/CmBacktrace;../Middlewares/Third_Party/micro-ecc;../Shared</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -597,61 +597,6 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>04_Impl</GroupName>
-          <Files>
-            <File>
-              <FileName>system_adaption.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\04_Impl\adaptation\system_adaption.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_key_driver.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\04_Impl\key\bsp_key_driver.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_led_driver.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\04_Impl\led\bsp_led_driver.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_uart_driver.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\04_Impl\uart\bsp_uart_driver.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_uart_handler.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\04_Impl\uart\bsp_uart_handler.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_rtt_driver.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\04_Impl\rtt\bsp_rtt_driver.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_flash_driver.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\04_Impl\flash\bsp_flash_driver.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_flash_handler.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\04_Impl\flash\bsp_flash_handler.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_wdg_driver.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\04_Impl\wdg\bsp_wdg_driver.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_sys_driver.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\04_Impl\sys\bsp_sys_driver.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>01_App</GroupName>
           <Files>
             <File>
@@ -713,6 +658,71 @@
               <FileName>ota_aes_key.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\02_Service\ota_aes_key.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>03_Platform/common</GroupName>
+          <Files>
+            <File>
+              <FileName>ring_buffer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\03_Platform\common\ring_buffer.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>04_Impl</GroupName>
+          <Files>
+            <File>
+              <FileName>system_adaption.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\04_Impl\adaptation\system_adaption.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_key_driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\04_Impl\key\bsp_key_driver.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_led_driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\04_Impl\led\bsp_led_driver.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_uart_driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\04_Impl\uart\bsp_uart_driver.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_uart_handler.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\04_Impl\uart\bsp_uart_handler.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_rtt_driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\04_Impl\rtt\bsp_rtt_driver.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_flash_driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\04_Impl\flash\bsp_flash_driver.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_flash_handler.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\04_Impl\flash\bsp_flash_handler.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_wdg_driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\04_Impl\wdg\bsp_wdg_driver.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_sys_driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\04_Impl\sys\bsp_sys_driver.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -798,16 +808,6 @@
               <FileName>SEGGER_RTT_printf.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Middlewares\Third_Party\SEGGER_RTT\SEGGER_RTT_printf.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>03_Platform/common</GroupName>
-          <Files>
-            <File>
-              <FileName>ring_buffer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\03_Platform\common\ring_buffer.c</FilePath>
             </File>
           </Files>
         </Group>
