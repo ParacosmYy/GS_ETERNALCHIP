@@ -47,19 +47,18 @@ INCDIRS = Core/Inc \
           Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F \
           Drivers/CMSIS/Device/ST/STM32F4xx/Include \
           Drivers/CMSIS/Include \
-          bsp/led \
-          bsp/key \
-          bsp/uart \
-          bsp/rtt \
-          bsp/flash \
-          bsp/wdg \
-          bsp/sys \
-          utils \
-          App \
-           Module/ota \
-           Module/crypto \
-           Module/diag \
-           Vendor/tiny-AES-c \
+          04_Impl/led \
+          04_Impl/key \
+          04_Impl/uart \
+          04_Impl/rtt \
+          04_Impl/flash \
+          04_Impl/wdg \
+          04_Impl/sys \
+          03_Platform/common \
+          03_Platform/interface \
+          01_App \
+          02_Service \
+          Vendor/tiny-AES-c \
           Middlewares/Third_Party/SEGGER_RTT \
           Middlewares/Third_Party/SHA256 \
           Middlewares/Third_Party/YMODEM \
@@ -135,35 +134,35 @@ C_SRCS += Middlewares/Third_Party/FreeRTOS/Source/croutine.c \
           Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c \
           Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c
 
-# BSP
-C_SRCS += bsp/key/bsp_key.c \
-          bsp/led/bsp_led.c \
-          bsp/uart/bsp_uart.c \
-          bsp/rtt/bsp_rtt.c \
-          bsp/flash/bsp_flash.c \
-          bsp/wdg/bsp_wdg.c \
-          bsp/sys/bsp_sys.c
+# 04_Impl (BSP implementations)
+C_SRCS += 04_Impl/key/bsp_key.c \
+          04_Impl/led/bsp_led.c \
+          04_Impl/uart/bsp_uart.c \
+          04_Impl/rtt/bsp_rtt.c \
+          04_Impl/flash/bsp_flash.c \
+          04_Impl/wdg/bsp_wdg.c \
+          04_Impl/sys/bsp_sys.c
 
-# Utils
-C_SRCS += utils/ring_buffer.c
+# 03_Platform/common
+C_SRCS += 03_Platform/common/ring_buffer.c
 
 # SEGGER RTT
 C_SRCS += Middlewares/Third_Party/SEGGER_RTT/SEGGER_RTT.c \
           Middlewares/Third_Party/SEGGER_RTT/SEGGER_RTT_printf.c
 
-# App
-C_SRCS += App/task_ota.c \
-          App/ota_confirm.c
+# 01_App
+C_SRCS += 01_App/task_ota.c \
+          01_App/ota_confirm.c
 
-# Module
-C_SRCS += Module/ota/ota_transport.c \
-          Module/ota/ota_verify.c \
-          Module/ota/ota_led.c \
-          Module/ota/ota_trace.c \
-          Module/crypto/ota_aes.c \
-          Module/crypto/ota_aes_key.c \
-          Module/crypto/ota_ecdsa.c \
-          Module/diag/crash_dump.c
+# 02_Service
+C_SRCS += 02_Service/ota_transport.c \
+          02_Service/ota_verify.c \
+          02_Service/ota_led.c \
+          02_Service/ota_trace.c \
+          02_Service/ota_aes.c \
+          02_Service/ota_aes_key.c \
+          02_Service/ota_ecdsa.c \
+          02_Service/crash_dump.c
 
 # Third-party Middlewares
 C_SRCS += Middlewares/Third_Party/micro-ecc/uECC.c \
@@ -220,17 +219,19 @@ size: $(BUILDDIR)/OTA_A.elf $(BUILDDIR)/OTA_B.elf
 	$(SIZE) --format=berkeley $(BUILDDIR)/OTA_B.elf
 
 # ----------------------------- Compile Rules ------------------------------- #
+MKDIR_P = mkdir
+
 $(OBJDIR)/%.o: %.c
-	@mkdir -p $(dir $@)
+	@$(MKDIR_P) $(subst /,\,$(dir $@)) 2>nul || exit 0
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJDIR)/%.o: %.s
-	@mkdir -p $(dir $@)
+	@$(MKDIR_P) $(subst /,\,$(dir $@)) 2>nul || exit 0
 	$(CC) $(MCU) -c -o $@ $<
 
 # ----------------------------- Clean --------------------------------------- #
 clean:
-	rm -rf $(BUILDDIR)
+	@if exist $(BUILDDIR) rmdir /s /q $(BUILDDIR)
 
 # ----------------------------- Dependencies -------------------------------- #
 -include $(C_OBJS:.o=.d)

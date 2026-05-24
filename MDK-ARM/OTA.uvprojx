@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\led;..\App;..\Module\ota;..\Module\crypto;..\Module\diag;..\bsp\key;..\bsp\uart;..\bsp\rtt;..\bsp\flash;..\bsp\wdg;..\bsp\sys;..\Vendor\tiny-AES-c;../Middlewares/Third_Party/SEGGER_RTT;../Middlewares/Third_Party/SHA256;../Middlewares/Third_Party/YMODEM;../Middlewares/Third_Party/EasyLogger/inc;../Middlewares/Third_Party/EasyLogger/port;../Middlewares/Third_Party/CmBacktrace;../Middlewares/Third_Party/micro-ecc;../Shared;..\utils</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\04_Impl\led;..\04_Impl\key;..\04_Impl\uart;..\04_Impl\rtt;..\04_Impl\flash;..\04_Impl\wdg;..\04_Impl\sys;..\03_Platform\common;..\03_Platform\interface;..\01_App;..\02_Service;..\Vendor\tiny-AES-c;../Middlewares/Third_Party/SEGGER_RTT;../Middlewares/Third_Party/SHA256;../Middlewares/Third_Party/YMODEM;../Middlewares/Third_Party/EasyLogger/inc;../Middlewares/Third_Party/EasyLogger/port;../Middlewares/Third_Party/CmBacktrace;../Middlewares/Third_Party/micro-ecc;../Shared</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -358,7 +358,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\bsp\rtt;..\Vendor\tiny-AES-c;../Middlewares/Third_Party/SEGGER_RTT;../Shared;..\utils</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\04_Impl\rtt;..\Vendor\tiny-AES-c;../Middlewares/Third_Party/SEGGER_RTT;../Shared</IncludePath>
             </VariousControls>
           </Aads>
           <LDads>
@@ -597,42 +597,42 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>BSP</GroupName>
+          <GroupName>04_Impl</GroupName>
           <Files>
             <File>
               <FileName>bsp_key.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\bsp\key\bsp_key.c</FilePath>
+              <FilePath>..\04_Impl\key\bsp_key.c</FilePath>
             </File>
             <File>
               <FileName>bsp_led.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\bsp\led\bsp_led.c</FilePath>
+              <FilePath>..\04_Impl\led\bsp_led.c</FilePath>
             </File>
             <File>
               <FileName>bsp_uart.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\bsp\uart\bsp_uart.c</FilePath>
+              <FilePath>..\04_Impl\uart\bsp_uart.c</FilePath>
             </File>
             <File>
               <FileName>bsp_rtt.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\bsp\rtt\bsp_rtt.c</FilePath>
+              <FilePath>..\04_Impl\rtt\bsp_rtt.c</FilePath>
             </File>
             <File>
               <FileName>bsp_flash.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\bsp\flash\bsp_flash.c</FilePath>
+              <FilePath>..\04_Impl\flash\bsp_flash.c</FilePath>
             </File>
             <File>
               <FileName>bsp_wdg.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\bsp\wdg\bsp_wdg.c</FilePath>
+              <FilePath>..\04_Impl\wdg\bsp_wdg.c</FilePath>
             </File>
             <File>
               <FileName>bsp_sys.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\bsp\sys\bsp_sys.c</FilePath>
+              <FilePath>..\04_Impl\sys\bsp_sys.c</FilePath>
             </File>
             <File>
               <FileName>SEGGER_RTT.c</FileName>
@@ -647,67 +647,67 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>App</GroupName>
+          <GroupName>01_App</GroupName>
           <Files>
             <File>
               <FileName>task_ota.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\App\task_ota.c</FilePath>
+              <FilePath>..\01_App\task_ota.c</FilePath>
             </File>
             <File>
               <FileName>ota_confirm.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\App\ota_confirm.c</FilePath>
+              <FilePath>..\01_App\ota_confirm.c</FilePath>
             </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>Module</GroupName>
+          <GroupName>02_Service</GroupName>
           <Files>
             <File>
               <FileName>ota_transport.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Module\ota\ota_transport.c</FilePath>
+              <FilePath>..\02_Service\ota_transport.c</FilePath>
             </File>
             <File>
               <FileName>ota_verify.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Module\ota\ota_verify.c</FilePath>
+              <FilePath>..\02_Service\ota_verify.c</FilePath>
             </File>
             <File>
               <FileName>ota_ecdsa.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Module\crypto\ota_ecdsa.c</FilePath>
+              <FilePath>..\02_Service\ota_ecdsa.c</FilePath>
             </File>
             <File>
               <FileName>ota_led.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Module\ota\ota_led.c</FilePath>
+              <FilePath>..\02_Service\ota_led.c</FilePath>
             </File>
             <File>
               <FileName>ota_trace.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Module\ota\ota_trace.c</FilePath>
+              <FilePath>..\02_Service\ota_trace.c</FilePath>
             </File>
             <File>
               <FileName>crash_dump.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Module\diag\crash_dump.c</FilePath>
+              <FilePath>..\02_Service\crash_dump.c</FilePath>
             </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>crypto</GroupName>
+          <GroupName>02_Service/crypto</GroupName>
           <Files>
             <File>
               <FileName>ota_aes.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Module\crypto\ota_aes.c</FilePath>
+              <FilePath>..\02_Service\ota_aes.c</FilePath>
             </File>
             <File>
               <FileName>ota_aes_key.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Module\crypto\ota_aes_key.c</FilePath>
+              <FilePath>..\02_Service\ota_aes_key.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -782,12 +782,12 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Utils</GroupName>
+          <GroupName>03_Platform/common</GroupName>
           <Files>
             <File>
               <FileName>ring_buffer.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\utils\ring_buffer.c</FilePath>
+              <FilePath>..\03_Platform\common\ring_buffer.c</FilePath>
             </File>
           </Files>
         </Group>
